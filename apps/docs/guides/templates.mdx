@@ -1,0 +1,163 @@
+---
+title: Templates
+description: Gérez vos templates MsgFlash et prévisualisez leur rendu avec variables.
+---
+
+## Endpoints
+
+| Méthode | Endpoint |
+|---|---|
+| `GET` | `/api/v1/templates` |
+| `POST` | `/api/v1/templates` |
+| `GET` | `/api/v1/templates/{id}` |
+| `PUT` | `/api/v1/templates/{id}` |
+| `DELETE` | `/api/v1/templates/{id}` |
+| `POST` | `/api/v1/templates/{id}/preview` |
+
+Authentification : `x-api-key: <api_key>`
+
+## Modèles de paramètres
+
+### `GET /api/v1/templates`
+
+| Paramètre | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `page` | integer | non | query | Page, défaut `1` |
+| `limit` | integer | non | query | Taille, défaut `20`, max `100` |
+
+### `POST /api/v1/templates`
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `name` | string | oui | body | Nom du template |
+| `type` | enum | oui | body | `text`, `image`, `video`, `audio`, `document` |
+| `body` | string | oui si `type=text` | body | Corps avec placeholders |
+| `mediaUrl` | string | oui si template media | body | URL publique du media |
+
+### `POST /api/v1/templates/{id}/preview`
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `id` | UUID | oui | path | ID du template |
+| `instanceId` | UUID | non | body | Contexte `instance.*` |
+| `contactId` | UUID | non | body | Contexte `contact.*` |
+| `variables` | object | non | body | Valeurs `custom.*` |
+
+---
+
+## Syntaxe des variables
+
+Format :
+
+```txt
+{{namespace.variable}}
+```
+
+Namespaces supportés :
+- `contact.*`
+- `user.*`
+- `instance.*`
+- `custom.*`
+
+Exemple :
+
+```txt
+Bonjour {{contact.firstName}}, votre code {{custom.code}} est prêt sur {{instance.name}}.
+```
+
+<Note>
+Les variables sont détectées et recalculées automatiquement par le backend à partir du `body`. Vous n'avez pas à maintenir manuellement la liste `variables`.
+</Note>
+
+---
+
+## Créer un template
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/templates \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Relance panier",
+    "type": "text",
+    "body": "Bonjour {{contact.firstName}}, utilisez {{custom.code}} aujourd''hui."
+  }'
+```
+
+Réponse :
+
+```json
+{
+  "data": {
+    "id": "tmpl_uuid",
+    "name": "Relance panier",
+    "type": "text",
+    "body": "Bonjour {{contact.firstName}}, utilisez {{custom.code}} aujourd'hui.",
+    "mediaUrl": null,
+    "variables": ["contact.firstName", "custom.code"]
+  }
+}
+```
+
+### Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `VALIDATION_ERROR` | 400 | Body invalide |
+| `TEMPLATE_INVALID` | 400 | Placeholder invalide |
+
+---
+
+## Preview
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/templates/TEMPLATE_ID/preview \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "contactId": "CONTACT_UUID",
+    "variables": {
+      "code": "PROMO10"
+    }
+  }'
+```
+
+```json
+{
+  "data": {
+    "rendered": "Bonjour Awa, utilisez PROMO10 aujourd'hui.",
+    "variables": ["contact.firstName", "custom.code"],
+    "missingVariables": [],
+    "valid": true
+  }
+}
+```
+
+Si une variable ne peut pas être résolue :
+- `valid` devient `false`
+- `missingVariables` liste les chemins manquants
+
+### Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `NOT_FOUND` | 404 | Template introuvable |
+| `TEMPLATE_CONTEXT_UNAVAILABLE` | 400 | Contact ou instance de contexte manquant |
+
+---
+
+## Templates media
+
+Pour `image`, `video`, `audio` ou `document`, le backend exige `mediaUrl`.
+
+Exemple :
+
+```json
+{
+  "name": "Brochure",
+  "type": "document",
+  "body": "Voici votre brochure {{contact.firstName}}.",
+  "mediaUrl": "https://cdn.example.com/brochure.pdf"
+}
+```

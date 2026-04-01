@@ -1,0 +1,26 @@
+---
+title: DELETE Supprimer un template
+description: Supprime un template de votre compte.
+---
+
+## Endpoint
+
+```txt
+DELETE /api/v1/templates/{id}
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID du template |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "deleted": true
+  }
+}
+```

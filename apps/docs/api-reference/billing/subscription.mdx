@@ -1,0 +1,45 @@
+---
+title: GET Souscription courante
+description: Retourne la souscription courante, l'usage du portail et la période courante.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/billing/subscription
+```
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "subscription": {
+      "plan": {
+        "code": "starter",
+        "limits": {
+          "maxInstances": 1
+        },
+        "features": {
+          "campaigns": true
+        }
+      },
+      "scheduledPlan": null,
+      "scheduledPlanAt": null,
+      "scheduledAction": null
+    },
+    "usage": {
+      "messagesCount": 0,
+      "statusesCount": 0,
+      "effectiveOutboundUsage": 0,
+      "apiRequestsCount": 0,
+      "activeInstancesCount": 1,
+      "activeApiKeysCount": 1
+    },
+    "period": {
+      "start": "2026-04-01T00:00:00.000Z",
+      "end": "2026-04-30T23:59:59.999Z"
+    }
+  }
+}
+```

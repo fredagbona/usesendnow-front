@@ -1,0 +1,48 @@
+---
+title: GET Usage billing enrichi
+description: Retourne plan, limites, features, usage et période courante.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/billing/usage
+```
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "plan": {
+      "code": "pro",
+      "name": "Pro"
+    },
+    "limits": {
+      "maxInstances": 5,
+      "maxApiKeys": 5,
+      "maxWebhookEndpoints": 10,
+      "monthlyOutboundQuota": 25000,
+      "monthlyApiRequestQuota": 100000
+    },
+    "features": {
+      "campaigns": true,
+      "statuses": true,
+      "voiceNotes": true,
+      "webhooks": true
+    },
+    "usage": {
+      "messagesCount": 1240,
+      "statusesCount": 85,
+      "effectiveOutboundUsage": 1325,
+      "apiRequestsCount": 4500,
+      "activeInstancesCount": 3,
+      "activeApiKeysCount": 2
+    },
+    "period": {
+      "start": "2026-04-01T00:00:00.000Z",
+      "end": "2026-04-30T23:59:59.999Z"
+    }
+  }
+}
+```

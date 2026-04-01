@@ -1,0 +1,32 @@
+---
+title: POST Créer un groupe
+description: Crée un groupe de contacts.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/contacts/groups
+```
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `name` | string | oui | Nom du groupe |
+| `description` | string | non | Description |
+| `color` | string | non | Couleur hexadécimale |
+
+## Réponse succès `201`
+
+```json
+{
+  "data": {
+    "id": "grp_uuid",
+    "name": "Clients VIP",
+    "description": "Clients à forte valeur",
+    "color": "#F59E0B",
+    "contactCount": 0
+  }
+}
+```

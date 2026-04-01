@@ -1,0 +1,238 @@
+---
+title: Envoyer un message
+description: Envoyez des messages WhatsApp de tous types, en mode libre ou via un template MsgFlash.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/messages/send
+```
+
+Authentification : `x-api-key: <api_key>`
+
+Le message est accepté en `queued`, puis envoyé de façon asynchrone.
+
+## Paramètres
+
+### Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | oui | Instance WhatsApp source |
+| `to` | string | oui | Numéro E.164 |
+| `type` | enum | oui si pas de `templateId` | Type du message libre |
+| `templateId` | UUID | oui si pas de `type` | Template MsgFlash à utiliser |
+| `text` | string | selon type | Corps du message libre |
+| `mediaUrl` | string | selon type | URL publique du media |
+| `latitude` | number | si `type=location` | Latitude |
+| `longitude` | number | si `type=location` | Longitude |
+| `locationName` | string | non | Nom du lieu |
+| `locationAddress` | string | non | Adresse du lieu |
+| `contactId` | UUID | non | Contact partagé ou contexte template |
+| `variables` | object | non | Valeurs injectées dans `custom.*` |
+
+Il n'y a ni path params ni query params sur cette route.
+
+---
+
+## Mode 1 — Message libre
+
+### Texte
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/messages/send \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "YOUR_INSTANCE_ID",
+    "to": "+22912345678",
+    "type": "text",
+    "text": "Bonjour, votre commande est prête."
+  }'
+```
+
+### Media, localisation et contact
+
+<Tabs>
+  <Tab title="Image">
+    ```json
+    {
+      "instanceId": "YOUR_INSTANCE_ID",
+      "to": "+22912345678",
+      "type": "image",
+      "mediaUrl": "https://cdn.example.com/banner.jpg",
+      "text": "Nouvelle collection"
+    }
+    ```
+  </Tab>
+  <Tab title="Vidéo">
+    ```json
+    {
+      "instanceId": "YOUR_INSTANCE_ID",
+      "to": "+22912345678",
+      "type": "video",
+      "mediaUrl": "https://cdn.example.com/promo.mp4"
+    }
+    ```
+  </Tab>
+  <Tab title="Audio">
+    ```json
+    {
+      "instanceId": "YOUR_INSTANCE_ID",
+      "to": "+22912345678",
+      "type": "audio",
+      "mediaUrl": "https://cdn.example.com/message.mp3"
+    }
+    ```
+  </Tab>
+  <Tab title="Note vocale">
+    ```json
+    {
+      "instanceId": "YOUR_INSTANCE_ID",
+      "to": "+22912345678",
+      "type": "voice_note",
+      "mediaUrl": "https://cdn.example.com/note.ogg"
+    }
+    ```
+  </Tab>
+  <Tab title="Document">
+    ```json
+    {
+      "instanceId": "YOUR_INSTANCE_ID",
+      "to": "+22912345678",
+      "type": "document",
+      "mediaUrl": "https://cdn.example.com/facture.pdf",
+      "text": "Votre facture"
+    }
+    ```
+  </Tab>
+  <Tab title="Localisation">
+    ```json
+    {
+      "instanceId": "YOUR_INSTANCE_ID",
+      "to": "+22912345678",
+      "type": "location",
+      "latitude": 6.3654,
+      "longitude": 2.4183,
+      "locationName": "Boutique Cotonou Centre",
+      "locationAddress": "Avenue de la Marina, Cotonou"
+    }
+    ```
+  </Tab>
+  <Tab title="Contact">
+    ```json
+    {
+      "instanceId": "YOUR_INSTANCE_ID",
+      "to": "+22912345678",
+      "type": "contact",
+      "contactId": "CONTACT_UUID"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Mode 2 — Envoi via template
+
+Vous pouvez envoyer un message en fournissant `templateId` à la place de `type`.
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/messages/send \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "YOUR_INSTANCE_ID",
+    "to": "+22912345678",
+    "contactId": "CONTACT_UUID",
+    "templateId": "TEMPLATE_UUID",
+    "variables": {
+      "app": "MsgFlash",
+      "coupon": "PROMO10"
+    }
+  }'
+```
+
+Le backend :
+- charge le template
+- résout `contact.*`, `user.*`, `instance.*`
+- injecte vos valeurs libres dans `custom.*`
+- enregistre le texte rendu final dans `Message.body`
+
+Exemple de template :
+
+```txt
+Bonjour {{contact.firstName}}, bienvenue sur {{custom.app}} depuis {{instance.name}}.
+```
+
+Variables supportées :
+- `contact.*`
+- `user.*`
+- `instance.*`
+- `custom.*`
+
+<Note>
+Pour les variables `contact.*`, fournissez `contactId` si vous voulez un contexte contact enrichi.
+</Note>
+
+---
+
+## Réponse succès
+
+```json
+{
+  "data": {
+    "id": "msg_uuid",
+    "instanceId": "inst_uuid",
+    "contactId": "cnt_uuid",
+    "campaignId": null,
+    "type": "text",
+    "to": "+22912345678",
+    "body": "Bonjour Awa, bienvenue sur MsgFlash depuis Boutique Porto-Novo.",
+    "mediaUrl": null,
+    "status": "queued",
+    "providerMessageId": null,
+    "createdAt": "2026-04-01T10:00:00.000Z",
+    "updatedAt": "2026-04-01T10:00:00.000Z"
+  }
+}
+```
+
+## Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `VALIDATION_ERROR` | 400 | Body invalide |
+| `TEMPLATE_INVALID` | 400 | Placeholder ou template invalide |
+| `TEMPLATE_VARIABLES_MISSING` | 400 | Variables template manquantes |
+| `TEMPLATE_CONTEXT_UNAVAILABLE` | 400 | `contactId` ou `instanceId` de contexte invalide |
+| `NOT_FOUND` | 404 | Instance, contact ou template introuvable |
+| `SUBSCRIPTION_INACTIVE` | 403 | Souscription non exploitable |
+| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota mensuel épuisé |
+
+---
+
+## Statuts possibles
+
+```txt
+queued → sent → delivered → read
+                   └──────→ failed
+```
+
+| Statut | Description |
+|---|---|
+| `queued` | Message accepté et mis en file |
+| `sent` | Transmis à WhatsApp |
+| `delivered` | Livré sur l'appareil |
+| `read` | Lu par le destinataire |
+| `failed` | Échec d'envoi |
+
+---
+
+## Suivre le statut
+
+1. `GET /api/v1/messages/{id}`
+2. Webhooks `message.sent`, `message.delivered`, `message.read`, `message.failed`
+
+Voir [Webhooks](/guides/webhooks).

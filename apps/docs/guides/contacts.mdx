@@ -1,0 +1,189 @@
+---
+title: Contacts et groupes
+description: Gérez vos contacts MsgFlash, vos groupes et les suppressions en lot via l'API publique.
+---
+
+## Contacts
+
+### Endpoints
+
+| Méthode | Endpoint |
+|---|---|
+| `GET` | `/api/v1/contacts` |
+| `POST` | `/api/v1/contacts` |
+| `GET` | `/api/v1/contacts/{id}` |
+| `PUT` | `/api/v1/contacts/{id}` |
+| `DELETE` | `/api/v1/contacts/{id}` |
+| `POST` | `/api/v1/contacts/bulk-delete` |
+
+### Paramètres
+
+#### `POST /api/v1/contacts`
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `name` | string | oui | body | Nom complet |
+| `phone` | string | oui | body | Numéro E.164 |
+| `tags` | string[] | non | body | Tags du contact |
+| `meta` | object | non | body | Métadonnées libres |
+
+#### `PUT /api/v1/contacts/{id}`
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `id` | UUID | oui | path | ID du contact |
+| `name` | string | non | body | Nouveau nom |
+| `phone` | string | non | body | Nouveau numéro |
+| `tags` | string[] | non | body | Remplace les tags |
+| `meta` | object | non | body | Remplace les métadonnées |
+
+#### `POST /api/v1/contacts/bulk-delete`
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `contactIds` | UUID[] | oui | body | 1 à 500 IDs |
+
+### Créer un contact
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/contacts \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Awa Doe",
+    "phone": "+22901000000",
+    "tags": ["vip", "newsletter"],
+    "meta": {
+      "city": "Cotonou"
+    }
+  }'
+```
+
+### Supprimer plusieurs contacts
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/contacts/bulk-delete \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contactIds": ["CONTACT_UUID_1", "CONTACT_UUID_2"]
+  }'
+```
+
+Exemple de réponse :
+
+```json
+{
+  "data": {
+    "requested": 2,
+    "deleted": 1,
+    "notFound": ["CONTACT_UUID_2"]
+  }
+}
+```
+
+### Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `VALIDATION_ERROR` | 400 | Body invalide |
+| `NOT_FOUND` | 404 | Contact demandé introuvable |
+
+---
+
+## Groupes de contacts
+
+### Endpoints
+
+| Méthode | Endpoint |
+|---|---|
+| `GET` | `/api/v1/contacts/groups` |
+| `POST` | `/api/v1/contacts/groups` |
+| `GET` | `/api/v1/contacts/groups/{groupId}` |
+| `PUT` | `/api/v1/contacts/groups/{groupId}` |
+| `DELETE` | `/api/v1/contacts/groups/{groupId}` |
+| `POST` | `/api/v1/contacts/groups/{groupId}/members` |
+| `DELETE` | `/api/v1/contacts/groups/{groupId}/members` |
+| `GET` | `/api/v1/contacts/groups/{groupId}/members` |
+| `GET` | `/api/v1/contacts/{id}/groups` |
+
+### Paramètres
+
+#### `POST /api/v1/contacts/groups`
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `name` | string | oui | body | Nom du groupe |
+| `description` | string | non | body | Description |
+| `color` | string | non | body | Couleur hexadécimale |
+
+#### `POST /api/v1/contacts/groups/{groupId}/members`
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `groupId` | UUID | oui | path | ID du groupe |
+| `contactIds` | UUID[] | oui | body | Liste des membres à ajouter |
+
+#### `GET /api/v1/contacts/groups/{groupId}/members`
+
+| Paramètre | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `groupId` | UUID | oui | path | ID du groupe |
+| `limit` | integer | non | query | Taille de page |
+| `cursor` | string | non | query | Curseur |
+| `search` | string | non | query | Filtre sur nom ou téléphone |
+
+### Créer un groupe
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/contacts/groups \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Clients VIP",
+    "description": "Clients à forte valeur",
+    "color": "#F59E0B"
+  }'
+```
+
+### Ajouter des membres
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/contacts/groups/GROUP_ID/members \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contactIds": ["CONTACT_UUID_1", "CONTACT_UUID_2"]
+  }'
+```
+
+### Lister les membres
+
+```bash
+curl "https://api.msgflash.com/api/v1/contacts/groups/GROUP_ID/members?limit=20&search=awa" \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+Réponse :
+
+```json
+{
+  "data": {
+    "members": [],
+    "nextCursor": null,
+    "hasMore": false
+  }
+}
+```
+
+<Note>
+Les groupes exposés ici sont les groupes de contacts MsgFlash, pas des groupes WhatsApp natifs.
+</Note>
+
+### Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `MAX_CONTACT_GROUPS_REACHED` | 403 | Limite de groupes atteinte |
+| `NOT_FOUND` | 404 | Groupe ou contact introuvable |
+| `CONFLICT` | 409 | Groupe avec le même nom déjà existant |

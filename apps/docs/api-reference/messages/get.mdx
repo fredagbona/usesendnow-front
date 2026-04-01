@@ -1,0 +1,34 @@
+---
+title: GET Récupérer un message
+description: Récupère le détail d'un message par son identifiant.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/messages/{id}
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID du message |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "msg_uuid",
+    "status": "delivered",
+    "providerMessageId": "BAE5D1A2B3C4D5E6"
+  }
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `404` | `NOT_FOUND` | Message introuvable |

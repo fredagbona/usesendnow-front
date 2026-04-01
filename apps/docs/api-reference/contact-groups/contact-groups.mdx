@@ -1,0 +1,32 @@
+---
+title: GET Lister les groupes d'un contact
+description: Liste les groupes auxquels appartient un contact.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/contacts/{id}/groups
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID du contact |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "groups": [
+      {
+        "id": "grp_uuid",
+        "name": "Clients VIP",
+        "color": "#F59E0B"
+      }
+    ]
+  }
+}
+```

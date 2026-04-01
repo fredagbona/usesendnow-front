@@ -1,0 +1,17 @@
+{
+  "name": "usesendnow-frontend",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev --filter=!docs",
+    "dev:landing": "turbo dev --filter=landing",
+    "dev:portal": "turbo dev --filter=portal",
+    "dev:admin": "turbo dev --filter=admin",
+    "build": "turbo build --filter=!docs",
+    "lint": "turbo lint --filter=!docs",
+    "type-check": "turbo type-check --filter=!docs"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

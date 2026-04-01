@@ -1,0 +1,41 @@
+---
+title: GET État live d'une instance
+description: Interroge l'état live de connexion d'une instance depuis le provider.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/instances/{id}/state
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de l'instance |
+
+## Exemple de requête
+
+```bash
+curl https://api.msgflash.com/api/v1/instances/INSTANCE_ID/state \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "instanceId": "inst_uuid",
+    "status": "connected",
+    "providerState": "open"
+  }
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `404` | `NOT_FOUND` | Instance inexistante ou hors de votre compte |

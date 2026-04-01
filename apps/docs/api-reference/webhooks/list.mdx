@@ -1,0 +1,27 @@
+---
+title: GET Lister les webhooks
+description: Liste vos endpoints webhook MsgFlash.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/webhooks
+```
+
+## Réponse succès `200`
+
+```json
+{
+  "data": [
+    {
+      "id": "wh_uuid",
+      "url": "https://example.com/webhooks/msgflash",
+      "events": ["message.delivered"],
+      "active": true,
+      "createdAt": "2026-04-01T10:00:00.000Z",
+      "updatedAt": "2026-04-01T10:00:00.000Z"
+    }
+  ]
+}
+```

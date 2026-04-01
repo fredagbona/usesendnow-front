@@ -1,0 +1,115 @@
+---
+title: Authentification
+description: Comment authentifier vos requêtes au dashboard et à l'API publique MsgFlash.
+---
+
+## Les deux surfaces
+
+| Surface | Méthode | Header | Usage |
+|---|---|---|---|
+| Dashboard | JWT Bearer | `Authorization: Bearer <jwt>` | Interface web et endpoints console `/api/*` |
+| API publique | Clé API | `x-api-key: <api_key>` | Endpoints `/api/v1/*` pour vos intégrations |
+
+Pour toute intégration serveur à serveur, utilisez une clé API.
+
+---
+
+## Format de la clé API
+
+Une clé API MsgFlash ressemble à :
+
+```txt
+msgf_live_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
+```
+
+Structure :
+- préfixe `msgf_live_`
+- 64 caractères hexadécimaux minuscules
+
+<Note>
+La clé complète n'est affichée qu'une seule fois lors de la création.
+</Note>
+
+---
+
+## Utiliser votre clé API
+
+```bash
+curl https://api.msgflash.com/api/v1/messages/send \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "to": "+22901000000",
+    "type": "text",
+    "text": "Bonjour"
+  }'
+```
+
+<Warning>
+N'utilisez pas `Authorization: Bearer <api_key>` pour l'API publique. Le backend attend explicitement le header `x-api-key`.
+</Warning>
+
+---
+
+## Créer et révoquer une clé
+
+1. Connectez-vous à [app.msgflash.com](https://app.msgflash.com)
+2. Ouvrez **API Keys**
+3. Cliquez sur **New API Key**
+4. Donnez un nom descriptif
+5. Copiez la clé immédiatement
+
+Pour révoquer une clé :
+1. Retournez dans **API Keys**
+2. Cliquez sur **Revoke**
+3. Confirmez
+
+La révocation est immédiate.
+
+---
+
+## Nombre de clés par plan
+
+| Plan | Clés API autorisées |
+|---|---|
+| Free | 0 |
+| Starter | 3 |
+| Pro | 5 |
+| Plus | 10 |
+
+---
+
+## Bonnes pratiques
+
+<CardGroup cols={2}>
+  <Card title="Une clé par environnement" icon="key">
+    Utilisez une clé distincte pour la production, le staging et le développement.
+  </Card>
+  <Card title="Variables d'environnement" icon="lock">
+    Stockez votre clé dans une variable comme `MSGFLASH_API_KEY` ou dans un gestionnaire de secrets.
+  </Card>
+</CardGroup>
+
+---
+
+## Erreurs liées à l'authentification
+
+| Code | HTTP | Description |
+|---|---|---|
+| `UNAUTHORIZED` | 401 | Clé manquante, invalide ou révoquée |
+| `FORBIDDEN` | 403 | La clé est valide mais n'a pas accès à la ressource |
+| `SUBSCRIPTION_INACTIVE` | 403 | Le compte n'a plus de souscription exploitable pour l'action demandée |
+| `API_RATE_LIMIT_EXCEEDED` | 429 | Plus de 10 requêtes/seconde sur la même clé |
+| `MONTHLY_API_REQUEST_QUOTA_EXCEEDED` | 429 | Quota mensuel de requêtes API épuisé |
+
+Exemple :
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid or revoked API key"
+  }
+}
+```

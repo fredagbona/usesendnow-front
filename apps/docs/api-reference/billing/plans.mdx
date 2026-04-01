@@ -1,0 +1,27 @@
+---
+title: GET Lister les plans
+description: Retourne le catalogue des plans MsgFlash actifs.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/billing/plans
+```
+
+## Réponse succès `200`
+
+```json
+{
+  "data": [
+    {
+      "code": "starter",
+      "name": "Starter",
+      "priceEur": 9,
+      "priceFcfa": 7200,
+      "limits": {},
+      "features": {}
+    }
+  ]
+}
+```

@@ -1,0 +1,58 @@
+---
+title: POST Planifier un message
+description: Planifie un message futur, en mode libre ou via template.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/messages/schedule
+```
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | oui | Instance source |
+| `to` | string | oui | Numéro E.164 |
+| `scheduledAt` | ISO 8601 | oui | Date/heure d'envoi |
+| `type` | enum | oui si pas de `templateId` | Type du message libre |
+| `templateId` | UUID | oui si pas de `type` | Template à rendre |
+| `variables` | object | non | Valeurs `custom.*` |
+
+Les autres champs suivent les mêmes règles que `/messages/send`.
+
+## Exemple de requête
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/messages/schedule \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "to": "+22912345678",
+    "type": "text",
+    "text": "Bonjour dans 30 minutes",
+    "scheduledAt": "2026-04-02T08:00:00.000Z"
+  }'
+```
+
+## Réponse succès `201`
+
+```json
+{
+  "data": {
+    "id": "msg_uuid",
+    "status": "queued"
+  }
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `400` | `VALIDATION_ERROR` | Body invalide |
+| `400` | `TEMPLATE_INVALID` | Template invalide |
+| `404` | `NOT_FOUND` | Instance, contact ou template introuvable |
+| `429` | `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | Quota déjà épuisé |

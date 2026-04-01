@@ -1,0 +1,178 @@
+---
+title: Billing public
+description: Consultez les plans, la souscription courante, la consommation et l'historique de paiements via l'API publique.
+---
+
+## Endpoints
+
+| Méthode | Endpoint |
+|---|---|
+| `GET` | `/api/v1/billing/plans` |
+| `GET` | `/api/v1/billing/subscription` |
+| `GET` | `/api/v1/billing/usage` |
+| `GET` | `/api/v1/billing/payments` |
+| `GET` | `/api/v1/usage` |
+
+<Note>
+Le billing public via API key est en lecture seule. Les actions sensibles comme checkout, annulation ou downgrade se font depuis le dashboard.
+</Note>
+
+## Paramètres
+
+Ces routes sont toutes en `GET`.
+
+| Endpoint | Query params | Body |
+|---|---|---|
+| `/api/v1/billing/plans` | aucun | aucun |
+| `/api/v1/billing/subscription` | aucun | aucun |
+| `/api/v1/billing/usage` | aucun | aucun |
+| `/api/v1/usage` | aucun | aucun |
+| `/api/v1/billing/payments` | `page`, `limit` | aucun |
+
+---
+
+## Lister les plans
+
+```bash
+curl https://api.msgflash.com/api/v1/billing/plans \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+### Réponse succès
+
+```json
+{
+  "data": [
+    {
+      "code": "starter",
+      "name": "Starter",
+      "priceEur": 9,
+      "priceFcfa": 7200,
+      "limits": {
+        "maxInstances": 1
+      },
+      "features": {
+        "campaigns": true
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Souscription courante
+
+```bash
+curl https://api.msgflash.com/api/v1/billing/subscription \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+Exemple :
+
+```json
+{
+  "data": {
+    "subscription": {
+      "plan": {
+        "code": "starter",
+        "name": "Starter",
+        "limits": {
+          "maxInstances": 1,
+          "maxApiKeys": 3,
+          "maxWebhookEndpoints": 3
+        },
+        "features": {
+          "campaigns": true,
+          "statuses": true,
+          "webhooks": true
+        }
+      },
+      "scheduledPlan": null,
+      "scheduledPlanAt": null,
+      "scheduledAction": null
+    },
+    "usage": {
+      "messagesCount": 0,
+      "statusesCount": 0,
+      "effectiveOutboundUsage": 0,
+      "apiRequestsCount": 0,
+      "activeInstancesCount": 1,
+      "activeApiKeysCount": 1
+    },
+    "period": {
+      "start": "2026-04-01T00:00:00.000Z",
+      "end": "2026-04-30T23:59:59.999Z"
+    }
+  }
+}
+```
+
+<Note>
+Les limites se lisent dans `subscription.plan.limits.*`, pas dans `subscription.plan.maxInstances`.
+</Note>
+
+---
+
+## Usage enrichi
+
+```bash
+curl https://api.msgflash.com/api/v1/billing/usage \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+Cet endpoint renvoie :
+- le plan courant
+- les limites
+- les features
+- l'usage du mois
+- la période de facturation
+
+---
+
+## Historique des paiements
+
+```bash
+curl "https://api.msgflash.com/api/v1/billing/payments?page=1&limit=20" \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+Réponse :
+
+```json
+{
+  "data": {
+    "payments": [
+      {
+        "id": "pay_uuid",
+        "provider": "dodo",
+        "planCode": "starter",
+        "planName": "Starter",
+        "amount": 900,
+        "currency": "EUR",
+        "status": "succeeded",
+        "periodStart": "2026-04-01T09:43:13.737Z",
+        "periodEnd": "2026-05-01T09:43:13.737Z",
+        "createdAt": "2026-04-01T09:43:13.745Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### Paramètres query
+
+| Paramètre | Type | Requis | Description |
+|---|---|---|---|
+| `page` | integer | non | Défaut `1` |
+| `limit` | integer | non | Défaut `20`, max `100` |
+
+## Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `UNAUTHORIZED` | 401 | Clé invalide ou absente |
+| `API_RATE_LIMIT_EXCEEDED` | 429 | Trop de requêtes par seconde |

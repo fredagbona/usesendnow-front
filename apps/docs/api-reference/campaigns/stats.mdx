@@ -1,0 +1,46 @@
+---
+title: GET Statistiques d'une campagne
+description: Récupère les statistiques et la timeline d'exécution d'une campagne.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/campaigns/{id}/stats
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de la campagne |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "campaignId": "cmp_uuid",
+    "status": "running",
+    "stats": {
+      "total": 1000,
+      "planned": 1000,
+      "queued": 150,
+      "sent": 600,
+      "delivered": 580,
+      "read": 420,
+      "failed": 10,
+      "cancelled": 5
+    },
+    "progressPercent": 85,
+    "timeline": {
+      "scheduledFor": "2026-04-02T10:00:00.000Z",
+      "processingStartedAt": "2026-04-02T10:00:01.000Z",
+      "lastEnqueuedAt": "2026-04-02T10:03:20.000Z",
+      "completedAt": null,
+      "cancelledAt": null,
+      "lastActivityAt": "2026-04-02T10:04:12.000Z"
+    }
+  }
+}
+```

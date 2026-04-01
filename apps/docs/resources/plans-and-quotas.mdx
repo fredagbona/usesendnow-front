@@ -1,0 +1,84 @@
+---
+title: Plans et quotas
+description: Comparatif des plans MsgFlash et lecture de la consommation via l'API publique.
+---
+
+## Comparatif des plans
+
+| | Free | Starter | Pro | Plus |
+|---|---|---|---|---|
+| Prix mensuel | 0 FCFA / 0 € | 7 200 FCFA / 9 € | 15 200 FCFA / 19 € | 31 200 FCFA / 39 € |
+| Instances | 1 | 1 | 5 | 20 |
+| Messages + statuts / mois | 20 | 5 000 | 25 000 | 150 000 |
+| Requêtes API / mois | 1 000 | 20 000 | 100 000 | 500 000 |
+| Clés API | 0 | 3 | 5 | 10 |
+| Endpoints webhook | 0 | 3 | 10 | 50 |
+| Groupes de contacts | 2 | 10 | 50 | Illimité |
+| Campagnes | non | oui | oui | oui |
+| Statuts WhatsApp | non | oui | oui | oui |
+| Webhooks | non | oui | oui | oui |
+
+---
+
+## Règles de quota
+
+- les messages et les statuts partagent le même quota mensuel
+- `effectiveOutboundUsage = messagesCount + statusesCount`
+- le quota API mensuel est distinct du rate limit temps réel
+- pour les messages planifiés, le quota est revérifié au moment de l'envoi effectif
+
+---
+
+## Suivre votre consommation
+
+### Endpoint historique compatible
+
+```bash
+curl https://api.msgflash.com/api/v1/usage \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+### Endpoint billing enrichi
+
+```bash
+curl https://api.msgflash.com/api/v1/billing/usage \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+Exemple :
+
+```json
+{
+  "data": {
+    "plan": {
+      "code": "pro",
+      "name": "Pro"
+    },
+    "limits": {
+      "maxInstances": 5,
+      "maxApiKeys": 5,
+      "maxWebhookEndpoints": 10,
+      "monthlyOutboundQuota": 25000,
+      "monthlyApiRequestQuota": 100000
+    },
+    "features": {
+      "campaigns": true,
+      "statuses": true,
+      "voiceNotes": true,
+      "webhooks": true
+    },
+    "usage": {
+      "messagesCount": 1240,
+      "statusesCount": 85,
+      "effectiveOutboundUsage": 1325,
+      "apiRequestsCount": 4500,
+      "activeInstancesCount": 3,
+      "activeApiKeysCount": 2
+    },
+    "period": {
+      "start": "2026-04-01T00:00:00.000Z",
+      "end": "2026-04-30T23:59:59.999Z"
+    }
+  }
+}
+```

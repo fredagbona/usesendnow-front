@@ -1,0 +1,35 @@
+---
+title: PUT Mettre à jour un groupe
+description: Met à jour un groupe de contacts.
+---
+
+## Endpoint
+
+```txt
+PUT /api/v1/contacts/groups/{groupId}
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `groupId` | UUID | oui | ID du groupe |
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `name` | string | non | Nouveau nom |
+| `description` | string | non | Nouvelle description |
+| `color` | string | non | Nouvelle couleur |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "grp_uuid",
+    "name": "Clients VIP"
+  }
+}
+```

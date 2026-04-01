@@ -1,0 +1,27 @@
+---
+title: POST Reprendre une campagne
+description: Reprend une campagne en pause.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/campaigns/{id}/resume
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de la campagne |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "cmp_uuid",
+    "status": "running"
+  }
+}
+```

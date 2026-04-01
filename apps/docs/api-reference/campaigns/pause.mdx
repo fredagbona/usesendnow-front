@@ -1,0 +1,36 @@
+---
+title: POST Pauser une campagne
+description: Met une campagne en pause quand son statut le permet.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/campaigns/{id}/pause
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de la campagne |
+
+Pas de body.
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "cmp_uuid",
+    "status": "paused"
+  }
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `400` | `BAD_REQUEST` | Statut incompatible avec la pause |
+| `404` | `NOT_FOUND` | Campagne introuvable |

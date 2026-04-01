@@ -1,0 +1,28 @@
+---
+title: GET Récupérer un contact
+description: Récupère le détail d'un contact.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/contacts/{id}
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID du contact |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "cnt_uuid",
+    "name": "Awa Doe",
+    "phone": "+22901000000"
+  }
+}
+```

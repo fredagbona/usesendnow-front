@@ -1,0 +1,35 @@
+---
+title: POST Ajouter des membres
+description: Ajoute plusieurs contacts à un groupe.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/contacts/groups/{groupId}/members
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `groupId` | UUID | oui | ID du groupe |
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `contactIds` | UUID[] | oui | Contacts à ajouter |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "added": 2,
+    "alreadyInGroup": 0,
+    "notFound": 0,
+    "total": 2
+  }
+}
+```

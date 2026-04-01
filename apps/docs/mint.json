@@ -1,0 +1,136 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "MsgFlash",
+  "logo": {
+    "dark": "/images/logo.svg",
+    "light": "/images/logo.svg"
+  },
+  "favicon": "/images/favicon.svg",
+  "theme": "prism",
+  "colors": {
+    "primary": "#FACC15",
+    "light": "#FACC15",
+    "dark": "#EAB308"
+  },
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "authentication",
+        "api-reference/introduction"
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "guides/send-message",
+        "guides/schedule-message",
+        "guides/campaigns",
+        "guides/templates",
+        "guides/contacts",
+        "guides/webhooks",
+        "guides/instances",
+        "guides/statuses",
+        "guides/billing"
+      ]
+    },
+    {
+      "group": "API Reference · Instances",
+      "pages": [
+        "api-reference/instances/list",
+        "api-reference/instances/get",
+        "api-reference/instances/state"
+      ]
+    },
+    {
+      "group": "API Reference · Messages",
+      "pages": [
+        "api-reference/messages/send",
+        "api-reference/messages/schedule",
+        "api-reference/messages/list",
+        "api-reference/messages/get"
+      ]
+    },
+    {
+      "group": "API Reference · Campagnes",
+      "pages": [
+        "api-reference/campaigns/create",
+        "api-reference/campaigns/get",
+        "api-reference/campaigns/stats",
+        "api-reference/campaigns/pause",
+        "api-reference/campaigns/resume"
+      ]
+    },
+    {
+      "group": "API Reference · Templates",
+      "pages": [
+        "api-reference/templates/list",
+        "api-reference/templates/create",
+        "api-reference/templates/get",
+        "api-reference/templates/update",
+        "api-reference/templates/delete",
+        "api-reference/templates/preview"
+      ]
+    },
+    {
+      "group": "API Reference · Contacts",
+      "pages": [
+        "api-reference/contacts/list",
+        "api-reference/contacts/create",
+        "api-reference/contacts/get",
+        "api-reference/contacts/update",
+        "api-reference/contacts/delete",
+        "api-reference/contacts/bulk-delete"
+      ]
+    },
+    {
+      "group": "API Reference · Groupes",
+      "pages": [
+        "api-reference/contact-groups/list",
+        "api-reference/contact-groups/create",
+        "api-reference/contact-groups/get",
+        "api-reference/contact-groups/update",
+        "api-reference/contact-groups/delete",
+        "api-reference/contact-groups/add-members",
+        "api-reference/contact-groups/remove-members",
+        "api-reference/contact-groups/list-members",
+        "api-reference/contact-groups/contact-groups"
+      ]
+    },
+    {
+      "group": "API Reference · Webhooks",
+      "pages": [
+        "api-reference/webhooks/list",
+        "api-reference/webhooks/create",
+        "api-reference/webhooks/delete"
+      ]
+    },
+    {
+      "group": "API Reference · Statuts",
+      "pages": [
+        "api-reference/statuses/create"
+      ]
+    },
+    {
+      "group": "API Reference · Billing",
+      "pages": [
+        "api-reference/billing/plans",
+        "api-reference/billing/subscription",
+        "api-reference/billing/usage",
+        "api-reference/billing/payments",
+        "api-reference/billing/legacy-usage"
+      ]
+    },
+    {
+      "group": "Resources",
+      "pages": [
+        "resources/message-types",
+        "resources/plans-and-quotas",
+        "resources/error-codes",
+        "resources/faq"
+      ]
+    }
+  ]
+}

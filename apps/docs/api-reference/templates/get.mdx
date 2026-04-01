@@ -1,0 +1,29 @@
+---
+title: GET Récupérer un template
+description: Récupère le détail d'un template.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/templates/{id}
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID du template |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "tmpl_uuid",
+    "name": "Relance panier",
+    "type": "text",
+    "variables": ["contact.firstName", "custom.code"]
+  }
+}
+```

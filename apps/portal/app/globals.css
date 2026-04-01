@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+/* ─── Runtime Theme Variables ─────────────────────────────────────────────── */
+
+:root {
+  --portal-primary: #FFD600;
+  --portal-primary-hover: #E0BC00;
+  --portal-primary-subtle: #FFF8CC;
+  --portal-primary-text: #5C4C00;
+  --portal-primary-ink: #7A5D00;
+
+  --portal-secondary: #0A0A0A;
+  --portal-secondary-hover: #1A1A1A;
+  --portal-secondary-subtle: #F5F5F5;
+  --portal-secondary-text: #0A0A0A;
+
+  --portal-tertiary: #1A1A1A;
+  --portal-tertiary-hover: #111111;
+  --portal-tertiary-subtle: #F5F5F5;
+  --portal-tertiary-text: #0A0A0A;
+
+  --portal-neutral-dark: #0A0A0A;
+  --portal-neutral-dark-hover: #1A1A1A;
+
+  --portal-bg: #FFFFFF;
+  --portal-bg-subtle: #F8F8F6;
+  --portal-bg-muted: #F2F2EE;
+  --portal-code-bg: #0A0A0A;
+
+  --portal-border: #E3E1D7;
+  --portal-border-strong: #C7C4B8;
+
+  --portal-text: #0A0A0A;
+  --portal-text-body: #1A1A1A;
+  --portal-text-secondary: #666666;
+  --portal-text-muted: #8A8A8A;
+
+  --portal-error: #EF4444;
+  --portal-error-hover: #DC2626;
+  --portal-error-subtle: #FEF2F2;
+  --portal-warning: #F59E0B;
+  --portal-warning-subtle: #FFFBEB;
+  --portal-warning-text: #B45309;
+
+  --background: var(--portal-bg-subtle);
+  --foreground: var(--portal-text);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  --portal-primary: #FFD600;
+  --portal-primary-hover: #FFE14D;
+  --portal-primary-subtle: #2B2400;
+  --portal-primary-text: #FFE14D;
+  --portal-primary-ink: #FFE14D;
+
+  --portal-secondary: #F5F5F5;
+  --portal-secondary-hover: #FFFFFF;
+  --portal-secondary-subtle: #151515;
+  --portal-secondary-text: #F5F5F5;
+
+  --portal-tertiary: #F5F5F5;
+  --portal-tertiary-hover: #FFFFFF;
+  --portal-tertiary-subtle: #151515;
+  --portal-tertiary-text: #F5F5F5;
+
+  --portal-neutral-dark: #050505;
+  --portal-neutral-dark-hover: #111111;
+
+  --portal-bg: #0A0A0A;
+  --portal-bg-subtle: #111111;
+  --portal-bg-muted: #1A1A1A;
+  --portal-code-bg: #050505;
+
+  --portal-border: #2A2A2A;
+  --portal-border-strong: #3B3B3B;
+
+  --portal-text: #F5F5F5;
+  --portal-text-body: #ECECEC;
+  --portal-text-secondary: #B5B5B5;
+  --portal-text-muted: #8D8D8D;
+
+  --portal-error: #EF4444;
+  --portal-error-hover: #F87171;
+  --portal-error-subtle: #261313;
+  --portal-warning: #F59E0B;
+  --portal-warning-subtle: #231A05;
+  --portal-warning-text: #FBBF24;
+
+  --background: var(--portal-bg-subtle);
+  --foreground: var(--portal-text);
+  color-scheme: dark;
+}
+
+/* ─── Design System Tokens ────────────────────────────────────────────────── */
+
+@theme {
+  --color-primary:        var(--portal-primary);
+  --color-primary-hover:  var(--portal-primary-hover);
+  --color-primary-subtle: var(--portal-primary-subtle);
+  --color-primary-text:   var(--portal-primary-text);
+  --color-primary-ink:    var(--portal-primary-ink);
+
+  --color-secondary:        var(--portal-secondary);
+  --color-secondary-hover:  var(--portal-secondary-hover);
+  --color-secondary-subtle: var(--portal-secondary-subtle);
+  --color-secondary-text:   var(--portal-secondary-text);
+
+  --color-tertiary:        var(--portal-tertiary);
+  --color-tertiary-hover:  var(--portal-tertiary-hover);
+  --color-tertiary-subtle: var(--portal-tertiary-subtle);
+  --color-tertiary-text:   var(--portal-tertiary-text);
+
+  --color-neutral-dark:       var(--portal-neutral-dark);
+  --color-neutral-dark-hover: var(--portal-neutral-dark-hover);
+
+  /* UI Surface */
+  --color-bg:           var(--portal-bg);
+  --color-bg-subtle:    var(--portal-bg-subtle);
+  --color-bg-muted:     var(--portal-bg-muted);
+  --color-code-bg:      var(--portal-code-bg);
+
+  /* UI Borders */
+  --color-border:       var(--portal-border);
+  --color-border-strong:var(--portal-border-strong);
+
+  /* UI Text */
+  --color-text:         var(--portal-text);
+  --color-text-body:    var(--portal-text-body);
+  --color-text-secondary:var(--portal-text-secondary);
+  --color-text-muted:   var(--portal-text-muted);
+
+  /* Semantic */
+  --color-error:          var(--portal-error);
+  --color-error-hover:    var(--portal-error-hover);
+  --color-error-subtle:   var(--portal-error-subtle);
+  --color-warning:        var(--portal-warning);
+  --color-warning-subtle: var(--portal-warning-subtle);
+  --color-warning-text:   var(--portal-warning-text);
+
+  /* Fonts */
+  --font-display: var(--font-geist-sans), 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body:    var(--font-poppins), 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+
+/* Display font on all headings */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+}
+
+/* ─── Sonner toast overrides ──────────────────────────────────────────────── */
+
+[data-sonner-toast] {
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-left-width: 4px !important;
+  border-left-color: var(--color-border-strong) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18) !important;
+  font-family: var(--font-body) !important;
+  padding: 14px 16px !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  border-left-color: var(--color-primary) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  border-left-color: var(--color-error) !important;
+}
+
+[data-sonner-toast][data-type="warning"] {
+  border-left-color: var(--color-warning) !important;
+}
+
+[data-sonner-toast][data-type="info"] {
+  border-left-color: #3B82F6 !important;
+}
+
+[data-sonner-toast] [data-title] {
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  color: var(--color-text) !important;
+  font-family: var(--font-body) !important;
+}
+
+[data-sonner-toast] [data-description] {
+  font-size: 0.75rem !important;
+  color: var(--color-text-secondary) !important;
+  margin-top: 2px !important;
+  font-family: var(--font-body) !important;
+}
+
+[data-sonner-toast] [data-close-button] {
+  color: var(--color-text-muted) !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  color: var(--color-text) !important;
+  background: var(--color-bg-subtle) !important;
+}
+
+[data-sonner-toast][data-type="success"] [data-icon] svg,
+[data-sonner-toast][data-type="success"] [data-icon] {
+  color: var(--color-primary) !important;
+}
+
+[data-sonner-toast][data-type="error"] [data-icon] svg,
+[data-sonner-toast][data-type="error"] [data-icon] {
+  color: var(--color-error) !important;
+}
+
+[data-sonner-toast][data-type="warning"] [data-icon] svg,
+[data-sonner-toast][data-type="warning"] [data-icon] {
+  color: var(--color-warning) !important;
+}
+
+[data-sonner-toast][data-type="info"] [data-icon] svg,
+[data-sonner-toast][data-type="info"] [data-icon] {
+  color: #3B82F6 !important;
+}
+
+/* Loading toast progress bar */
+[data-sonner-toast] [data-loader] {
+  background: var(--color-primary) !important;
+}

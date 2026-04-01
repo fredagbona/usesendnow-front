@@ -1,0 +1,28 @@
+---
+title: GET Récupérer un groupe
+description: Récupère le détail d'un groupe de contacts.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/contacts/groups/{groupId}
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `groupId` | UUID | oui | ID du groupe |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "grp_uuid",
+    "name": "Clients VIP",
+    "contactCount": 12
+  }
+}
+```

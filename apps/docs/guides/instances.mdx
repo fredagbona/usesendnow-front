@@ -1,0 +1,133 @@
+---
+title: Instances WhatsApp
+description: Comprendre les instances WhatsApp et interroger leur état via l'API publique.
+---
+
+## Endpoints
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/instances` | Lister les instances de votre compte |
+| `GET` | `/api/v1/instances/{id}` | Détail d'une instance |
+| `GET` | `/api/v1/instances/{id}/state` | État live depuis le provider |
+
+Authentification : `x-api-key: <api_key>`
+
+## Qu'est-ce qu'une instance ?
+
+Une instance est un numéro WhatsApp connecté à MsgFlash.
+
+Vous créez et connectez les instances depuis le dashboard. L'API publique permet ensuite de lire leur détail et leur état live.
+
+---
+
+## États possibles
+
+| Statut | Description |
+|---|---|
+| `disconnected` | Instance existante mais non connectée |
+| `connecting` | Connexion en cours |
+| `connected` | Instance prête à envoyer |
+
+---
+
+## Lister les instances
+
+```bash
+curl https://api.msgflash.com/api/v1/instances \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+### Paramètres
+
+Cette route n'accepte ni query params ni body.
+
+### Réponse succès
+
+```json
+{
+  "data": [
+    {
+      "id": "inst_uuid",
+      "name": "boutique-principale",
+      "waNumber": "+22912345678",
+      "status": "connected",
+      "webhook": null,
+      "meta": null,
+      "deletedAt": null,
+      "createdAt": "2026-04-01T09:00:00.000Z",
+      "updatedAt": "2026-04-01T09:10:00.000Z"
+    }
+  ]
+}
+```
+
+### Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `UNAUTHORIZED` | 401 | Clé API manquante ou invalide |
+| `API_RATE_LIMIT_EXCEEDED` | 429 | Plus de 10 req/s sur la même clé |
+
+---
+
+## Détail d'une instance
+
+```bash
+curl https://api.msgflash.com/api/v1/instances/INSTANCE_ID \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+### Paramètres path
+
+| Paramètre | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de l'instance |
+
+```json
+{
+  "data": {
+    "id": "inst_uuid",
+    "name": "boutique-principale",
+    "waNumber": "+22912345678",
+    "status": "connected",
+    "createdAt": "2026-04-01T09:00:00.000Z",
+    "updatedAt": "2026-04-01T09:10:00.000Z"
+  }
+}
+```
+
+### Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `NOT_FOUND` | 404 | Instance inexistante ou hors de votre compte |
+
+## État live
+
+```bash
+curl https://api.msgflash.com/api/v1/instances/INSTANCE_ID/state \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+### Paramètres path
+
+| Paramètre | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de l'instance |
+
+```json
+{
+  "data": {
+    "instanceId": "inst_uuid",
+    "status": "connected",
+    "providerState": "open"
+  }
+}
+```
+
+### Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `NOT_FOUND` | 404 | Instance inexistante ou hors de votre compte |

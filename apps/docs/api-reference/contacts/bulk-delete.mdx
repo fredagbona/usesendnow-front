@@ -1,0 +1,28 @@
+---
+title: POST Supprimer plusieurs contacts
+description: Supprime plusieurs contacts en une seule requête.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/contacts/bulk-delete
+```
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `contactIds` | UUID[] | oui | 1 à 500 IDs |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "requested": 2,
+    "deleted": 1,
+    "notFound": ["cnt_missing"]
+  }
+}
+```

@@ -1,0 +1,31 @@
+---
+title: POST Publier un statut
+description: Publie un statut WhatsApp texte ou image.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/statuses
+```
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | oui | Instance source |
+| `type` | `text` \| `image` | oui | Type du statut |
+| `content` | string | oui | Texte ou URL publique de l'image |
+| `caption` | string | non | Légende si image |
+| `backgroundColor` | string | non | Couleur hex si texte |
+
+## Réponse succès `201`
+
+```json
+{
+  "data": {
+    "instanceId": "inst_uuid",
+    "providerMessageId": "BAE5D1A2B3C4D5E6"
+  }
+}
+```

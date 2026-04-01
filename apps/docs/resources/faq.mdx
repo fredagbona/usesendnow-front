@@ -1,0 +1,31 @@
+---
+title: FAQ
+description: Questions fréquentes sur MsgFlash, les plans, les clés API et les webhooks.
+---
+
+<AccordionGroup>
+  <Accordion title="MsgFlash utilise-t-il l'API officielle WhatsApp Business ?">
+    Non. MsgFlash s'appuie sur Evolution API v2 comme provider interne, pas sur la Cloud API officielle Meta.
+  </Accordion>
+
+  <Accordion title="Puis-je utiliser un numéro WhatsApp existant ?">
+    Oui. Vous connectez un numéro existant via QR code ou pairing code depuis le dashboard.
+  </Accordion>
+
+  <Accordion title="Comment intégrer avec Make, n8n ou Zapier ?">
+    Utilisez un module HTTP standard vers `https://api.msgflash.com/api/v1/*` avec le header `x-api-key: votre_cle_api`.
+  </Accordion>
+
+  <Accordion title="Puis-je avoir plusieurs clés API ?">
+    Oui, selon votre plan.
+    Free: 0, Starter: 3, Pro: 5, Plus: 10.
+  </Accordion>
+
+  <Accordion title="Que faire si ma clé API est compromise ?">
+    Révoquez-la immédiatement dans le dashboard, puis créez-en une nouvelle et mettez vos intégrations à jour.
+  </Accordion>
+
+  <Accordion title="Que se passe-t-il quand j'annule mon abonnement ?">
+    L'abonnement reste exploitable jusqu'à la fin de la période en cours, puis le compte revient sur le plan Free et ses limites.
+  </Accordion>
+</AccordionGroup>

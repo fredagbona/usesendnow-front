@@ -1,0 +1,31 @@
+---
+title: POST Créer un webhook
+description: Crée un endpoint webhook et retourne son secret.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/webhooks
+```
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `url` | string | oui | URL de réception |
+| `events` | string[] | oui | 1 à 50 événements |
+
+## Réponse succès `201`
+
+```json
+{
+  "data": {
+    "id": "wh_uuid",
+    "url": "https://example.com/webhooks/msgflash",
+    "secret": "generated_once_secret",
+    "events": ["message.delivered"],
+    "active": true
+  }
+}
+```

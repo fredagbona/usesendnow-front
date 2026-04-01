@@ -1,0 +1,245 @@
+---
+title: Campagnes
+description: Créez des campagnes planifiées, suivez leur progression et pilotez leur exécution.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/campaigns
+```
+
+Authentification : `x-api-key: <api_key>`
+
+<Warning>
+Les campagnes nécessitent le plan Starter ou supérieur.
+</Warning>
+
+## Paramètres
+
+### Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | oui | Instance source |
+| `name` | string | oui | Nom de la campagne |
+| `schedule` | ISO 8601 | oui | Date de démarrage |
+| `templateId` | UUID | non | Template à utiliser |
+| `variables` | object | non | Variables `custom.*` injectées pour tous les contacts |
+| `repeat` | string | non | Règle simple de répétition |
+| `recipients` | object | oui | Sélecteur de destinataires |
+
+Pas de path params ni query params sur la création.
+
+---
+
+## Créer une campagne
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/campaigns \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "YOUR_INSTANCE_ID",
+    "name": "Promo Black Friday",
+    "schedule": "2026-04-02T10:00:00.000Z",
+    "repeat": "none",
+    "templateId": "YOUR_TEMPLATE_ID",
+    "variables": {
+      "campaignName": "Black Friday"
+    },
+    "recipients": {
+      "type": "all"
+    }
+  }'
+```
+
+---
+
+## Destinataires
+
+<Tabs>
+  <Tab title="Tous les contacts">
+    ```json
+    {
+      "recipients": {
+        "type": "all"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Par tags">
+    ```json
+    {
+      "recipients": {
+        "type": "tags",
+        "value": ["vip", "newsletter"]
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Liste explicite">
+    ```json
+    {
+      "recipients": {
+        "type": "explicit",
+        "value": ["CONTACT_UUID_1", "CONTACT_UUID_2"]
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Réponse à la création
+
+```json
+{
+  "data": {
+    "id": "cmp_uuid",
+    "instanceId": "inst_uuid",
+    "templateId": "tmpl_uuid",
+    "name": "Promo Black Friday",
+    "schedule": "2026-04-02T10:00:00.000Z",
+    "status": "scheduled",
+    "recipients": { "type": "all" },
+    "stats": {
+      "planned": 0,
+      "queued": 0,
+      "sent": 0,
+      "delivered": 0,
+      "read": 0,
+      "failed": 0,
+      "cancelled": 0,
+      "processingStartedAt": null,
+      "lastEnqueuedAt": null,
+      "completedAt": null,
+      "cancelledAt": null
+    }
+  }
+}
+```
+
+---
+
+## Statuts d'une campagne
+
+| Statut | Description |
+|---|---|
+| `draft` | Réservé à certains flux dashboard |
+| `scheduled` | En attente de la date prévue |
+| `running` | En cours d'exécution |
+| `paused` | Pause manuelle |
+| `paused_quota` | Pause automatique pour quota |
+| `paused_plan` | Pause automatique pour plan/features |
+| `completed` | Campagne terminée |
+| `cancelled` | Campagne annulée |
+| `failed` | Erreur fatale |
+
+<Note>
+Une campagne passe maintenant automatiquement à `completed` quand il ne reste plus de messages `queued`.
+</Note>
+
+---
+
+## Pauser et reprendre
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/pause \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/resume \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+Ces actions sont valides uniquement sur les statuts compatibles.
+
+### Paramètres path
+
+| Paramètre | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de la campagne |
+
+---
+
+## Statistiques
+
+```bash
+curl https://api.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/stats \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+```json
+{
+  "data": {
+    "campaignId": "cmp_uuid",
+    "status": "running",
+    "stats": {
+      "total": 1000,
+      "planned": 1000,
+      "queued": 150,
+      "sent": 600,
+      "delivered": 580,
+      "read": 420,
+      "failed": 10,
+      "cancelled": 5
+    },
+    "progressPercent": 85,
+    "timeline": {
+      "scheduledFor": "2026-04-02T10:00:00.000Z",
+      "processingStartedAt": "2026-04-02T10:00:01.000Z",
+      "lastEnqueuedAt": "2026-04-02T10:03:20.000Z",
+      "completedAt": null,
+      "cancelledAt": null,
+      "lastActivityAt": "2026-04-02T10:04:12.000Z"
+    },
+    "startedAt": "2026-04-02T10:00:01.000Z",
+    "estimatedCompletionAt": null
+  }
+}
+```
+
+### Paramètres path
+
+| Paramètre | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de la campagne |
+
+### Sens des compteurs
+
+| Champ | Description |
+|---|---|
+| `planned` | Nombre total de messages générés pour la campagne |
+| `queued` | Messages encore en file |
+| `sent` | Messages transmis à WhatsApp |
+| `delivered` | Messages confirmés livrés |
+| `read` | Messages lus |
+| `failed` | Échecs hors annulations |
+| `cancelled` | Messages marqués annulés |
+
+---
+
+## Récupérer une campagne
+
+```bash
+curl https://api.msgflash.com/api/v1/campaigns/CAMPAIGN_ID \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+### Paramètres path
+
+| Paramètre | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de la campagne |
+
+## Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `VALIDATION_ERROR` | 400 | Body invalide |
+| `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` | 403 | Plan trop faible |
+| `NOT_FOUND` | 404 | Instance ou template introuvable |
+| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota épuisé |

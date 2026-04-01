@@ -1,0 +1,32 @@
+---
+title: GET Lister les membres d'un groupe
+description: Liste les membres d'un groupe avec pagination et recherche.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/contacts/groups/{groupId}/members
+```
+
+## Paramètres
+
+| Nom | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `groupId` | UUID | oui | path | ID du groupe |
+| `limit` | integer | non | query | Taille de page |
+| `cursor` | string | non | query | Curseur |
+| `search` | string | non | query | Recherche sur nom ou téléphone |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "contacts": [],
+    "nextCursor": null,
+    "hasMore": false,
+    "total": 0
+  }
+}
+```

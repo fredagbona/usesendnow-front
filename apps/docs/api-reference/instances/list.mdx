@@ -1,0 +1,52 @@
+---
+title: GET Lister les instances
+description: Liste toutes les instances WhatsApp actives de votre compte.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/instances
+```
+
+## Authentification
+
+`x-api-key: <api_key>`
+
+## Paramètres
+
+Aucun paramètre path, query ou body.
+
+## Exemple de requête
+
+```bash
+curl https://api.msgflash.com/api/v1/instances \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+## Réponse succès `200`
+
+```json
+{
+  "data": [
+    {
+      "id": "inst_uuid",
+      "name": "boutique-principale",
+      "waNumber": "+22912345678",
+      "status": "connected",
+      "webhook": null,
+      "meta": null,
+      "deletedAt": null,
+      "createdAt": "2026-04-01T09:00:00.000Z",
+      "updatedAt": "2026-04-01T09:10:00.000Z"
+    }
+  ]
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `401` | `UNAUTHORIZED` | Clé API absente ou invalide |
+| `429` | `API_RATE_LIMIT_EXCEEDED` | Trop de requêtes par seconde |

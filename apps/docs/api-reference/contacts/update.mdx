@@ -1,0 +1,36 @@
+---
+title: PUT Mettre à jour un contact
+description: Met à jour un contact existant.
+---
+
+## Endpoint
+
+```txt
+PUT /api/v1/contacts/{id}
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID du contact |
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `name` | string | non | Nouveau nom |
+| `phone` | string | non | Nouveau téléphone |
+| `tags` | string[] | non | Remplace les tags |
+| `meta` | object | non | Remplace les métadonnées |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "cnt_uuid",
+    "name": "Awa Doe"
+  }
+}
+```

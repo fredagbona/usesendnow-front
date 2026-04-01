@@ -1,0 +1,57 @@
+---
+title: POST Créer une campagne
+description: Crée et programme une campagne d'envoi.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/campaigns
+```
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | oui | Instance source |
+| `name` | string | oui | Nom interne |
+| `schedule` | ISO 8601 | oui | Date de démarrage |
+| `templateId` | UUID | non | Template utilisé |
+| `variables` | object | non | Variables `custom.*` globales |
+| `repeat` | string | non | `none`, `daily`, `weekly` |
+| `recipients` | object | oui | Sélecteur de destinataires |
+
+### `recipients`
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `type` | enum | oui | `all`, `tags`, `explicit` |
+| `value` | string[] | selon type | Tags ou IDs de contacts |
+
+## Réponse succès `201`
+
+```json
+{
+  "data": {
+    "id": "cmp_uuid",
+    "status": "scheduled",
+    "stats": {
+      "planned": 0,
+      "queued": 0,
+      "sent": 0,
+      "delivered": 0,
+      "read": 0,
+      "failed": 0,
+      "cancelled": 0
+    }
+  }
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `400` | `VALIDATION_ERROR` | Body invalide |
+| `403` | `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` | Plan trop faible |
+| `404` | `NOT_FOUND` | Instance ou template introuvable |

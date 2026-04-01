@@ -1,0 +1,43 @@
+---
+title: GET Historique des paiements
+description: Liste paginée des paiements du compte.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/billing/payments
+```
+
+## Paramètres query
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `page` | integer | non | Défaut `1` |
+| `limit` | integer | non | Défaut `20`, max `100` |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "payments": [
+      {
+        "id": "pay_uuid",
+        "provider": "dodo",
+        "planCode": "starter",
+        "planName": "Starter",
+        "amount": 900,
+        "currency": "EUR",
+        "status": "succeeded",
+        "periodStart": "2026-04-01T09:43:13.737Z",
+        "periodEnd": "2026-05-01T09:43:13.737Z",
+        "createdAt": "2026-04-01T09:43:13.745Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "totalPages": 1
+  }
+}
+```

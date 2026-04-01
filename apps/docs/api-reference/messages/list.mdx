@@ -1,0 +1,44 @@
+---
+title: GET Lister les messages
+description: Liste les messages avec pagination par curseur.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/messages
+```
+
+## Paramètres query
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `limit` | integer | non | Taille de page |
+| `cursor` | string | non | Curseur de pagination |
+| `instanceId` | UUID | non | Filtre par instance |
+| `status` | string | non | Filtre par statut |
+
+## Exemple de requête
+
+```bash
+curl "https://api.msgflash.com/api/v1/messages?limit=20&status=delivered" \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "messages": [],
+    "nextCursor": null,
+    "hasMore": false
+  }
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `401` | `UNAUTHORIZED` | Clé invalide |

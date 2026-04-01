@@ -1,0 +1,172 @@
+---
+title: Webhooks
+description: Gérer vos endpoints webhook et vérifier les événements signés envoyés par MsgFlash.
+---
+
+## À quoi servent les webhooks ?
+
+MsgFlash peut envoyer des requêtes HTTP signées à votre application à chaque événement important :
+- `instance.connected`
+- `instance.disconnected`
+- `message.sent`
+- `message.delivered`
+- `message.read`
+- `message.failed`
+- `message.received`
+
+---
+
+## Gérer vos endpoints via l'API publique
+
+### Paramètres
+
+#### `POST /api/v1/webhooks`
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `url` | string | oui | body | URL HTTPS de réception |
+| `events` | string[] | oui | body | 1 à 50 événements |
+
+#### `DELETE /api/v1/webhooks/{id}`
+
+| Paramètre | Type | Requis | Emplacement | Description |
+|---|---|---|---|---|
+| `id` | UUID | oui | path | ID du webhook |
+
+### Lister
+
+```bash
+curl https://api.msgflash.com/api/v1/webhooks \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+### Créer
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/webhooks \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/webhooks/msgflash",
+    "events": ["message.delivered", "message.failed", "message.read"]
+  }'
+```
+
+Réponse :
+
+```json
+{
+  "data": {
+    "id": "wh_uuid",
+    "url": "https://example.com/webhooks/msgflash",
+    "events": ["message.delivered", "message.failed", "message.read"],
+    "secret": "generated_once_secret",
+    "createdAt": "2026-04-01T10:00:00.000Z"
+  }
+}
+```
+
+<Warning>
+Le secret doit être conservé immédiatement. Il sert à vérifier la signature HMAC.
+</Warning>
+
+### Supprimer
+
+```bash
+curl -X DELETE https://api.msgflash.com/api/v1/webhooks/WEBHOOK_ID \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+### Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `WEBHOOKS_NOT_AVAILABLE_ON_PLAN` | 403 | Feature non disponible |
+| `MAX_WEBHOOK_ENDPOINTS_REACHED` | 403 | Limite atteinte |
+| `NOT_FOUND` | 404 | Webhook introuvable |
+
+---
+
+## Headers envoyés par MsgFlash
+
+| Header | Description |
+|---|---|
+| `Content-Type: application/json` | Payload JSON |
+| `X-MsgFlash-Signature` | Signature `sha256=<hex>` |
+| `X-MsgFlash-Event` | Nom de l'événement |
+
+---
+
+## Exemple de payload
+
+```json
+{
+  "event": "message.delivered",
+  "instanceId": "inst_uuid",
+  "messageId": "msg_uuid",
+  "providerMessageId": "BAE5D1A2B3C4D5E6",
+  "to": "+22912345678",
+  "status": "delivered",
+  "timestamp": "2026-04-01T10:00:05.000Z"
+}
+```
+
+---
+
+## Vérifier la signature
+
+Algorithme : `HMAC-SHA256(secret, rawBody)`
+
+<Tabs>
+  <Tab title="Node.js">
+    ```ts
+    import crypto from 'crypto'
+    import express from 'express'
+
+    const app = express()
+
+    app.post('/webhooks/msgflash', express.raw({ type: 'application/json' }), (req, res) => {
+      const signature = req.headers['x-msgflash-signature'] as string
+      const secret = process.env.MSGFLASH_WEBHOOK_SECRET!
+
+      const expected = 'sha256=' + crypto
+        .createHmac('sha256', secret)
+        .update(req.body)
+        .digest('hex')
+
+      if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+        return res.status(401).send('Invalid signature')
+      }
+
+      res.sendStatus(200)
+    })
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import hmac
+    import hashlib
+    import os
+
+    WEBHOOK_SECRET = os.environ["MSGFLASH_WEBHOOK_SECRET"]
+
+    def verify(signature: str, raw_body: bytes) -> bool:
+        expected = "sha256=" + hmac.new(
+            WEBHOOK_SECRET.encode("utf-8"),
+            raw_body,
+            hashlib.sha256
+        ).hexdigest()
+        return hmac.compare_digest(signature, expected)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Livraison et retry
+
+- 5 tentatives
+- backoff exponentiel
+- toute réponse non-2xx déclenche un retry
+
+Répondez `200` rapidement puis traitez en asynchrone.

@@ -1,0 +1,223 @@
+---
+title: Référence API
+description: Base URL, authentification, rate limiting, format des réponses et surface complète de l'API publique MsgFlash.
+---
+
+## Base URL
+
+```txt
+https://api.msgflash.com
+```
+
+Tous les endpoints publics sont préfixés par `/api/v1/`.
+
+Exemples :
+
+```txt
+https://api.msgflash.com/api/v1/messages/send
+https://api.msgflash.com/api/v1/templates
+https://api.msgflash.com/api/v1/contacts
+https://api.msgflash.com/api/v1/billing/usage
+```
+
+---
+
+## Authentification
+
+Toutes les requêtes vers `/api/v1/*` nécessitent une clé API MsgFlash envoyée dans le header `x-api-key`.
+
+```bash
+curl https://api.msgflash.com/api/v1/usage \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+Voir [Authentification](/authentication) pour le format exact et les règles de sécurité.
+
+---
+
+## Rate limiting
+
+| Limite | Valeur |
+|---|---|
+| Requêtes par seconde | 10 req/s |
+| Scope | Par clé API |
+| Code d'erreur | `API_RATE_LIMIT_EXCEEDED` |
+
+En cas de dépassement :
+
+```json
+{
+  "error": {
+    "code": "API_RATE_LIMIT_EXCEEDED",
+    "message": "Too many API requests"
+  }
+}
+```
+
+<Note>
+Le rate limit temps réel est distinct du quota mensuel `monthlyApiRequestQuota`. Vous pouvez être sous votre quota mensuel et tout de même recevoir un `429` si vous dépassez 10 req/s.
+</Note>
+
+---
+
+## Format des réponses
+
+### Succès
+
+Toutes les réponses réussies sont enveloppées dans `data`.
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "status": "queued"
+  }
+}
+```
+
+Pour les listes simples :
+
+```json
+{
+  "data": [
+    { "id": "..." },
+    { "id": "..." }
+  ]
+}
+```
+
+Pour les listes paginées :
+
+```json
+{
+  "data": {
+    "messages": [],
+    "nextCursor": null,
+    "hasMore": false
+  }
+}
+```
+
+### Erreur
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Message not found"
+  }
+}
+```
+
+Voir [Codes d'erreur](/resources/error-codes) pour les principaux codes.
+
+---
+
+## Endpoints disponibles
+
+### Messages
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/messages/send` | Envoyer un message immédiat |
+| `POST` | `/api/v1/messages/schedule` | Planifier un message |
+| `GET` | `/api/v1/messages` | Lister les messages |
+| `GET` | `/api/v1/messages/{id}` | Détail d'un message |
+
+### Campagnes
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/campaigns` | Créer une campagne |
+| `GET` | `/api/v1/campaigns/{id}` | Détail d'une campagne |
+| `GET` | `/api/v1/campaigns/{id}/stats` | Statistiques d'exécution |
+| `POST` | `/api/v1/campaigns/{id}/pause` | Pauser une campagne |
+| `POST` | `/api/v1/campaigns/{id}/resume` | Reprendre une campagne |
+
+### Templates
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/templates` | Lister les templates |
+| `POST` | `/api/v1/templates` | Créer un template |
+| `GET` | `/api/v1/templates/{id}` | Détail d'un template |
+| `PUT` | `/api/v1/templates/{id}` | Mettre à jour un template |
+| `DELETE` | `/api/v1/templates/{id}` | Supprimer un template |
+| `POST` | `/api/v1/templates/{id}/preview` | Prévisualiser le rendu d'un template |
+
+### Contacts
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/contacts` | Lister les contacts |
+| `POST` | `/api/v1/contacts` | Créer un contact |
+| `GET` | `/api/v1/contacts/{id}` | Détail d'un contact |
+| `PUT` | `/api/v1/contacts/{id}` | Mettre à jour un contact |
+| `DELETE` | `/api/v1/contacts/{id}` | Supprimer un contact |
+| `POST` | `/api/v1/contacts/bulk-delete` | Supprimer plusieurs contacts |
+
+### Groupes de contacts
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/contacts/groups` | Lister les groupes |
+| `POST` | `/api/v1/contacts/groups` | Créer un groupe |
+| `GET` | `/api/v1/contacts/groups/{groupId}` | Détail d'un groupe |
+| `PUT` | `/api/v1/contacts/groups/{groupId}` | Mettre à jour un groupe |
+| `DELETE` | `/api/v1/contacts/groups/{groupId}` | Supprimer un groupe |
+| `POST` | `/api/v1/contacts/groups/{groupId}/members` | Ajouter des membres |
+| `DELETE` | `/api/v1/contacts/groups/{groupId}/members` | Retirer des membres |
+| `GET` | `/api/v1/contacts/groups/{groupId}/members` | Lister les membres |
+| `GET` | `/api/v1/contacts/{id}/groups` | Lister les groupes d'un contact |
+
+### Webhooks
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/webhooks` | Lister vos endpoints webhook |
+| `POST` | `/api/v1/webhooks` | Créer un endpoint webhook |
+| `DELETE` | `/api/v1/webhooks/{id}` | Supprimer un endpoint webhook |
+
+### Statuts WhatsApp
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/statuses` | Publier un statut WhatsApp |
+
+### Instances
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/instances` | Lister les instances |
+| `GET` | `/api/v1/instances/{id}` | Détail d'une instance |
+| `GET` | `/api/v1/instances/{id}/state` | État live d'une instance |
+
+### Billing public read-only
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/usage` | Vue usage compacte compatible |
+| `GET` | `/api/v1/billing/plans` | Catalogue des plans |
+| `GET` | `/api/v1/billing/subscription` | Souscription et période courante |
+| `GET` | `/api/v1/billing/usage` | Usage, limites et features |
+| `GET` | `/api/v1/billing/payments` | Historique des paiements |
+
+---
+
+## Référence interactive
+
+En développement, la Swagger UI est disponible sur :
+
+```txt
+http://localhost:4000/docs
+```
+
+La spec OpenAPI brute :
+
+```txt
+http://localhost:4000/docs.json
+```
+
+<Note>
+La Swagger UI n'est pas exposée en production.
+</Note>

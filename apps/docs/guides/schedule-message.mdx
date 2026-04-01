@@ -1,0 +1,89 @@
+---
+title: Planifier un message
+description: Programmez un envoi futur en mode libre ou via template.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/messages/schedule
+```
+
+Authentification : `x-api-key: <api_key>`
+
+La différence avec `/messages/send` est le champ `scheduledAt`.
+
+## Paramètres
+
+### Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | oui | Instance WhatsApp |
+| `to` | string | oui | Numéro destinataire |
+| `scheduledAt` | ISO 8601 | oui | Date future d'envoi |
+| `type` | enum | oui si pas de `templateId` | Type du message libre |
+| `templateId` | UUID | oui si pas de `type` | Template à rendre |
+| `variables` | object | non | Valeurs `custom.*` |
+
+Pas de path params ni query params.
+
+---
+
+## Exemple
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/messages/schedule \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "YOUR_INSTANCE_ID",
+    "to": "+22912345678",
+    "templateId": "TEMPLATE_UUID",
+    "contactId": "CONTACT_UUID",
+    "variables": {
+      "code": "PROMO10"
+    },
+    "scheduledAt": "2026-04-02T08:00:00.000Z"
+  }'
+```
+
+---
+
+Les autres champs suivent les mêmes règles que [Envoyer un message](/guides/send-message).
+
+---
+
+## Réponse
+
+```json
+{
+  "data": {
+    "id": "msg_uuid",
+    "status": "queued",
+    "body": "Bonjour Awa, votre code PROMO10 est prêt."
+  }
+}
+```
+
+Le message reste en `queued` jusqu'au traitement effectif.
+
+## Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `VALIDATION_ERROR` | 400 | Body invalide |
+| `TEMPLATE_INVALID` | 400 | Template invalide |
+| `TEMPLATE_VARIABLES_MISSING` | 400 | Variables template manquantes |
+| `NOT_FOUND` | 404 | Instance, contact ou template introuvable |
+| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota déjà épuisé au moment de la planification |
+
+---
+
+## Règles importantes
+
+- `scheduledAt` est attendu en UTC
+- une date passée est acceptée et conduit à un envoi immédiat
+- le quota mensuel est vérifié à la planification puis au moment de l'envoi effectif
+- si l'instance est déconnectée lors du traitement, le message passe en `failed`
+- les messages planifiés survivent à un redémarrage grâce à BullMQ + Redis

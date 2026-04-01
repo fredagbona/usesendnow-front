@@ -1,0 +1,35 @@
+---
+title: GET Récupérer une campagne
+description: Récupère le détail d'une campagne.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/campaigns/{id}
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de la campagne |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "cmp_uuid",
+    "name": "Promo Black Friday",
+    "status": "running",
+    "recipients": { "type": "all" }
+  }
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `404` | `NOT_FOUND` | Campagne introuvable |

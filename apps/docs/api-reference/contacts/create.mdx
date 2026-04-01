@@ -1,0 +1,31 @@
+---
+title: POST Créer un contact
+description: Crée un contact dans votre répertoire MsgFlash.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/contacts
+```
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `name` | string | oui | Nom complet |
+| `phone` | string | oui | Numéro E.164 |
+| `tags` | string[] | non | Tags |
+| `meta` | object | non | Métadonnées |
+
+## Réponse succès `201`
+
+```json
+{
+  "data": {
+    "id": "cnt_uuid",
+    "name": "Awa Doe",
+    "phone": "+22901000000"
+  }
+}
+```

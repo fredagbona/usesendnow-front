@@ -1,0 +1,81 @@
+---
+title: Statuts WhatsApp
+description: Publiez des statuts WhatsApp texte ou image depuis une instance connectée.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/statuses
+```
+
+Authentification : `x-api-key: <api_key>`
+
+<Warning>
+Les statuts nécessitent le plan Starter ou supérieur.
+</Warning>
+
+## Paramètres
+
+### Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | oui | Instance source |
+| `type` | `text` \| `image` | oui | Type du statut |
+| `content` | string | oui | Texte ou URL publique de l'image |
+| `caption` | string | non | Légende si image |
+| `backgroundColor` | string | non | Couleur hex si texte |
+
+---
+
+## Statut texte
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/statuses \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "YOUR_INSTANCE_ID",
+    "type": "text",
+    "content": "Nouvelle collection disponible.",
+    "backgroundColor": "#00a884"
+  }'
+```
+
+## Statut image
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/statuses \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "YOUR_INSTANCE_ID",
+    "type": "image",
+    "content": "https://cdn.example.com/promo.jpg",
+    "caption": "Promo du weekend"
+  }'
+```
+
+---
+
+## Réponse
+
+```json
+{
+  "data": {
+    "instanceId": "YOUR_INSTANCE_ID",
+    "providerMessageId": "BAE5D1A2B3C4D5E6"
+  }
+}
+```
+
+Les statuts consomment le même quota mensuel que les messages.
+
+## Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `STATUSES_NOT_AVAILABLE_ON_PLAN` | 403 | Plan trop faible |
+| `NOT_FOUND` | 404 | Instance introuvable |
+| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota mensuel épuisé |

@@ -1,0 +1,37 @@
+---
+title: POST Prévisualiser un template
+description: Rend un template avec le contexte fourni sans envoyer de message.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/templates/{id}/preview
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID du template |
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | non | Contexte `instance.*` |
+| `contactId` | UUID | non | Contexte `contact.*` |
+| `variables` | object | non | Valeurs `custom.*` |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "rendered": "Bonjour Awa, utilisez PROMO10.",
+    "variables": ["contact.firstName", "custom.code"],
+    "missingVariables": [],
+    "valid": true
+  }
+}
+```

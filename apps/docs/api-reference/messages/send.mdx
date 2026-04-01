@@ -1,0 +1,75 @@
+---
+title: POST Envoyer un message
+description: Envoie un message immédiat, en mode libre ou via un template.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/messages/send
+```
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | oui | Instance source |
+| `to` | string | oui | Numéro E.164 |
+| `type` | enum | oui si pas de `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact` |
+| `templateId` | UUID | oui si pas de `type` | Template à rendre |
+| `text` | string | selon type | Corps du message |
+| `mediaUrl` | string | selon type | URL publique du media |
+| `latitude` | number | si `location` | Latitude |
+| `longitude` | number | si `location` | Longitude |
+| `locationName` | string | non | Nom du lieu |
+| `locationAddress` | string | non | Adresse |
+| `contactId` | UUID | non | Contact partagé ou contexte template |
+| `variables` | object | non | Valeurs `custom.*` |
+
+## Exemple de requête
+
+```bash
+curl -X POST https://api.msgflash.com/api/v1/messages/send \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "to": "+22912345678",
+    "type": "text",
+    "text": "Bonjour"
+  }'
+```
+
+## Réponse succès `201`
+
+```json
+{
+  "data": {
+    "id": "msg_uuid",
+    "instanceId": "inst_uuid",
+    "contactId": null,
+    "campaignId": null,
+    "type": "text",
+    "to": "+22912345678",
+    "body": "Bonjour",
+    "mediaUrl": null,
+    "status": "queued",
+    "error": null,
+    "providerMessageId": null,
+    "createdAt": "2026-04-01T10:00:00.000Z",
+    "updatedAt": "2026-04-01T10:00:00.000Z"
+  }
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `400` | `VALIDATION_ERROR` | Body invalide |
+| `400` | `TEMPLATE_INVALID` | Template invalide |
+| `400` | `TEMPLATE_VARIABLES_MISSING` | Variables requises manquantes |
+| `400` | `TEMPLATE_CONTEXT_UNAVAILABLE` | Contact ou instance de contexte invalide |
+| `403` | `SUBSCRIPTION_INACTIVE` | Souscription non exploitable |
+| `404` | `NOT_FOUND` | Instance, contact ou template introuvable |
+| `429` | `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | Quota d'envoi épuisé |

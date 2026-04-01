@@ -1,0 +1,28 @@
+---
+title: GET Lister les templates
+description: Liste les templates de votre compte avec pagination simple.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/templates
+```
+
+## Paramètres query
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `page` | integer | non | Défaut `1` |
+| `limit` | integer | non | Défaut `20`, max `100` |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "templates": [],
+    "total": 0
+  }
+}
+```

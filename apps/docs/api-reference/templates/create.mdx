@@ -1,0 +1,41 @@
+---
+title: POST Créer un template
+description: Crée un template texte ou media. Les variables sont recalculées automatiquement.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/templates
+```
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `name` | string | oui | Nom du template |
+| `type` | enum | oui | `text`, `image`, `video`, `audio`, `document` |
+| `body` | string | oui si `type=text` | Contenu avec placeholders |
+| `mediaUrl` | string | oui si template media | URL publique du media |
+
+## Réponse succès `201`
+
+```json
+{
+  "data": {
+    "id": "tmpl_uuid",
+    "name": "Relance panier",
+    "type": "text",
+    "body": "Bonjour {{contact.firstName}}",
+    "mediaUrl": null,
+    "variables": ["contact.firstName"]
+  }
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `400` | `VALIDATION_ERROR` | Body invalide |
+| `400` | `TEMPLATE_INVALID` | Placeholder invalide |

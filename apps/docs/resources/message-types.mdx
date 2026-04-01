@@ -1,0 +1,247 @@
+---
+title: Types de messages
+description: Référence des types de messages supportés par MsgFlash, de leurs champs et de leur usage avec les templates.
+---
+
+## Vue d'ensemble
+
+| Type | Description | Champ principal requis |
+|---|---|---|
+| `text` | Message texte simple | `text` |
+| `image` | Image avec légende optionnelle | `mediaUrl` |
+| `video` | Vidéo avec légende optionnelle | `mediaUrl` |
+| `audio` | Fichier audio standard | `mediaUrl` |
+| `voice_note` | Note vocale WhatsApp | `mediaUrl` |
+| `document` | Fichier ou document | `mediaUrl` |
+| `location` | Localisation GPS | `latitude`, `longitude` |
+| `contact` | Partage d'un contact du répertoire | `contactId` |
+
+Champs communs :
+- `instanceId`
+- `to`
+- `type` ou `templateId`
+
+<Note>
+Les endpoints `POST /api/v1/messages/send` et `POST /api/v1/messages/schedule` supportent deux modes :
+- mode libre avec `type`
+- mode template avec `templateId`
+</Note>
+
+---
+
+## Envoi libre vs envoi via template
+
+### Mode libre
+
+Vous fournissez directement `type` et les champs associés.
+
+```json
+{
+  "instanceId": "inst_uuid",
+  "to": "+22912345678",
+  "type": "text",
+  "text": "Bonjour Awa"
+}
+```
+
+### Mode template
+
+Vous fournissez `templateId` et, si nécessaire, des variables `custom.*`.
+
+```json
+{
+  "instanceId": "inst_uuid",
+  "to": "+22912345678",
+  "contactId": "cnt_uuid",
+  "templateId": "tmpl_uuid",
+  "variables": {
+    "code": "PROMO10"
+  }
+}
+```
+
+Le backend rend alors le message final avant envoi. Le `type` effectif est celui du template.
+
+---
+
+## text
+
+```json
+{
+  "instanceId": "inst_uuid",
+  "to": "+22912345678",
+  "type": "text",
+  "text": "Bonjour Jean,\n\nVotre commande #1234 est prête."
+}
+```
+
+| Champ | Type | Requis | Contraintes |
+|---|---|---|---|
+| `text` | string | ✓ | 1 à 4096 caractères |
+
+---
+
+## image
+
+```json
+{
+  "instanceId": "inst_uuid",
+  "to": "+22912345678",
+  "type": "image",
+  "mediaUrl": "https://cdn.example.com/produit.jpg",
+  "text": "Nouvelle collection disponible"
+}
+```
+
+| Champ | Type | Requis | Contraintes |
+|---|---|---|---|
+| `mediaUrl` | URL | ✓ | URL publique |
+| `text` | string | non | Légende optionnelle |
+
+---
+
+## video
+
+```json
+{
+  "instanceId": "inst_uuid",
+  "to": "+22912345678",
+  "type": "video",
+  "mediaUrl": "https://cdn.example.com/demo.mp4",
+  "text": "Découvrez notre nouveau produit"
+}
+```
+
+| Champ | Type | Requis | Contraintes |
+|---|---|---|---|
+| `mediaUrl` | URL | ✓ | URL publique |
+| `text` | string | non | Légende optionnelle |
+
+---
+
+## audio
+
+```json
+{
+  "instanceId": "inst_uuid",
+  "to": "+22912345678",
+  "type": "audio",
+  "mediaUrl": "https://cdn.example.com/message.mp3"
+}
+```
+
+Affiché comme un fichier audio standard dans WhatsApp.
+
+---
+
+## voice_note
+
+```json
+{
+  "instanceId": "inst_uuid",
+  "to": "+22912345678",
+  "type": "voice_note",
+  "mediaUrl": "https://cdn.example.com/note.ogg"
+}
+```
+
+Affiché comme une note vocale WhatsApp.
+
+<Note>
+La différence entre `audio` et `voice_note` est surtout le mode d'affichage côté WhatsApp.
+</Note>
+
+---
+
+## document
+
+```json
+{
+  "instanceId": "inst_uuid",
+  "to": "+22912345678",
+  "type": "document",
+  "mediaUrl": "https://cdn.example.com/facture.pdf",
+  "text": "Facture avril 2026"
+}
+```
+
+| Champ | Type | Requis | Contraintes |
+|---|---|---|---|
+| `mediaUrl` | URL | ✓ | URL publique |
+| `text` | string | non | Libellé ou légende |
+
+---
+
+## location
+
+```json
+{
+  "instanceId": "inst_uuid",
+  "to": "+22912345678",
+  "type": "location",
+  "latitude": 6.3654,
+  "longitude": 2.4183,
+  "locationName": "Boutique Cotonou Centre",
+  "locationAddress": "Avenue de la Marina, Cotonou"
+}
+```
+
+| Champ | Type | Requis | Contraintes |
+|---|---|---|---|
+| `latitude` | number | ✓ | Latitude décimale |
+| `longitude` | number | ✓ | Longitude décimale |
+| `locationName` | string | non | Nom du lieu |
+| `locationAddress` | string | non | Adresse |
+
+---
+
+## contact
+
+```json
+{
+  "instanceId": "inst_uuid",
+  "to": "+22912345678",
+  "type": "contact",
+  "contactId": "cnt_uuid"
+}
+```
+
+Le `contactId` doit appartenir à votre compte MsgFlash.
+
+---
+
+## Champs communs
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | ✓ | Instance WhatsApp à utiliser |
+| `to` | string | ✓ | Numéro E.164 |
+| `type` | enum | ✓ si pas de `templateId` | Type du message libre |
+| `templateId` | UUID | ✓ si pas de `type` | Template MsgFlash à utiliser |
+| `contactId` | UUID | non | Contact source ou contexte template |
+| `variables` | object | non | Valeurs pour `custom.*` |
+| `scheduledAt` | ISO 8601 | non | Utilisé uniquement sur `/messages/schedule` |
+
+---
+
+## Templates media
+
+Un template peut être de type :
+- `text`
+- `image`
+- `video`
+- `audio`
+- `document`
+
+Pour un template media, `mediaUrl` est obligatoire sur le template lui-même.
+
+Exemple :
+
+```json
+{
+  "name": "Brochure PDF",
+  "type": "document",
+  "body": "Bonjour {{contact.firstName}}, voici votre brochure.",
+  "mediaUrl": "https://cdn.example.com/brochure.pdf"
+}
+```
