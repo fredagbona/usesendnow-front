@@ -23,16 +23,82 @@ const USE_CASES = [
 ]
 
 const PLANS = [
-  { name: "Gratuit", price: "0€", desc: "Pour démarrer", cta: "Commencer", featured: false },
-  { name: "Starter", price: "9€", desc: "Pour vos premiers envois", cta: "Commencer", featured: false },
-  { name: "Pro", price: "19€", desc: "Messagerie fluide + automatisations", cta: "S’abonner", featured: true },
-  { name: "Plus", price: "39€", desc: "Pour les équipes et volumes plus élevés", cta: "Contacter", featured: false },
-]
-
-const FEATURES = [
-  "1000 messages/mois",
-  "1 numéro",
-  "API + Webhooks",
+  {
+    name: "Gratuit",
+    price: "0€",
+    desc: "Pour tester l’infrastructure et brancher un premier numéro.",
+    cta: "Commencer",
+    featured: false,
+    features: [
+      "1 instance",
+      "20 messages / statuts par mois",
+      "1 000 requêtes API / mois",
+      "0 clé API",
+      "0 endpoint webhook",
+      "2 groupes de contacts",
+      "Campagnes : non",
+      "Statuts WhatsApp : non",
+      "Webhooks : non",
+      "Notes vocales : oui",
+    ],
+  },
+  {
+    name: "Starter",
+    price: "9€",
+    desc: "Pour lancer vos premiers automatismes en production.",
+    cta: "Commencer",
+    featured: false,
+    features: [
+      "1 instance",
+      "5 000 messages / statuts par mois",
+      "20 000 requêtes API / mois",
+      "3 clés API",
+      "3 endpoints webhook",
+      "10 groupes de contacts",
+      "Campagnes : oui",
+      "Statuts WhatsApp : oui",
+      "Webhooks : oui",
+      "Notes vocales : oui",
+    ],
+  },
+  {
+    name: "Pro",
+    price: "19€",
+    desc: "Pour les équipes qui envoient plus, automatisent plus et monitorent mieux.",
+    cta: "S’abonner",
+    featured: true,
+    features: [
+      "5 instances",
+      "25 000 messages / statuts par mois",
+      "100 000 requêtes API / mois",
+      "5 clés API",
+      "10 endpoints webhook",
+      "50 groupes de contacts",
+      "Campagnes : oui",
+      "Statuts WhatsApp : oui",
+      "Webhooks : oui",
+      "Notes vocales : oui",
+    ],
+  },
+  {
+    name: "Plus",
+    price: "39€",
+    desc: "Pour les volumes élevés, les workflows avancés et les opérations multi-numéros.",
+    cta: "Contacter",
+    featured: false,
+    features: [
+      "20 instances",
+      "150 000 messages / statuts par mois",
+      "500 000 requêtes API / mois",
+      "10 clés API",
+      "50 endpoints webhook",
+      "Groupes de contacts illimités",
+      "Campagnes : oui",
+      "Statuts WhatsApp : oui",
+      "Webhooks : oui",
+      "Notes vocales : oui",
+    ],
+  },
 ]
 
 const CODE_SAMPLE = `POST ${landingBrand.apiUrl}/messages/send
@@ -159,7 +225,7 @@ export function Pricing({}: PricingProps) {
                   </div>
 
                   <div className="mt-6 flex-1 space-y-3">
-                    {FEATURES.map((feature) => (
+                    {plan.features.map((feature) => (
                       <div key={feature} className="flex items-start gap-2">
                         <ArrowRight01Icon className="mt-0.5 h-4 w-4 shrink-0" />
                         <span className={plan.featured ? "font-(family-name:--font-poppins) text-sm text-[#1F1A00]" : "font-(family-name:--font-poppins) text-sm text-[#B2B2B2]"}>
