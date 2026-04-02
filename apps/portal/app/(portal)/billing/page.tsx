@@ -30,10 +30,76 @@ import {
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 
 const PLAN_ORDER = ["free", "starter", "pro", "plus"]
+const PLAN_MARKETING: Record<string, { price: string; description: string; features: string[] }> = {
+  free: {
+    price: "0€",
+    description: "Pour tester l’infrastructure et brancher un premier numéro.",
+    features: [
+      "1 instance",
+      "20 messages / statuts par mois",
+      "1 000 requêtes API / mois",
+      "0 clé API",
+      "0 endpoint webhook",
+      "2 groupes de contacts",
+      "Campagnes : non",
+      "Statuts WhatsApp : non",
+      "Webhooks : non",
+      "Notes vocales : oui",
+    ],
+  },
+  starter: {
+    price: "9€",
+    description: "Pour lancer vos premiers automatismes en production.",
+    features: [
+      "1 instance",
+      "5 000 messages / statuts par mois",
+      "20 000 requêtes API / mois",
+      "3 clés API",
+      "3 endpoints webhook",
+      "10 groupes de contacts",
+      "Campagnes : oui",
+      "Statuts WhatsApp : oui",
+      "Webhooks : oui",
+      "Notes vocales : oui",
+    ],
+  },
+  pro: {
+    price: "19€",
+    description: "Pour les équipes qui envoient plus, automatisent plus et monitorent mieux.",
+    features: [
+      "5 instances",
+      "25 000 messages / statuts par mois",
+      "100 000 requêtes API / mois",
+      "5 clés API",
+      "10 endpoints webhook",
+      "50 groupes de contacts",
+      "Campagnes : oui",
+      "Statuts WhatsApp : oui",
+      "Webhooks : oui",
+      "Notes vocales : oui",
+    ],
+  },
+  plus: {
+    price: "39€",
+    description: "Pour les volumes élevés, les workflows avancés et les opérations multi-numéros.",
+    features: [
+      "20 instances",
+      "150 000 messages / statuts par mois",
+      "500 000 requêtes API / mois",
+      "10 clés API",
+      "50 endpoints webhook",
+      "Groupes de contacts illimités",
+      "Campagnes : oui",
+      "Statuts WhatsApp : oui",
+      "Webhooks : oui",
+      "Notes vocales : oui",
+    ],
+  },
+}
 
 function formatPrice(priceMonthly: number | undefined): string {
-  if (!priceMonthly || priceMonthly === 0) return "Gratuit"
-  return `${(priceMonthly / 100).toLocaleString("fr-FR")} FCFA/mois`
+  if (!priceMonthly || priceMonthly === 0) return "0€ / mois"
+  return `${(priceMonthly / 100).toLocaleString("fr-FR")}€ / mois`
 }
 
 function formatAmount(amount: number, currency: string): string {
@@ -143,8 +209,11 @@ function PlanCard({
   actioning: string | null
   onSelect: (plan: Plan) => void
 }) {
-  const limits = getPlanLimits(plan)
-  const features = getPlanFeatures(plan)
+  const marketing = PLAN_MARKETING[plan.code] ?? {
+    price: formatPrice(plan.priceMonthly),
+    description: "Plan disponible pour votre compte.",
+    features: [],
+  }
 
   return (
     <div className={[
@@ -160,27 +229,17 @@ function PlanCard({
       </div>
 
       <p className="text-xl font-bold text-text mb-4">
-        {formatPrice(plan.priceMonthly ?? (plan.priceFcfa ? plan.priceFcfa * 100 : 0))}
+        {marketing.price}
+      </p>
+
+      <p className="mb-5 text-sm leading-6 text-text-secondary">
+        {marketing.description}
       </p>
 
       <ul className="space-y-2 mb-5 text-sm flex-1">
-        <PlanFeatureRow
-          label={limits.monthlyOutboundQuota >= 99999
-            ? "Messages illimités"
-            : `${limits.monthlyOutboundQuota.toLocaleString("fr-FR")} messages/mois`}
-          ok
-        />
-        <PlanFeatureRow
-          label={`${limits.maxInstances} instance${limits.maxInstances > 1 ? "s" : ""}`}
-          ok
-        />
-        <PlanFeatureRow
-          label={limits.maxApiKeys > 0 ? `${limits.maxApiKeys} clés API` : "Clés API"}
-          ok={limits.maxApiKeys > 0}
-        />
-        <PlanFeatureRow label="Webhooks"         ok={features.webhooks} />
-        <PlanFeatureRow label="Campagnes"         ok={features.campaigns} />
-        <PlanFeatureRow label="Statuts WhatsApp"  ok={features.statuses} />
+        {marketing.features.map((feature) => (
+          <PlanFeatureRow key={feature} label={feature} ok={!feature.endsWith(": non")} />
+        ))}
       </ul>
 
       {isCurrent ? (
