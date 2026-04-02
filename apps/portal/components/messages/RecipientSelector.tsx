@@ -62,7 +62,7 @@ export function RecipientSelector({
           type="tel"
           value={to}
           onChange={(event) => onToChange(event.target.value)}
-          placeholder="+22912345678"
+          placeholder="+33612345678"
           required
         />
       )}
@@ -73,4 +73,3 @@ export function RecipientSelector({
     </div>
   )
 }
-

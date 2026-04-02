@@ -158,7 +158,7 @@ export default function SignupPage() {
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">Téléphone</label>
-          <input type="tel" value={form.phone} onChange={handleChange("phone")} placeholder="+22912345678" required autoComplete="tel" className={inputClass} />
+          <input type="tel" value={form.phone} onChange={handleChange("phone")} placeholder="+33612345678" required autoComplete="tel" className={inputClass} />
         </div>
 
         <div className="space-y-1.5">

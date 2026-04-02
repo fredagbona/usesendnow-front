@@ -108,14 +108,6 @@ function getPlanLimits(plan: Plan) {
   }
 }
 
-function getPlanFeatures(plan: Plan) {
-  return {
-    campaigns: plan.canUseCampaigns ?? plan.features?.campaigns ?? false,
-    statuses:  plan.canUseStatuses  ?? plan.features?.statuses  ?? false,
-    webhooks:  plan.features?.webhooks ?? false,
-  }
-}
-
 function planName(code: string, plans: Plan[]): string {
   return plans.find(p => p.code === code)?.name ?? code
 }

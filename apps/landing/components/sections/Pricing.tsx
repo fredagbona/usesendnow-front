@@ -103,7 +103,7 @@ const PLANS = [
 
 const CODE_SAMPLE = `POST ${landingBrand.apiUrl}/messages/send
 {
-  "to": "+22900000000",
+  "to": "+33612345000",
   "type": "text",
   "message": "Votre commande #123 est prête.",
   "instanceId": "main"

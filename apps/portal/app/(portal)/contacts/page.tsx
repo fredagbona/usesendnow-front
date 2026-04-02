@@ -112,7 +112,7 @@ function ContactModal({
           type="tel"
           value={form.phone}
           onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-          placeholder="+22912345678"
+          placeholder="+33612345678"
           required
         />
         <Input
@@ -218,7 +218,7 @@ function ImportModal({
   }
 
   const downloadSample = () => {
-    const csv = "phone,name,tags\n+22901000000,Kouassi Amara,vip|benin\n+22501000000,Fatou Diallo,client\n+33612345678,Jean Dupont,"
+    const csv = "phone,name,tags\n+33612345000,Jean Dupont,vip|france\n+33612345001,Claire Martin,client\n+33612345678,Luc Bernard,"
     const blob = new Blob([csv], { type: "text/csv" })
     const a = document.createElement("a")
     a.href = URL.createObjectURL(blob)

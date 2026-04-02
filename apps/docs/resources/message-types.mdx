@@ -38,7 +38,7 @@ Vous fournissez directement `type` et les champs associés.
 ```json
 {
   "instanceId": "inst_uuid",
-  "to": "+22912345678",
+  "to": "+33612345678",
   "type": "text",
   "text": "Bonjour Awa"
 }
@@ -51,7 +51,7 @@ Vous fournissez `templateId` et, si nécessaire, des variables `custom.*`.
 ```json
 {
   "instanceId": "inst_uuid",
-  "to": "+22912345678",
+  "to": "+33612345678",
   "contactId": "cnt_uuid",
   "templateId": "tmpl_uuid",
   "variables": {
@@ -69,7 +69,7 @@ Le backend rend alors le message final avant envoi. Le `type` effectif est celui
 ```json
 {
   "instanceId": "inst_uuid",
-  "to": "+22912345678",
+  "to": "+33612345678",
   "type": "text",
   "text": "Bonjour Jean,\n\nVotre commande #1234 est prête."
 }
@@ -86,7 +86,7 @@ Le backend rend alors le message final avant envoi. Le `type` effectif est celui
 ```json
 {
   "instanceId": "inst_uuid",
-  "to": "+22912345678",
+  "to": "+33612345678",
   "type": "image",
   "mediaUrl": "https://cdn.example.com/produit.jpg",
   "text": "Nouvelle collection disponible"
@@ -105,7 +105,7 @@ Le backend rend alors le message final avant envoi. Le `type` effectif est celui
 ```json
 {
   "instanceId": "inst_uuid",
-  "to": "+22912345678",
+  "to": "+33612345678",
   "type": "video",
   "mediaUrl": "https://cdn.example.com/demo.mp4",
   "text": "Découvrez notre nouveau produit"
@@ -124,7 +124,7 @@ Le backend rend alors le message final avant envoi. Le `type` effectif est celui
 ```json
 {
   "instanceId": "inst_uuid",
-  "to": "+22912345678",
+  "to": "+33612345678",
   "type": "audio",
   "mediaUrl": "https://cdn.example.com/message.mp3"
 }
@@ -139,7 +139,7 @@ Affiché comme un fichier audio standard dans WhatsApp.
 ```json
 {
   "instanceId": "inst_uuid",
-  "to": "+22912345678",
+  "to": "+33612345678",
   "type": "voice_note",
   "mediaUrl": "https://cdn.example.com/note.ogg"
 }
@@ -158,7 +158,7 @@ La différence entre `audio` et `voice_note` est surtout le mode d'affichage cô
 ```json
 {
   "instanceId": "inst_uuid",
-  "to": "+22912345678",
+  "to": "+33612345678",
   "type": "document",
   "mediaUrl": "https://cdn.example.com/facture.pdf",
   "text": "Facture avril 2026"
@@ -177,7 +177,7 @@ La différence entre `audio` et `voice_note` est surtout le mode d'affichage cô
 ```json
 {
   "instanceId": "inst_uuid",
-  "to": "+22912345678",
+  "to": "+33612345678",
   "type": "location",
   "latitude": 6.3654,
   "longitude": 2.4183,
@@ -200,7 +200,7 @@ La différence entre `audio` et `voice_note` est surtout le mode d'affichage cô
 ```json
 {
   "instanceId": "inst_uuid",
-  "to": "+22912345678",
+  "to": "+33612345678",
   "type": "contact",
   "contactId": "cnt_uuid"
 }

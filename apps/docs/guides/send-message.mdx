@@ -46,7 +46,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "YOUR_INSTANCE_ID",
-    "to": "+22912345678",
+    "to": "+33612345678",
     "type": "text",
     "text": "Bonjour, votre commande est prête."
   }'
@@ -59,7 +59,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     ```json
     {
       "instanceId": "YOUR_INSTANCE_ID",
-      "to": "+22912345678",
+      "to": "+33612345678",
       "type": "image",
       "mediaUrl": "https://cdn.example.com/banner.jpg",
       "text": "Nouvelle collection"
@@ -70,7 +70,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     ```json
     {
       "instanceId": "YOUR_INSTANCE_ID",
-      "to": "+22912345678",
+      "to": "+33612345678",
       "type": "video",
       "mediaUrl": "https://cdn.example.com/promo.mp4"
     }
@@ -80,7 +80,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     ```json
     {
       "instanceId": "YOUR_INSTANCE_ID",
-      "to": "+22912345678",
+      "to": "+33612345678",
       "type": "audio",
       "mediaUrl": "https://cdn.example.com/message.mp3"
     }
@@ -90,7 +90,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     ```json
     {
       "instanceId": "YOUR_INSTANCE_ID",
-      "to": "+22912345678",
+      "to": "+33612345678",
       "type": "voice_note",
       "mediaUrl": "https://cdn.example.com/note.ogg"
     }
@@ -100,7 +100,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     ```json
     {
       "instanceId": "YOUR_INSTANCE_ID",
-      "to": "+22912345678",
+      "to": "+33612345678",
       "type": "document",
       "mediaUrl": "https://cdn.example.com/facture.pdf",
       "text": "Votre facture"
@@ -111,7 +111,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     ```json
     {
       "instanceId": "YOUR_INSTANCE_ID",
-      "to": "+22912345678",
+      "to": "+33612345678",
       "type": "location",
       "latitude": 6.3654,
       "longitude": 2.4183,
@@ -124,7 +124,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     ```json
     {
       "instanceId": "YOUR_INSTANCE_ID",
-      "to": "+22912345678",
+      "to": "+33612345678",
       "type": "contact",
       "contactId": "CONTACT_UUID"
     }
@@ -144,7 +144,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "YOUR_INSTANCE_ID",
-    "to": "+22912345678",
+    "to": "+33612345678",
     "contactId": "CONTACT_UUID",
     "templateId": "TEMPLATE_UUID",
     "variables": {
@@ -188,7 +188,7 @@ Pour les variables `contact.*`, fournissez `contactId` si vous voulez un context
     "contactId": "cnt_uuid",
     "campaignId": null,
     "type": "text",
-    "to": "+22912345678",
+    "to": "+33612345678",
     "body": "Bonjour Awa, bienvenue sur MsgFlash depuis Boutique Porto-Novo.",
     "mediaUrl": null,
     "status": "queued",

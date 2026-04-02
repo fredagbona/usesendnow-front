@@ -28,7 +28,7 @@ const SNIPPET = `curl -X POST https://srv.msgflash.com/v1/messages/send \\
   -H "Content-Type: application/json" \\
   -d '{
     "instanceId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "to": "+22901000000",
+    "to": "+33612345000",
     "type": "text",
     "text": "Bonjour"
   }'

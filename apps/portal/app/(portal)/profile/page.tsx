@@ -158,7 +158,7 @@ export default function ProfilePage() {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+22912345678"
+              placeholder="+33612345678"
               required
             />
 
