@@ -81,7 +81,11 @@ export function MediaUploadPanel({
             </div>
           </div>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center gap-2 py-4 text-center">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex w-full cursor-pointer flex-col items-center gap-2 py-4 text-center"
+          >
             <div className="rounded-2xl border border-border bg-bg p-3 text-text-muted">
               <Upload01Icon className="h-6 w-6" />
             </div>
@@ -89,7 +93,7 @@ export function MediaUploadPanel({
             <span className="text-xs text-text-muted">
               {ACCEPTED_LABELS[type]} · max {formatBytes(maxSize)}
             </span>
-          </label>
+          </button>
         )}
 
         <input
