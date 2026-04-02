@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { fadeIn } from "@/lib/animations"
 import { getToken, setToken } from "@/lib/auth"
+import { portalBrand } from "@/lib/brand"
 import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
 import { EyeIcon, ViewOffIcon, Tick01Icon, Cancel01Icon } from "hugeicons-react"
@@ -175,9 +176,9 @@ export default function SignupPage() {
           <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-0.5 w-4 h-4 rounded-none border-border-strong accent-primary cursor-pointer" />
           <span className="text-xs text-text-secondary leading-snug">
             J&apos;accepte les{" "}
-            <Link href="/conditions-utilisation" className="text-primary-ink font-medium hover:underline">Conditions d&apos;utilisation</Link>
+            <Link href={`${portalBrand.siteUrl}/conditions-utilisation`} className="text-primary-ink font-medium hover:underline" target="_blank" rel="noreferrer">Conditions d&apos;utilisation</Link>
             {" "}et la{" "}
-            <Link href="/politique-confidentialite" className="text-primary-ink font-medium hover:underline">Politique de confidentialité</Link>
+            <Link href={`${portalBrand.siteUrl}/politique-confidentialite`} className="text-primary-ink font-medium hover:underline" target="_blank" rel="noreferrer">Politique de confidentialité</Link>
           </span>
         </label>
 

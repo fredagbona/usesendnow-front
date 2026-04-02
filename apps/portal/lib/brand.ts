@@ -1,5 +1,6 @@
 export const portalBrand = {
   name: "msgflash",
+  siteUrl: "https://msgflash.com",
   appUrl: "https://app.msgflash.com",
   docsUrl: "https://docs.msgflash.com",
   apiUrl: "https://srv.msgflash.com",
