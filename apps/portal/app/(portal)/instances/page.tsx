@@ -42,6 +42,13 @@ export default function InstancesPage() {
   const [newName, setNewName] = useState("")
   const [creating, setCreating] = useState(false)
   const [planLimitReached, setPlanLimitReached] = useState(false)
+  const normalizedNewName = newName.trim()
+  const createNameError =
+    normalizedNewName.length === 0
+      ? null
+      : normalizedNewName.length <= 3
+        ? "Le nom de l'instance doit contenir plus de 3 caractères."
+        : null
 
   useEffect(() => {
     apiClient.billing.getSubscription().then(setSubscription).catch(() => {})
@@ -56,10 +63,10 @@ export default function InstancesPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newName.trim()) return
+    if (!normalizedNewName || createNameError) return
     setCreating(true)
     try {
-      await createInstance(newName.trim())
+      await createInstance(normalizedNewName)
       toast.success("Instance créée")
       setModalOpen(false)
       setNewName("")
@@ -211,12 +218,15 @@ export default function InstancesPage() {
             placeholder="ex : Boutique Principale"
             required
             autoFocus
+            minLength={4}
+            error={createNameError ?? undefined}
+            hint="Minimum 4 caractères."
           />
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
               Annuler
             </Button>
-            <Button type="submit" variant="primary" loading={creating}>
+            <Button type="submit" variant="primary" loading={creating} disabled={!normalizedNewName || !!createNameError}>
               Créer
             </Button>
           </div>
