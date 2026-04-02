@@ -11,6 +11,7 @@ import { ApiClientError } from "@usesendnow/api-client"
 import { EyeIcon, ViewOffIcon, Tick01Icon, Cancel01Icon } from "hugeicons-react"
 import Alert from "@/components/ui/Alert"
 import BrandMark from "@/components/shared/BrandMark"
+import AuthTransition from "@/components/shared/AuthTransition"
 
 /* ─── Password rules ──────────────────────────────────────────────────────── */
 
@@ -104,17 +105,24 @@ export default function SignupPage() {
     "w-full border border-border rounded-none px-3.5 py-2.5 text-sm text-text bg-bg placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-border-strong transition-all"
 
   return (
-    <motion.div variants={fadeIn} initial={false} animate="visible" className="w-full max-w-sm">
-      <div className="md:hidden mb-6 text-center">
-        <div className="flex justify-center">
-          <BrandMark textClassName="text-xl text-primary-ink" />
+    <>
+      {loading && (
+        <AuthTransition
+          title="Création du compte"
+          description="Nous préparons votre espace msgflash et finalisons votre inscription."
+        />
+      )}
+      <motion.div variants={fadeIn} initial={false} animate="visible" className="w-full max-w-sm">
+        <div className="md:hidden mb-6 text-center">
+          <div className="flex justify-center">
+            <BrandMark textClassName="text-xl text-primary-ink" />
+          </div>
         </div>
-      </div>
 
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-text">Créer un compte</h2>
-        <p className="text-sm text-text-secondary mt-1">Commencez à expédier vos messages en production.</p>
-      </div>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-text">Créer un compte</h2>
+          <p className="text-sm text-text-secondary mt-1">Commencez à expédier vos messages en production.</p>
+        </div>
 
       <button
         type="button"
@@ -198,10 +206,11 @@ export default function SignupPage() {
         </button>
       </form>
 
-      <p className="text-center text-sm text-text-secondary mt-5">
-        Déjà un compte ?{" "}
-        <Link href="/login" className="text-primary-ink font-semibold hover:underline">Se connecter</Link>
-      </p>
-    </motion.div>
+        <p className="text-center text-sm text-text-secondary mt-5">
+          Déjà un compte ?{" "}
+          <Link href="/login" className="text-primary-ink font-semibold hover:underline">Se connecter</Link>
+        </p>
+      </motion.div>
+    </>
   )
 }

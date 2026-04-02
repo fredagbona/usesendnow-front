@@ -12,6 +12,7 @@ import { ApiClientError } from "@usesendnow/api-client"
 import { EyeIcon, ViewOffIcon } from "hugeicons-react"
 import Alert from "@/components/ui/Alert"
 import BrandMark from "@/components/shared/BrandMark"
+import AuthTransition from "@/components/shared/AuthTransition"
 
 /* ─── Login form ──────────────────────────────────────────────────────────── */
 
@@ -61,23 +62,30 @@ function LoginForm() {
   }
 
   return (
-    <motion.div
-      variants={fadeIn}
-      initial={false}
-      animate="visible"
-      className="w-full max-w-sm"
-    >
-      {/* Mobile logo */}
-      <div className="md:hidden mb-8 text-center">
-        <div className="flex justify-center">
-          <BrandMark textClassName="text-xl text-primary-ink" />
+    <>
+      {loading && (
+        <AuthTransition
+          title="Connexion en cours"
+          description="Nous sécurisons votre session et préparons votre console msgflash."
+        />
+      )}
+      <motion.div
+        variants={fadeIn}
+        initial={false}
+        animate="visible"
+        className="w-full max-w-sm"
+      >
+        {/* Mobile logo */}
+        <div className="md:hidden mb-8 text-center">
+          <div className="flex justify-center">
+            <BrandMark textClassName="text-xl text-primary-ink" />
+          </div>
         </div>
-      </div>
 
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-text">Bon retour</h2>
-        <p className="text-sm text-text-secondary mt-1">Accédez à votre console de pilotage</p>
-      </div>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-text">Bon retour</h2>
+          <p className="text-sm text-text-secondary mt-1">Accédez à votre console de pilotage</p>
+        </div>
 
       {/* Google */}
       <button
@@ -165,13 +173,14 @@ function LoginForm() {
         </button>
       </form>
 
-      <p className="text-center text-sm text-text-secondary mt-6">
-        Nouveau sur la plateforme ?{" "}
-        <Link href="/signup" className="text-primary-ink font-semibold hover:underline">
-          S&apos;inscrire
-        </Link>
-      </p>
-    </motion.div>
+        <p className="text-center text-sm text-text-secondary mt-6">
+          Nouveau sur la plateforme ?{" "}
+          <Link href="/signup" className="text-primary-ink font-semibold hover:underline">
+            S&apos;inscrire
+          </Link>
+        </p>
+      </motion.div>
+    </>
   )
 }
 
