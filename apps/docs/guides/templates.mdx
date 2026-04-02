@@ -74,7 +74,7 @@ Les variables sont détectées et recalculées automatiquement par le backend à
 ## Créer un template
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/templates \
+curl -X POST https://srv.msgflash.com/api/v1/templates \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -111,7 +111,7 @@ Réponse :
 ## Preview
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/templates/TEMPLATE_ID/preview \
+curl -X POST https://srv.msgflash.com/api/v1/templates/TEMPLATE_ID/preview \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{

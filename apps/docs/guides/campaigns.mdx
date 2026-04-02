@@ -36,7 +36,7 @@ Pas de path params ni query params sur la création.
 ## Créer une campagne
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/campaigns \
+curl -X POST https://srv.msgflash.com/api/v1/campaigns \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -146,12 +146,12 @@ Une campagne passe maintenant automatiquement à `completed` quand il ne reste p
 ## Pauser et reprendre
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/pause \
+curl -X POST https://srv.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/pause \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/resume \
+curl -X POST https://srv.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/resume \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
@@ -168,7 +168,7 @@ Ces actions sont valides uniquement sur les statuts compatibles.
 ## Statistiques
 
 ```bash
-curl https://api.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/stats \
+curl https://srv.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/stats \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
@@ -225,7 +225,7 @@ curl https://api.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/stats \
 ## Récupérer une campagne
 
 ```bash
-curl https://api.msgflash.com/api/v1/campaigns/CAMPAIGN_ID \
+curl https://srv.msgflash.com/api/v1/campaigns/CAMPAIGN_ID \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 

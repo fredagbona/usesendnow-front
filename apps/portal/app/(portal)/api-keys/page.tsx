@@ -23,7 +23,7 @@ import { portalBrand } from "@/lib/brand"
 
 // ─── Quick Start dark block ────────────────────────────────────────────────────
 
-const SNIPPET = `curl -X POST https://api.msgflash.com/v1/messages/send \\
+const SNIPPET = `curl -X POST https://srv.msgflash.com/v1/messages/send \\
   -H "x-api-key: msgf_live_your_api_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{

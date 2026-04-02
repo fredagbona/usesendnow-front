@@ -6,7 +6,7 @@ description: Base URL, authentification, rate limiting, format des réponses et 
 ## Base URL
 
 ```txt
-https://api.msgflash.com
+https://srv.msgflash.com
 ```
 
 Tous les endpoints publics sont préfixés par `/api/v1/`.
@@ -14,10 +14,10 @@ Tous les endpoints publics sont préfixés par `/api/v1/`.
 Exemples :
 
 ```txt
-https://api.msgflash.com/api/v1/messages/send
-https://api.msgflash.com/api/v1/templates
-https://api.msgflash.com/api/v1/contacts
-https://api.msgflash.com/api/v1/billing/usage
+https://srv.msgflash.com/api/v1/messages/send
+https://srv.msgflash.com/api/v1/templates
+https://srv.msgflash.com/api/v1/contacts
+https://srv.msgflash.com/api/v1/billing/usage
 ```
 
 ---
@@ -27,7 +27,7 @@ https://api.msgflash.com/api/v1/billing/usage
 Toutes les requêtes vers `/api/v1/*` nécessitent une clé API MsgFlash envoyée dans le header `x-api-key`.
 
 ```bash
-curl https://api.msgflash.com/api/v1/usage \
+curl https://srv.msgflash.com/api/v1/usage \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 

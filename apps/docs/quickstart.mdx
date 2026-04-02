@@ -41,7 +41,7 @@ msgf_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ## Étape 4 — Envoyer votre premier message
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/messages/send \
+curl -X POST https://srv.msgflash.com/api/v1/messages/send \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -74,7 +74,7 @@ Réponse :
 ## Étape 5 — Vérifier le statut
 
 ```bash
-curl https://api.msgflash.com/api/v1/messages/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+curl https://srv.msgflash.com/api/v1/messages/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 

@@ -36,14 +36,14 @@ MsgFlash peut envoyer des requêtes HTTP signées à votre application à chaque
 ### Lister
 
 ```bash
-curl https://api.msgflash.com/api/v1/webhooks \
+curl https://srv.msgflash.com/api/v1/webhooks \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
 ### Créer
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/webhooks \
+curl -X POST https://srv.msgflash.com/api/v1/webhooks \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -73,7 +73,7 @@ Le secret doit être conservé immédiatement. Il sert à vérifier la signature
 ### Supprimer
 
 ```bash
-curl -X DELETE https://api.msgflash.com/api/v1/webhooks/WEBHOOK_ID \
+curl -X DELETE https://srv.msgflash.com/api/v1/webhooks/WEBHOOK_ID \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 

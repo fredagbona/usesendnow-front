@@ -41,7 +41,7 @@ Il n'y a ni path params ni query params sur cette route.
 ### Texte
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/messages/send \
+curl -X POST https://srv.msgflash.com/api/v1/messages/send \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -139,7 +139,7 @@ curl -X POST https://api.msgflash.com/api/v1/messages/send \
 Vous pouvez envoyer un message en fournissant `templateId` à la place de `type`.
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/messages/send \
+curl -X POST https://srv.msgflash.com/api/v1/messages/send \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{

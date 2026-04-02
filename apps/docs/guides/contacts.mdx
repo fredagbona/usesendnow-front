@@ -46,7 +46,7 @@ description: Gérez vos contacts MsgFlash, vos groupes et les suppressions en lo
 ### Créer un contact
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/contacts \
+curl -X POST https://srv.msgflash.com/api/v1/contacts \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -62,7 +62,7 @@ curl -X POST https://api.msgflash.com/api/v1/contacts \
 ### Supprimer plusieurs contacts
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/contacts/bulk-delete \
+curl -X POST https://srv.msgflash.com/api/v1/contacts/bulk-delete \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -136,7 +136,7 @@ Exemple de réponse :
 ### Créer un groupe
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/contacts/groups \
+curl -X POST https://srv.msgflash.com/api/v1/contacts/groups \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -149,7 +149,7 @@ curl -X POST https://api.msgflash.com/api/v1/contacts/groups \
 ### Ajouter des membres
 
 ```bash
-curl -X POST https://api.msgflash.com/api/v1/contacts/groups/GROUP_ID/members \
+curl -X POST https://srv.msgflash.com/api/v1/contacts/groups/GROUP_ID/members \
   -H "x-api-key: msgf_live_your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -160,7 +160,7 @@ curl -X POST https://api.msgflash.com/api/v1/contacts/groups/GROUP_ID/members \
 ### Lister les membres
 
 ```bash
-curl "https://api.msgflash.com/api/v1/contacts/groups/GROUP_ID/members?limit=20&search=awa" \
+curl "https://srv.msgflash.com/api/v1/contacts/groups/GROUP_ID/members?limit=20&search=awa" \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 

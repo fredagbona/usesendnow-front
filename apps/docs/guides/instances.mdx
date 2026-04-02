@@ -34,7 +34,7 @@ Vous créez et connectez les instances depuis le dashboard. L'API publique perme
 ## Lister les instances
 
 ```bash
-curl https://api.msgflash.com/api/v1/instances \
+curl https://srv.msgflash.com/api/v1/instances \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
@@ -74,7 +74,7 @@ Cette route n'accepte ni query params ni body.
 ## Détail d'une instance
 
 ```bash
-curl https://api.msgflash.com/api/v1/instances/INSTANCE_ID \
+curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
@@ -106,7 +106,7 @@ curl https://api.msgflash.com/api/v1/instances/INSTANCE_ID \
 ## État live
 
 ```bash
-curl https://api.msgflash.com/api/v1/instances/INSTANCE_ID/state \
+curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID/state \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 

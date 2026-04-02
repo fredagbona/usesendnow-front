@@ -34,7 +34,7 @@ Ces routes sont toutes en `GET`.
 ## Lister les plans
 
 ```bash
-curl https://api.msgflash.com/api/v1/billing/plans \
+curl https://srv.msgflash.com/api/v1/billing/plans \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
@@ -64,7 +64,7 @@ curl https://api.msgflash.com/api/v1/billing/plans \
 ## Souscription courante
 
 ```bash
-curl https://api.msgflash.com/api/v1/billing/subscription \
+curl https://srv.msgflash.com/api/v1/billing/subscription \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
@@ -117,7 +117,7 @@ Les limites se lisent dans `subscription.plan.limits.*`, pas dans `subscription.
 ## Usage enrichi
 
 ```bash
-curl https://api.msgflash.com/api/v1/billing/usage \
+curl https://srv.msgflash.com/api/v1/billing/usage \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
@@ -133,7 +133,7 @@ Cet endpoint renvoie :
 ## Historique des paiements
 
 ```bash
-curl "https://api.msgflash.com/api/v1/billing/payments?page=1&limit=20" \
+curl "https://srv.msgflash.com/api/v1/billing/payments?page=1&limit=20" \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
