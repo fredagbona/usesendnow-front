@@ -128,32 +128,55 @@ export default function InstancesPage() {
               elevated
               onClick={() => router.push(`/instances/${instance.id}`)}
             >
-              <div className="flex items-start justify-between mb-3">
+              <div className="mb-4 flex items-start justify-between gap-3">
                 <div className={[
-                  "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                  instance.status === "suspended" ? "bg-error-subtle" : "bg-primary-subtle",
+                  "flex h-14 w-14 items-center justify-center rounded-2xl shrink-0 border",
+                  instance.status === "suspended"
+                    ? "border-error/20 bg-error-subtle"
+                    : instance.status === "connected"
+                      ? "border-primary/20 bg-primary-subtle"
+                      : "border-border bg-bg-subtle",
                 ].join(" ")}>
                   <SmartPhone01Icon className={[
-                    "w-5 h-5",
-                    instance.status === "suspended" ? "text-error" : "text-primary",
+                    "w-8 h-8",
+                    instance.status === "suspended"
+                      ? "text-error"
+                      : instance.status === "connected"
+                        ? "text-primary"
+                        : "text-text",
                   ].join(" ")} />
                 </div>
                 <Badge
                   variant={STATUS_VARIANT[instance.status] ?? "neutral"}
                   pulse={instance.status === "connecting"}
                 >
-                  {STATUS_LABEL[instance.status] ?? instance.status}
+                  {instance.status === "connected"
+                    ? "WhatsApp connecté"
+                    : instance.status === "connecting"
+                      ? "Connexion en cours"
+                      : instance.status === "disconnected"
+                        ? "WhatsApp non connecté"
+                        : "Instance suspendue"}
                 </Badge>
               </div>
-              <h3 className="text-sm font-semibold text-text mb-1 truncate">
+              <h3 className="mb-1 text-base font-semibold text-text truncate">
                 {instance.name}
               </h3>
               <p className="text-xs text-text-secondary font-mono mb-1">
-                {instance.waNumber ?? "Non connecté"}
+                {instance.waNumber ?? "Aucun numéro lié"}
               </p>
               {instance.status === "suspended" && (
                 <p className="text-xs text-error mb-3">
                   Suspendue suite à un changement de plan.
+                </p>
+              )}
+              {instance.status !== "suspended" && (
+                <p className="text-sm text-text-secondary">
+                  {instance.status === "connected"
+                    ? "Numéro actif et prêt à envoyer des messages."
+                    : instance.status === "connecting"
+                      ? "Finalisez la connexion WhatsApp depuis la page de détail."
+                      : "Scannez un QR code pour connecter ce numéro."}
                 </p>
               )}
               <div className={instance.status === "suspended" ? "mt-2" : "mt-4"}>

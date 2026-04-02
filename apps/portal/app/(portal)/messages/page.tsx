@@ -69,13 +69,10 @@ const MEDIA_FIELD_LABEL: Partial<Record<MessageType, string>> = {
 const TYPE_LABEL: Record<string, string> = {
   text: "Texte",
   image: "Image",
-  video: "Vidéo",
-  audio: "Audio",
-  voice_note: "Message vocal",
   document: "Document",
 }
 
-const FILE_UPLOAD_TYPES: MessageType[] = ["image", "audio", "voice_note", "document"]
+const FILE_UPLOAD_TYPES: MessageType[] = ["image", "document"]
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -91,6 +88,7 @@ function formatBytes(bytes: number): string {
 }
 
 type ComposeMode = "freeform" | "template"
+type RecipientMode = "manual" | "contact"
 
 export default function MessagesPage() {
   const router = useRouter()
@@ -105,6 +103,7 @@ export default function MessagesPage() {
   const { contacts } = useContacts()
   const [sendModalOpen, setSendModalOpen] = useState(false)
   const [composeMode, setComposeMode] = useState<ComposeMode>("freeform")
+  const [recipientMode, setRecipientMode] = useState<RecipientMode>("manual")
   const [sending, setSending] = useState(false)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
@@ -154,6 +153,7 @@ export default function MessagesPage() {
       contactId: "",
     })
     setComposeMode("freeform")
+    setRecipientMode("manual")
     setTemplateVariables([])
     setTemplatePreview(null)
     setPreviewError(null)
@@ -168,6 +168,29 @@ export default function MessagesPage() {
   const handleTypeChange = (type: MessageType) => {
     setSendForm((prev) => ({ ...prev, type, mediaUrl: "", text: "" }))
     resetMediaState()
+  }
+
+  const handleRecipientModeChange = (mode: RecipientMode) => {
+    setRecipientMode(mode)
+    if (mode === "manual") {
+      setSendForm((prev) => ({ ...prev, contactId: "" }))
+      return
+    }
+
+    setSendForm((prev) => ({
+      ...prev,
+      to: "",
+      contactId: "",
+    }))
+  }
+
+  const handleContactRecipientChange = (contactId: string) => {
+    const contact = contacts.find((item) => item.id === contactId)
+    setSendForm((prev) => ({
+      ...prev,
+      contactId,
+      to: contact?.phone ?? "",
+    }))
   }
 
   const handleTemplateChange = (templateId: string) => {
@@ -462,17 +485,58 @@ export default function MessagesPage() {
                 <option key={instance.id} value={instance.id}>{instance.name}</option>
               ))}
             </Select>
-            <Input
-              label="Destinataire (numéro)"
-              type="tel"
-              value={sendForm.to}
-              onChange={(event) => setSendForm((prev) => ({ ...prev, to: event.target.value }))}
-              placeholder="+22912345678"
-              required
-            />
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-text-body">Destinataire</p>
+              <div className="flex gap-1 rounded-xl bg-bg-muted p-1 w-fit">
+                {([
+                  { value: "manual", label: "Nouveau numéro" },
+                  { value: "contact", label: "Contact enregistré" },
+                ] as const).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleRecipientModeChange(option.value)}
+                    className={[
+                      "rounded-lg px-4 py-1.5 text-sm font-medium transition-all cursor-pointer",
+                      recipientMode === option.value
+                        ? "bg-bg border border-border text-text shadow-sm"
+                        : "text-text-secondary hover:text-text",
+                    ].join(" ")}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              {recipientMode === "contact" ? (
+                <Select
+                  label="Choisir un contact"
+                  value={sendForm.contactId}
+                  onChange={(event) => handleContactRecipientChange(event.target.value)}
+                  required
+                >
+                  <option value="">Sélectionner un contact...</option>
+                  {contacts.map((contact) => (
+                    <option key={contact.id} value={contact.id}>{contact.name} · {contact.phone}</option>
+                  ))}
+                </Select>
+              ) : (
+                <Input
+                  label="Destinataire (numéro)"
+                  type="tel"
+                  value={sendForm.to}
+                  onChange={(event) => setSendForm((prev) => ({ ...prev, to: event.target.value, contactId: "" }))}
+                  placeholder="+22912345678"
+                  required
+                />
+              )}
+            </div>
           </div>
 
           {connectedInstances.length === 0 && <p className="text-xs text-warning">Aucune instance connectée disponible.</p>}
+          {recipientMode === "contact" && contacts.length === 0 && (
+            <p className="text-xs text-warning">Aucun contact enregistré disponible. Ajoutez un contact ou utilisez un nouveau numéro.</p>
+          )}
 
           {composeMode === "template" ? (
             <>
@@ -480,13 +544,6 @@ export default function MessagesPage() {
                 <option value="">Sélectionner un template...</option>
                 {templates.map((template) => (
                   <option key={template.id} value={template.id}>{template.name}</option>
-                ))}
-              </Select>
-
-              <Select label="Contact (optionnel)" value={sendForm.contactId} onChange={(event) => setSendForm((prev) => ({ ...prev, contactId: event.target.value }))}>
-                <option value="">Aucun contact</option>
-                {contacts.map((contact) => (
-                  <option key={contact.id} value={contact.id}>{contact.name} · {contact.phone}</option>
                 ))}
               </Select>
 
@@ -528,7 +585,7 @@ export default function MessagesPage() {
           ) : (
             <>
               <Select label="Type de message" value={sendForm.type} onChange={(event) => handleTypeChange(event.target.value as MessageType)}>
-                {(["text", "image", "video", "audio", "voice_note", "document"] as MessageType[]).map((type) => (
+                {(["text", "image", "document"] as MessageType[]).map((type) => (
                   <option key={type} value={type}>{TYPE_LABEL[type] ?? type}</option>
                 ))}
               </Select>
@@ -544,20 +601,6 @@ export default function MessagesPage() {
                     maxLength={4096}
                   />
                   {sendForm.text.length === 0 && <input type="text" required className="sr-only" tabIndex={-1} aria-hidden="true" />}
-                </div>
-              )}
-
-              {sendForm.type === "video" && (
-                <div className="space-y-1.5">
-                  <Input
-                    label="URL de la vidéo"
-                    type="url"
-                    value={sendForm.mediaUrl}
-                    onChange={(event) => setSendForm((prev) => ({ ...prev, mediaUrl: event.target.value }))}
-                    placeholder="https://cdn.example.com/video.mp4"
-                    required
-                  />
-                  <p className="text-xs text-text-muted">L’upload vidéo n’est pas disponible. Fournissez une URL directe.</p>
                 </div>
               )}
 
