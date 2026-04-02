@@ -19,7 +19,10 @@ const bodyFont = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "msgflash — Portail",
+  title: {
+    default: "MsgFlash - Portail",
+    template: "MsgFlash - %s",
+  },
   description: portalBrand.tagline,
   icons: {
     icon: [
@@ -31,7 +34,7 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   openGraph: {
-    title: "msgflash — Portail",
+    title: "MsgFlash - Portail",
     description: portalBrand.tagline,
     type: "website",
     url: portalBrand.appUrl,
@@ -40,13 +43,13 @@ export const metadata: Metadata = {
         url: `${portalBrand.appUrl}/og-image.png`,
         width: 512,
         height: 512,
-        alt: "msgflash portal",
+        alt: "MsgFlash portal",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "msgflash — Portail",
+    title: "MsgFlash - Portail",
     description: portalBrand.tagline,
     images: [`${portalBrand.appUrl}/og-image.png`],
   },

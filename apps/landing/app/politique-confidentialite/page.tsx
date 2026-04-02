@@ -4,7 +4,7 @@ import { Metadata } from "next"
 import { landingBrand } from "../../lib/brand"
 
 export const metadata: Metadata = {
-  title: "Politique de confidentialité — msgflash",
+  title: "Politique de confidentialité - MsgFlash",
   description: "Politique de confidentialité et protection des données personnelles de msgflash.",
 }
 

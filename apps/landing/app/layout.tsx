@@ -16,7 +16,7 @@ const bodyFont = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "msgflash — Infrastructure WhatsApp pour produits et automatisations",
+  title: "MsgFlash - Infrastructure WhatsApp pour produits et automatisations",
   description: landingBrand.tagline,
   icons: {
     icon: [
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   openGraph: {
-    title: "msgflash — Infrastructure WhatsApp pour produits et automatisations",
+    title: "MsgFlash - Infrastructure WhatsApp pour produits et automatisations",
     description: landingBrand.tagline,
     type: "website",
     url: `https://${landingBrand.domain}`,
@@ -37,13 +37,13 @@ export const metadata: Metadata = {
         url: `${landingBrand.appUrl.replace("app.", "")}/og-image.png`,
         width: 512,
         height: 512,
-        alt: "msgflash landing",
+        alt: "MsgFlash landing",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "msgflash — Infrastructure WhatsApp pour produits et automatisations",
+    title: "MsgFlash - Infrastructure WhatsApp pour produits et automatisations",
     description: landingBrand.tagline,
     images: [`${landingBrand.appUrl.replace("app.", "")}/og-image.png`],
   },

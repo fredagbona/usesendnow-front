@@ -4,7 +4,7 @@ import { Metadata } from "next"
 import { landingBrand } from "../../lib/brand"
 
 export const metadata: Metadata = {
-  title: "Conditions d'utilisation — msgflash",
+  title: "Conditions d'utilisation - MsgFlash",
   description: "Conditions générales d'utilisation de la plateforme msgflash.",
 }
 

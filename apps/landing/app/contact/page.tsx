@@ -5,8 +5,8 @@ import { landingBrand } from "../../lib/brand"
 import { Button } from "../../components/ui/Button"
 
 export const metadata: Metadata = {
-  title: "Contact — msgflash",
-  description: "Contactez l'équipe msgflash pour toute question sur notre infrastructure WhatsApp.",
+  title: "Contact - MsgFlash",
+  description: "Contactez l'équipe MsgFlash pour toute question sur notre infrastructure WhatsApp.",
 }
 
 export default function ContactPage() {

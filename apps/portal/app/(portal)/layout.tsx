@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { isAuthenticated } from "@/lib/auth"
 import Sidebar, { MobileDrawer } from "@/components/layout/Sidebar"
+import PortalTitleManager from "@/components/layout/PortalTitleManager"
 import TopNav from "@/components/layout/TopNav"
 import { apiClient } from "@usesendnow/api-client"
 import type { Plan, SubscriptionResponse, User } from "@usesendnow/types"
@@ -58,6 +59,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="flex min-h-screen bg-bg-subtle overflow-x-hidden">
+      <PortalTitleManager />
       {/* Desktop sidebar */}
       <div className="hidden md:block">
         <Sidebar
