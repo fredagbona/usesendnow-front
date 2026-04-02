@@ -259,6 +259,22 @@ export interface TemplatePreviewResponse {
   valid: boolean
 }
 
+// ─── Media Upload ────────────────────────────────────────────────────────────
+
+export type UploadedMediaKind = "image" | "video" | "document" | "audio"
+export type UploadedMediaSuggestedMessageType = "image" | "video" | "document" | "audio" | "voice_note"
+
+export interface UploadedMedia {
+  id: string
+  url: string
+  type: UploadedMediaKind
+  mimeType: string
+  sizeBytes: number
+  originalName: string
+  expiresAt: string
+  suggestedMessageType: UploadedMediaSuggestedMessageType
+}
+
 // ─── ApiKey ───────────────────────────────────────────────────────────────────
 
 export interface ApiKey {

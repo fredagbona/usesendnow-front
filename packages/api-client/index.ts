@@ -42,6 +42,7 @@ import type {
   ImportResult,
   ContactImportsResponse,
   ApiError,
+  UploadedMedia,
 } from "@usesendnow/types"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -102,6 +103,77 @@ async function request<T>(
       }
     }
 
+    throw new ApiClientError(err.code, err.message, res.status)
+  }
+
+  return json.data as T
+}
+
+async function uploadRequest<T>(
+  path: string,
+  formData: FormData,
+  onProgress?: (progress: number) => void,
+): Promise<T> {
+  const headers: Record<string, string> = {}
+  const token = getToken()
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
+  if (typeof XMLHttpRequest !== "undefined") {
+    return new Promise<T>((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open("POST", `${getBaseUrl()}${path}`)
+
+      Object.entries(headers).forEach(([key, value]) => {
+        xhr.setRequestHeader(key, value)
+      })
+
+      xhr.upload.onprogress = (event) => {
+        if (!onProgress || !event.lengthComputable) return
+        onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)))
+      }
+
+      xhr.onload = () => {
+        let json: { data?: T; error?: ApiError } = {}
+
+        try {
+          json = JSON.parse(xhr.responseText) as { data?: T; error?: ApiError }
+        } catch {
+          reject(new ApiClientError("UNKNOWN_ERROR", "An error occurred", xhr.status))
+          return
+        }
+
+        if (xhr.status < 200 || xhr.status >= 300 || json.error) {
+          const err = json.error ?? { code: "UNKNOWN_ERROR", message: "An error occurred" }
+          reject(new ApiClientError(err.code, err.message, xhr.status))
+          return
+        }
+
+        if (onProgress) {
+          onProgress(100)
+        }
+        resolve(json.data as T)
+      }
+
+      xhr.onerror = () => {
+        reject(new ApiClientError("UNKNOWN_ERROR", "An error occurred", xhr.status || 0))
+      }
+
+      xhr.send(formData)
+    })
+  }
+
+  const res = await fetch(`${getBaseUrl()}${path}`, {
+    method: "POST",
+    headers,
+    body: formData,
+  })
+
+  const json = (await res.json()) as { data?: T; error?: ApiError }
+
+  if (!res.ok || json.error) {
+    const err = json.error ?? { code: "UNKNOWN_ERROR", message: "An error occurred" }
     throw new ApiClientError(err.code, err.message, res.status)
   }
 
@@ -332,6 +404,18 @@ const templates = {
   ) => post<TemplatePreviewResponse>(`/api/templates/${id}/preview`, payload),
 }
 
+// ─── Media ───────────────────────────────────────────────────────────────────
+
+const media = {
+  upload: async (file: File, onProgress?: (progress: number) => void) => {
+    const formData = new FormData()
+    formData.append("file", file)
+    return uploadRequest<UploadedMedia>("/api/media/upload", formData, onProgress)
+  },
+
+  delete: (mediaId: string) => del<{ deleted: boolean }>(`/api/media/${mediaId}`),
+}
+
 // ─── API Keys ─────────────────────────────────────────────────────────────────
 
 const apiKeys = {
@@ -403,6 +487,7 @@ export const apiClient = {
   contacts,
   contactGroups,
   templates,
+  media,
   apiKeys,
   webhooks,
   billing,
