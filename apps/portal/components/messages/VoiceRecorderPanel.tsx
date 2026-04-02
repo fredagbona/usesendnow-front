@@ -10,6 +10,8 @@ interface VoiceRecorderPanelProps {
   uploading: boolean
   onUpload: (file: File) => Promise<void>
   onResetUploadState: () => void
+  uploadError?: string | null
+  uploadNotice?: string | null
 }
 
 function formatDuration(seconds: number): string {
@@ -22,7 +24,21 @@ function supportsMediaRecorder(): boolean {
   return typeof window !== "undefined" && typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== "undefined"
 }
 
-export function VoiceRecorderPanel({ uploading, onUpload, onResetUploadState }: VoiceRecorderPanelProps) {
+const BACKEND_SUPPORTED_RECORDING_MIME_TYPES = [
+  "audio/ogg",
+  "audio/mp4",
+  "audio/aac",
+  "audio/mpeg",
+  "audio/amr",
+] as const
+
+export function VoiceRecorderPanel({
+  uploading,
+  onUpload,
+  onResetUploadState,
+  uploadError,
+  uploadNotice,
+}: VoiceRecorderPanelProps) {
   const [recorderState, setRecorderState] = useState<RecorderState>("idle")
   const [error, setError] = useState<string | null>(null)
   const [seconds, setSeconds] = useState(0)
@@ -34,10 +50,8 @@ export function VoiceRecorderPanel({ uploading, onUpload, onResetUploadState }: 
   const timerRef = useRef<number | null>(null)
 
   const mimeType = useMemo(() => {
-    if (typeof MediaRecorder === "undefined") return "audio/ogg"
-    if (MediaRecorder.isTypeSupported("audio/ogg")) return "audio/ogg"
-    if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm"
-    return "audio/webm"
+    if (typeof MediaRecorder === "undefined") return null
+    return BACKEND_SUPPORTED_RECORDING_MIME_TYPES.find((type) => MediaRecorder.isTypeSupported(type)) ?? null
   }, [])
 
   useEffect(() => {
@@ -92,6 +106,11 @@ export function VoiceRecorderPanel({ uploading, onUpload, onResetUploadState }: 
 
     if (!supportsMediaRecorder()) {
       setError("L’enregistrement vocal n’est pas supporté sur ce navigateur.")
+      return
+    }
+
+    if (!mimeType) {
+      setError("Votre navigateur ne prend pas en charge un format audio compatible pour les notes vocales. Utilisez plutôt l’envoi de fichier audio.")
       return
     }
 
@@ -176,8 +195,16 @@ export function VoiceRecorderPanel({ uploading, onUpload, onResetUploadState }: 
   }
 
   const handleUploadVoiceNote = async () => {
-    if (!audioBlob) return
-    const extension = mimeType.includes("ogg") ? "ogg" : "webm"
+    if (!audioBlob || !mimeType) return
+    const extension = mimeType.includes("ogg")
+      ? "ogg"
+      : mimeType.includes("mp4")
+        ? "mp4"
+        : mimeType.includes("aac")
+          ? "aac"
+          : mimeType.includes("mpeg")
+            ? "mp3"
+            : "amr"
     const file = new File([audioBlob], `voice-note-${Date.now()}.${extension}`, { type: mimeType })
 
     try {
@@ -202,6 +229,8 @@ export function VoiceRecorderPanel({ uploading, onUpload, onResetUploadState }: 
       </div>
 
       {error && <Alert variant="warning" message={error} onClose={() => setError(null)} />}
+      {uploadError && <Alert variant="error" message={uploadError} />}
+      {uploadNotice && <Alert variant="info" message={uploadNotice} />}
 
       {recorderState === "idle" && (
         <div className="flex flex-wrap items-center gap-3">
