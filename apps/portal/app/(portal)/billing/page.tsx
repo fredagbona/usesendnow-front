@@ -30,10 +30,9 @@ import {
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 
 const PLAN_ORDER = ["free", "starter", "pro", "plus"]
-const PLAN_MARKETING: Record<string, { price: string; description: string; features: string[] }> = {
+const PLAN_MARKETING: Record<string, { price: string; features: string[] }> = {
   free: {
     price: "0€",
-    description: "Pour tester l’infrastructure et brancher un premier numéro.",
     features: [
       "1 instance",
       "20 messages / statuts par mois",
@@ -42,14 +41,11 @@ const PLAN_MARKETING: Record<string, { price: string; description: string; featu
       "0 endpoint webhook",
       "2 groupes de contacts",
       "Campagnes : non",
-      "Statuts WhatsApp : non",
-      "Webhooks : non",
       "Notes vocales : oui",
     ],
   },
   starter: {
     price: "9€",
-    description: "Pour lancer vos premiers automatismes en production.",
     features: [
       "1 instance",
       "5 000 messages / statuts par mois",
@@ -58,14 +54,11 @@ const PLAN_MARKETING: Record<string, { price: string; description: string; featu
       "3 endpoints webhook",
       "10 groupes de contacts",
       "Campagnes : oui",
-      "Statuts WhatsApp : oui",
-      "Webhooks : oui",
       "Notes vocales : oui",
     ],
   },
   pro: {
     price: "19€",
-    description: "Pour les équipes qui envoient plus, automatisent plus et monitorent mieux.",
     features: [
       "5 instances",
       "25 000 messages / statuts par mois",
@@ -74,14 +67,11 @@ const PLAN_MARKETING: Record<string, { price: string; description: string; featu
       "10 endpoints webhook",
       "50 groupes de contacts",
       "Campagnes : oui",
-      "Statuts WhatsApp : oui",
-      "Webhooks : oui",
       "Notes vocales : oui",
     ],
   },
   plus: {
     price: "39€",
-    description: "Pour les volumes élevés, les workflows avancés et les opérations multi-numéros.",
     features: [
       "20 instances",
       "150 000 messages / statuts par mois",
@@ -90,8 +80,6 @@ const PLAN_MARKETING: Record<string, { price: string; description: string; featu
       "50 endpoints webhook",
       "Groupes de contacts illimités",
       "Campagnes : oui",
-      "Statuts WhatsApp : oui",
-      "Webhooks : oui",
       "Notes vocales : oui",
     ],
   },
@@ -230,10 +218,6 @@ function PlanCard({
 
       <p className="text-xl font-bold text-text mb-4">
         {marketing.price}
-      </p>
-
-      <p className="mb-5 text-sm leading-6 text-text-secondary">
-        {marketing.description}
       </p>
 
       <ul className="space-y-2 mb-5 text-sm flex-1">

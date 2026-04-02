@@ -7,6 +7,7 @@
     "dev:portal": "turbo dev --filter=portal",
     "dev:admin": "turbo dev --filter=admin",
     "build": "turbo build --filter=!docs",
+    "build:portal": "turbo build --filter=portal",
     "lint": "turbo lint --filter=!docs",
     "type-check": "turbo type-check --filter=!docs"
   },
