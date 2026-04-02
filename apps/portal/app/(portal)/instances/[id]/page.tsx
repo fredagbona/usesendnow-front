@@ -30,8 +30,6 @@ const STATUS_LABEL: Record<string, string> = {
   suspended:    "Suspendue",
 }
 
-type ConnectTab = "qr" | "pairing"
-
 export default function InstanceDetailPage() {
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
@@ -41,8 +39,6 @@ export default function InstanceDetailPage() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [connectTab, setConnectTab] = useState<ConnectTab>("qr")
-  const [phoneNumber, setPhoneNumber] = useState("")
 
   const poll = useCallback(async () => {
     const status = await refreshState()
@@ -69,23 +65,6 @@ export default function InstanceDetailPage() {
     setConnecting(true)
     try {
       const data = await apiClient.instances.connect(id)
-      setConnectData(data)
-      updateStatus("connecting")
-    } catch {
-      toast.error("Impossible d'initier la connexion. Réessayez.")
-    } finally {
-      setConnecting(false)
-    }
-  }
-
-  const handleConnectPairing = async () => {
-    if (!phoneNumber.trim()) {
-      toast.error("Entrez votre numéro WhatsApp.")
-      return
-    }
-    setConnecting(true)
-    try {
-      const data = await apiClient.instances.connect(id, phoneNumber.trim())
       setConnectData(data)
       updateStatus("connecting")
     } catch {
@@ -200,53 +179,14 @@ export default function InstanceDetailPage() {
 
         {status === "disconnected" && (
           <div className="space-y-5">
-            {/* Tab switcher */}
-            <div className="flex gap-1 p-1 bg-bg-muted rounded-xl w-fit">
-              {(["qr", "pairing"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => { setConnectTab(tab); setConnectData(null) }}
-                  className={[
-                    "px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-100 cursor-pointer",
-                    connectTab === tab
-                      ? "bg-bg text-text border border-border shadow-sm"
-                      : "text-text-secondary hover:text-text",
-                  ].join(" ")}
-                >
-                  {tab === "qr" ? "QR Code" : "Code d'appairage"}
-                </button>
-              ))}
+            <div className="space-y-3">
+              <p className="text-sm text-text-secondary">
+                Connectez-vous en scannant un QR code depuis votre téléphone.
+              </p>
+              <Button variant="primary" loading={connecting} onClick={handleConnectQR}>
+                Générer le QR Code
+              </Button>
             </div>
-
-            {connectTab === "qr" && (
-              <div className="space-y-3">
-                <p className="text-sm text-text-secondary">
-                  Connectez-vous en scannant un QR code depuis votre téléphone.
-                </p>
-                <Button variant="primary" loading={connecting} onClick={handleConnectQR}>
-                  Générer le QR Code
-                </Button>
-              </div>
-            )}
-
-            {connectTab === "pairing" && (
-              <div className="space-y-3">
-                <p className="text-sm text-text-secondary">
-                  Entrez votre numéro WhatsApp pour recevoir un code d&apos;appairage.
-                </p>
-                <input
-                  type="tel"
-                  placeholder="+22912345678"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full max-w-xs border border-border-strong rounded-lg px-3.5 py-2.5 text-sm text-text bg-bg placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150"
-                />
-                <Button variant="primary" loading={connecting} onClick={handleConnectPairing}>
-                  Obtenir le code
-                </Button>
-              </div>
-            )}
           </div>
         )}
 
@@ -274,17 +214,6 @@ export default function InstanceDetailPage() {
                 <Button variant="ghost" size="sm" onClick={handleConnectQR}>
                   Regénérer le QR
                 </Button>
-              </div>
-            ) : connectData?.pairingCode ? (
-              <div className="space-y-3">
-                <p className="text-xs text-text-secondary">
-                  Ouvrez WhatsApp → Appareils connectés → Lier avec un numéro, puis entrez ce code.
-                </p>
-                <div className="inline-flex items-center gap-3 bg-bg-subtle border border-border rounded-2xl px-6 py-4">
-                  <span className="font-mono text-2xl font-bold tracking-[0.2em] text-text">
-                    {connectData.pairingCode}
-                  </span>
-                </div>
               </div>
             ) : (
               <Button variant="ghost" size="sm" onClick={() => poll()}>
