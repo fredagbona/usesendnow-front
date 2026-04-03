@@ -15,8 +15,28 @@ export interface AuthResponse {
   token: string
 }
 
+export interface SignupResponse {
+  success: boolean
+  verificationRequired: boolean
+  email: string
+}
+
 export interface ForgotPasswordResponse {
   success: boolean
+}
+
+export interface ResendVerificationResponse {
+  success: boolean
+}
+
+export interface VerifyEmailValidationResponse {
+  valid: boolean
+  status: "valid" | "expired" | "used" | "invalid" | "already_verified"
+}
+
+export interface VerifyEmailResponse {
+  success: boolean
+  alreadyVerified: boolean
 }
 
 export interface ResetPasswordValidationResponse {

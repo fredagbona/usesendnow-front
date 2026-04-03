@@ -16,6 +16,7 @@ Après connexion réussie, le token JWT est stocké en localStorage (`usn_token`
 | Method | Endpoint | Auth | Usage |
 |---|---|---|---|
 | POST | /api/auth/login | public | Connexion email/password |
+| POST | /api/auth/resend-verification | public | Renvoyer un lien de vérification email |
 | GET | /api/auth/google | public | Initier Google OAuth |
 
 ---
@@ -26,8 +27,9 @@ Centré verticalement et horizontalement : logo + card de connexion.
 Fond blanc, card avec léger shadow.
 
 ### Zones principales
-- **Header de la card** : logo UseSendNow + titre "Welcome back"
+- **Header de la card** : logo MsgFlash + titre "Welcome back"
 - **Formulaire email/password**
+- **Lien "Forgot password?"** sous le champ mot de passe
 - **Séparateur "or"**
 - **Bouton Google OAuth**
 - **Footer de la card** : lien vers `/signup`
@@ -57,6 +59,7 @@ Note : pas de loading state — c'est une redirection navigateur.
 ## États à gérer
 - `loading`: bouton submit désactivé + spinner pendant POST /api/auth/login
 - `error.UNAUTHORIZED`: "Invalid email or password." sous le formulaire
+- `error.EMAIL_NOT_VERIFIED`: "Please verify your email before signing in."
 - `error.VALIDATION_ERROR`: messages de validation Zod par champ
 - `error.network`: "Connection error. Please try again."
 
@@ -69,7 +72,20 @@ Note : pas de loading state — c'est une redirection navigateur.
 - Appel API : `POST /api/auth/login` — `{ email, password }`
 - Succès : stocker `data.token` dans `localStorage.setItem('usn_token', token)`, puis `router.push('/dashboard')`
 - Erreur 401 `UNAUTHORIZED` : "Invalid email or password."
+- Erreur 403 `EMAIL_NOT_VERIFIED` : afficher un message clair + proposer un bouton "Resend verification email"
 - Erreur 400 `VALIDATION_ERROR` : afficher les détails par champ
+
+### Mot de passe oublié
+- Déclencheur : clic sur le lien "Forgot password?"
+- Action : `router.push('/forgot-password')`
+- Aucun appel API direct depuis la page `/login`
+
+### Renvoyer le lien de vérification
+- Déclencheur : clic sur "Resend verification email" après une erreur `EMAIL_NOT_VERIFIED`
+- Appel API : `POST /api/auth/resend-verification` — `{ email }`
+- Succès : afficher un message neutre :
+  - `If your account still requires verification, a new verification link has been sent.`
+- Ne jamais afficher si l’email existe réellement ou non
 
 ### Connexion Google
 - Déclencheur : clic sur "Continue with Google"
@@ -81,6 +97,7 @@ Note : pas de loading state — c'est une redirection navigateur.
 ## Règles métier
 - Si `usn_token` est déjà présent en localStorage au chargement de la page, rediriger directement vers `/dashboard` sans afficher la page.
 - Les comptes Google-only (sans password) retourneront `UNAUTHORIZED` si on tente une connexion email/password — afficher le message générique "Invalid email or password."
+- Les comptes classiques non vérifiés retournent `EMAIL_NOT_VERIFIED` tant que l’utilisateur n’a pas confirmé son email.
 - Pas de "remember me" — le JWT expire dans 7 jours côté backend.
 
 ---
@@ -122,9 +139,18 @@ Response (erreur):
 }
 ```
 
+Response (email non vérifié):
+```json
+{
+  "error": {
+    "code": "EMAIL_NOT_VERIFIED",
+    "message": "Email not verified"
+  }
+}
+```
+
 ---
 
 ## Out of scope
-- Forgot password / reset password (pas implémenté)
 - 2FA
 - "Remember me" toggle

@@ -24,11 +24,16 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [needsVerification, setNeedsVerification] = useState(false)
+  const [resendingVerification, setResendingVerification] = useState(false)
 
   useEffect(() => {
     if (getToken()) router.replace("/dashboard")
     if (searchParams.get("error") === "oauth_failed") {
       toast.error("Connexion Google échouée. Réessayez.")
+    }
+    if (searchParams.get("signup") === "success") {
+      toast.success("Compte créé avec succès. Connectez-vous pour continuer.")
     }
     const resetEmail = searchParams.get("email")
     if (resetEmail) {
@@ -47,6 +52,7 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setNeedsVerification(false)
     setLoading(true)
     try {
       const data = await apiClient.auth.login(email, password)
@@ -56,6 +62,9 @@ function LoginForm() {
       if (err instanceof ApiClientError) {
         if (err.code === "UNAUTHORIZED") {
           setError("Email ou mot de passe incorrect.")
+        } else if (err.code === "EMAIL_NOT_VERIFIED") {
+          setNeedsVerification(true)
+          setError("Veuillez vérifier votre adresse e-mail avant de vous connecter.")
         } else if (err.code === "VALIDATION_ERROR") {
           setError("Vérifiez votre email et mot de passe.")
         } else {
@@ -66,6 +75,19 @@ function LoginForm() {
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    if (!email) return
+    setResendingVerification(true)
+    try {
+      await apiClient.auth.resendVerification(email)
+      toast.success("Si votre compte nécessite encore une vérification, un nouveau lien a été envoyé.")
+    } catch {
+      toast.error("Impossible de renvoyer le lien pour le moment.")
+    } finally {
+      setResendingVerification(false)
     }
   }
 
@@ -166,7 +188,20 @@ function LoginForm() {
           </div>
         </div>
 
-        {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
+        {error && (
+          <Alert variant={needsVerification ? "warning" : "error"} message={error} onClose={() => setError(null)}>
+            {needsVerification && (
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendingVerification}
+                className="mt-1 inline-flex text-sm font-medium underline"
+              >
+                {resendingVerification ? "Envoi..." : "Renvoyer l’e-mail de vérification"}
+              </button>
+            )}
+          </Alert>
+        )}
 
         <button
           type="submit"

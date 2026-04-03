@@ -1,7 +1,11 @@
 import type {
   User,
   AuthResponse,
+  SignupResponse,
   ForgotPasswordResponse,
+  ResendVerificationResponse,
+  VerifyEmailValidationResponse,
+  VerifyEmailResponse,
   ResetPasswordValidationResponse,
   ResetPasswordResponse,
   Payment,
@@ -201,10 +205,19 @@ const auth = {
     post<AuthResponse>("/api/auth/login", { email, password }, true),
 
   signup: (fullName: string, email: string, phone: string, password: string) =>
-    post<AuthResponse>("/api/auth/signup", { fullName, email, phone, password }, true),
+    post<SignupResponse>("/api/auth/signup", { fullName, email, phone, password }, true),
+
+  resendVerification: (email: string) =>
+    post<ResendVerificationResponse>("/api/auth/resend-verification", { email }, true),
 
   forgotPassword: (email: string) =>
     post<ForgotPasswordResponse>("/api/auth/forgot-password", { email }, true),
+
+  validateVerifyEmailToken: (token: string) =>
+    get<VerifyEmailValidationResponse>(`/api/auth/verify-email/validate?token=${encodeURIComponent(token)}`, true),
+
+  verifyEmail: (token: string) =>
+    post<VerifyEmailResponse>("/api/auth/verify-email", { token }, true),
 
   validateResetPasswordToken: (token: string) =>
     get<ResetPasswordValidationResponse>(`/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`, true),

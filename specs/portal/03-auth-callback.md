@@ -11,6 +11,8 @@ Page intermédiaire sans UI visible.
 Récupère le JWT depuis le query param `?token=` après un flow Google OAuth, le stocke en localStorage, puis redirige vers `/dashboard`.
 En cas d'erreur OAuth, redirige vers `/login` avec un message d'erreur.
 
+Le flow Google reste considéré comme déjà vérifié côté backend : il n’y a pas d’étape supplémentaire de vérification email après ce callback.
+
 ---
 
 ## Backend endpoints utilisés
@@ -65,12 +67,12 @@ Aucune action utilisateur — tout est automatique.
 Aucun appel API. Le token JWT est reçu directement dans l'URL :
 
 ```
-https://app.usesendnow.com/auth/callback?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+https://app.msgflash.com/auth/callback?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 En cas d'erreur OAuth :
 ```
-https://app.usesendnow.com/auth/callback?error=oauth_failed
+https://app.msgflash.com/auth/callback?error=oauth_failed
 ```
 
 ---

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { fadeIn } from "@/lib/animations"
-import { getToken, setToken } from "@/lib/auth"
+import { getToken } from "@/lib/auth"
 import { portalBrand } from "@/lib/brand"
 import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
@@ -13,6 +13,8 @@ import { EyeIcon, ViewOffIcon, Tick01Icon, Cancel01Icon } from "hugeicons-react"
 import Alert from "@/components/ui/Alert"
 import BrandMark from "@/components/shared/BrandMark"
 import AuthTransition from "@/components/shared/AuthTransition"
+
+const VERIFICATION_EMAIL_STORAGE_KEY = "msgflash-verification-email"
 
 /* ─── Password rules ──────────────────────────────────────────────────────── */
 
@@ -64,7 +66,9 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [resendingVerification, setResendingVerification] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null)
 
   useEffect(() => {
     if (getToken()) router.replace("/dashboard")
@@ -82,9 +86,11 @@ export default function SignupPage() {
     setError(null)
     setLoading(true)
     try {
-      const data = await apiClient.auth.signup(form.fullName, form.email, form.phone, form.password)
-      setToken(data.token)
-      router.push("/dashboard")
+      const response = await apiClient.auth.signup(form.fullName, form.email, form.phone, form.password)
+      if (typeof window !== "undefined") {
+        localStorage.setItem(VERIFICATION_EMAIL_STORAGE_KEY, response.email)
+      }
+      setVerificationEmail(response.email)
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "CONFLICT") setError("Un compte avec cet email existe déjà.")
@@ -95,6 +101,19 @@ export default function SignupPage() {
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    if (!verificationEmail) return
+    setResendingVerification(true)
+    setError(null)
+    try {
+      await apiClient.auth.resendVerification(verificationEmail)
+    } catch {
+      setError("Impossible de renvoyer l’e-mail de vérification pour le moment.")
+    } finally {
+      setResendingVerification(false)
     }
   }
 
@@ -120,6 +139,51 @@ export default function SignupPage() {
           </div>
         </div>
 
+        {verificationEmail ? (
+          <>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-text">Vérifiez votre e-mail</h2>
+              <p className="text-sm text-text-secondary mt-1">
+                Votre compte a bien été créé. Un lien de vérification a été envoyé à <span className="font-medium text-text">{verificationEmail}</span>.
+              </p>
+            </div>
+
+            <div className="space-y-4 rounded-none border border-border bg-bg p-5">
+              <div className="space-y-2 text-sm text-text-secondary">
+                <p>Ouvrez votre boîte de réception puis cliquez sur le lien pour activer votre compte.</p>
+                <p>Vérifiez aussi votre dossier spam si vous ne voyez pas l’e-mail immédiatement.</p>
+              </div>
+
+              {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendingVerification}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-none border border-border-strong bg-bg text-sm font-medium text-text hover:bg-primary-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[3px_3px_0px_0px_rgba(10,10,10,0.12)]"
+                >
+                  {resendingVerification ? "Renvoi en cours..." : "Renvoyer l’e-mail de vérification"}
+                </button>
+                <Link
+                  href={`/login?email=${encodeURIComponent(verificationEmail)}`}
+                  className="w-full inline-flex items-center justify-center px-4 py-3 rounded-none bg-primary text-black text-sm font-semibold uppercase tracking-wide hover:bg-primary-hover transition-colors border border-[#0A0A0A] shadow-[3px_3px_0px_0px_rgba(10,10,10,0.12)]"
+                >
+                  Retour à la connexion
+                </Link>
+                <a
+                  href="https://mail.google.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex text-sm font-medium text-primary-ink hover:underline"
+                >
+                  Ouvrir Gmail
+                </a>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-text">Créer un compte</h2>
           <p className="text-sm text-text-secondary mt-1">Commencez à expédier vos messages en production.</p>
@@ -211,6 +275,8 @@ export default function SignupPage() {
           Déjà un compte ?{" "}
           <Link href="/login" className="text-primary-ink font-semibold hover:underline">Se connecter</Link>
         </p>
+          </>
+        )}
       </motion.div>
     </>
   )

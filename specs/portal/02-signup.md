@@ -8,7 +8,8 @@ Status: ready
 
 ## Purpose
 Permet à un nouvel utilisateur de créer un compte avec email + mot de passe, ou via Google OAuth.
-Après inscription réussie, l'utilisateur est redirigé vers `/dashboard`.
+Après inscription classique réussie, le frontend affiche un écran `Check your email`.
+Le compte n’est pas connecté automatiquement tant que l’email n’a pas été vérifié.
 
 ---
 
@@ -16,6 +17,7 @@ Après inscription réussie, l'utilisateur est redirigé vers `/dashboard`.
 | Method | Endpoint | Auth | Usage |
 |---|---|---|---|
 | POST | /api/auth/signup | public | Créer un compte email/password |
+| POST | /api/auth/resend-verification | public | Renvoyer un lien de vérification |
 | GET | /api/auth/google | public | Initier Google OAuth |
 
 ---
@@ -36,7 +38,7 @@ Centré verticalement et horizontalement : logo + card d'inscription.
 ## Composants de la page
 
 ### SignupForm
-Props : `onSuccess: (token: string) => void`
+Props : `onSuccess: (email: string) => void`
 
 Champs :
 - `fullName` — input text, required, min 2 chars
@@ -57,6 +59,7 @@ Bouton "Sign up with Google" — redirige vers `GET /api/auth/google`.
 - `error.CONFLICT`: "An account with this email already exists." — lien "Sign in instead" vers `/login`
 - `error.VALIDATION_ERROR`: messages par champ
 - `error.network`: "Connection error. Please try again."
+- `success.check-email`: écran succès avec CTA de renvoi du lien
 
 ---
 
@@ -65,9 +68,26 @@ Bouton "Sign up with Google" — redirige vers `GET /api/auth/google`.
 ### Inscription email/password
 - Déclencheur : submit du formulaire
 - Appel API : `POST /api/auth/signup` — `{ fullName, email, phone, password }`
-- Succès : stocker `data.token` dans `localStorage.setItem('usn_token', token)`, puis `router.push('/dashboard')`
+- Succès : ne rien stocker en localStorage. Afficher un écran `Check your email`.
+- Payload succès attendu :
+  - `data.success === true`
+  - `data.verificationRequired === true`
+  - `data.email`
 - Erreur 409 `CONFLICT` : "An account with this email already exists."
 - Erreur 400 `VALIDATION_ERROR` : afficher les détails par champ
+
+### Écran "Check your email"
+Après signup classique réussi, afficher :
+- titre : `Check your email`
+- texte : `We sent a verification link to your email address. You must verify your account before signing in.`
+- CTA :
+  - `Resend verification email`
+  - `Back to login`
+  - `Open Gmail` optionnel frontend-only
+
+Si l’utilisateur clique sur `Resend verification email` :
+- appel API : `POST /api/auth/resend-verification` — `{ email }`
+- succès : afficher un toast/message neutre
 
 ### Inscription Google
 - Déclencheur : clic sur "Sign up with Google"
@@ -80,6 +100,8 @@ Bouton "Sign up with Google" — redirige vers `GET /api/auth/google`.
 - Si `usn_token` présent en localStorage → rediriger vers `/dashboard`.
 - Le numéro de téléphone est normalisé côté backend — accepter les formats internationaux.
 - Un compte créé via Google n'a pas de mot de passe — si l'email existe déjà, le googleId est lié au compte existant (pas de doublon).
+- Un compte créé via signup classique n’est pas connecté automatiquement.
+- L’utilisateur doit vérifier son email puis se connecter manuellement via `/login`.
 
 ---
 
@@ -100,14 +122,9 @@ Response (succès):
 ```json
 {
   "data": {
-    "user": {
-      "id": "a1b2c3d4-...",
-      "fullName": "Fred Agbona",
-      "email": "fred@example.com",
-      "phone": "+22912345678",
-      "plan": "free"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    "success": true,
+    "verificationRequired": true,
+    "email": "fred@example.com"
   }
 }
 ```
@@ -125,6 +142,5 @@ Response (erreur conflit):
 ---
 
 ## Out of scope
-- Email verification
 - Invitation flow
 - Terms of service checkbox
