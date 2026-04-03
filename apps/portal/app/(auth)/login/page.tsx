@@ -30,6 +30,18 @@ function LoginForm() {
     if (searchParams.get("error") === "oauth_failed") {
       toast.error("Connexion Google échouée. Réessayez.")
     }
+    const resetEmail = searchParams.get("email")
+    if (resetEmail) {
+      setEmail(resetEmail)
+    } else if (typeof window !== "undefined") {
+      const storedResetEmail = localStorage.getItem("msgflash-reset-email")
+      if (storedResetEmail) {
+        setEmail(storedResetEmail)
+      }
+    }
+    if (searchParams.get("reset") === "success") {
+      toast.success("Votre mot de passe a été mis à jour. Vous pouvez maintenant vous connecter.")
+    }
   }, [router, searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,7 +141,7 @@ function LoginForm() {
             <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">
               Mot de passe
             </label>
-        <Link href="#" className="text-xs text-primary-ink font-medium hover:underline">
+        <Link href="/forgot-password" className="text-xs text-primary-ink font-medium hover:underline">
               Mot de passe oublié ?
             </Link>
           </div>

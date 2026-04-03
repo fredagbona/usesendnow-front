@@ -15,6 +15,19 @@ export interface AuthResponse {
   token: string
 }
 
+export interface ForgotPasswordResponse {
+  success: boolean
+}
+
+export interface ResetPasswordValidationResponse {
+  valid: boolean
+  expiresAt: string | null
+}
+
+export interface ResetPasswordResponse {
+  success: boolean
+}
+
 // ─── Instance ────────────────────────────────────────────────────────────────
 
 export type InstanceStatus = "connected" | "connecting" | "disconnected" | "suspended"

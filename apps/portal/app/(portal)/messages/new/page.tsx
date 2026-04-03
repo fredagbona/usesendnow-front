@@ -463,6 +463,8 @@ export default function NewMessagePage() {
                           resetMediaState()
                           setStatusMessage("Prêt à enregistrer une nouvelle note vocale.")
                         }}
+                        uploadError={mediaError}
+                        uploadNotice={mediaNotice}
                       />
                     ) : (
                       <MediaUploadPanel

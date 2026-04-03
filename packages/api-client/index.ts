@@ -1,6 +1,9 @@
 import type {
   User,
   AuthResponse,
+  ForgotPasswordResponse,
+  ResetPasswordValidationResponse,
+  ResetPasswordResponse,
   Payment,
   PaymentsResponse,
   Instance,
@@ -199,6 +202,15 @@ const auth = {
 
   signup: (fullName: string, email: string, phone: string, password: string) =>
     post<AuthResponse>("/api/auth/signup", { fullName, email, phone, password }, true),
+
+  forgotPassword: (email: string) =>
+    post<ForgotPasswordResponse>("/api/auth/forgot-password", { email }, true),
+
+  validateResetPasswordToken: (token: string) =>
+    get<ResetPasswordValidationResponse>(`/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`, true),
+
+  resetPassword: (token: string, password: string) =>
+    post<ResetPasswordResponse>("/api/auth/reset-password", { token, password }, true),
 
   me: () => get<User>("/api/auth/me"),
 

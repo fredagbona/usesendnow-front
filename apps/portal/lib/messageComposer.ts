@@ -21,7 +21,7 @@ export const ACCEPTED_MIME: Partial<Record<MessageType, string[]>> = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ],
   audio: ["audio/mpeg", "audio/ogg", "audio/mp4", "audio/aac", "audio/amr"],
-  voice_note: ["audio/mpeg", "audio/ogg", "audio/mp4", "audio/aac", "audio/amr"],
+  voice_note: ["audio/mpeg", "audio/ogg", "audio/webm", "audio/mp4", "audio/aac", "audio/amr"],
 }
 
 export const ACCEPTED_LABELS: Partial<Record<MessageType, string>> = {
@@ -29,7 +29,7 @@ export const ACCEPTED_LABELS: Partial<Record<MessageType, string>> = {
   video: "MP4, 3GPP",
   document: "PDF, DOC, DOCX, XLS, XLSX",
   audio: "MP3, OGG, MP4 audio, AAC, AMR",
-  voice_note: "MP3, OGG, MP4 audio, AAC, AMR",
+  voice_note: "MP3, OGG, WEBM audio, MP4 audio, AAC, AMR",
 }
 
 export const MEDIA_FIELD_LABEL: Partial<Record<MessageType, string>> = {
@@ -54,4 +54,3 @@ export const FILE_UPLOAD_TYPES: MessageType[] = ["image", "video", "audio", "voi
 export function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(2)} Mo`
 }
-
