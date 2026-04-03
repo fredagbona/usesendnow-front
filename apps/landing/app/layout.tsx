@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 import { landingBrand } from "../lib/brand";
 import "./globals.css";
 
@@ -60,6 +61,11 @@ export default function RootLayout({
       className={`${displayFont.variable} ${bodyFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#0A0A0A] text-[#F0F0F0]">
+        <Script
+          defer
+          src="https://analytics.aivisuel.cloud/script.js"
+          data-website-id="19dfa8fa-d267-47ee-816d-ebfcc5b54acf"
+        />
         {children}
       </body>
     </html>
