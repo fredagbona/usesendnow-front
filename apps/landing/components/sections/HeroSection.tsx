@@ -10,15 +10,7 @@ const HERO_CONTENT = {
   description:
     "Connectez un numéro WhatsApp, envoyez des messages, lancez des campagnes et intégrez vos outils favoris en quelques minutes.",
   primaryCta: "Commencer",
-  secondaryCta: "Voir la documentation",
-  stats: [
-    "SMS natif simple",
-    "API REST",
-    "Webhooks",
-    "Messages texte",
-    "Médias",
-    "Réponses client",
-  ],
+  secondaryCta: "Voir la documentation"
 }
 
 interface HeroSectionProps {}
@@ -55,23 +47,6 @@ export function HeroSection({}: HeroSectionProps) {
               {HERO_CONTENT.secondaryCta}
             </Button>
           </motion.div>
-        </motion.div>
-
-        <motion.div
-          variants={fadeIn}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.5 }}
-          className="mt-9 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-white/8 pt-5"
-        >
-          {HERO_CONTENT.stats.map((item) => (
-            <span
-              key={item}
-              className="font-(family-name:--font-poppins) text-[10px] uppercase tracking-[0.16em] text-[#7A7A7A] sm:text-[11px]"
-            >
-              {item}
-            </span>
-          ))}
         </motion.div>
       </div>
     </section>
