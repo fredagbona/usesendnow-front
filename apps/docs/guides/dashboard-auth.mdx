@@ -1,0 +1,139 @@
+---
+title: Authentification dashboard
+description: Flux de connexion, inscription, OAuth Google et vérification e-mail pour la console MsgFlash.
+---
+
+## Surface concernée
+
+Cette page documente l’authentification de la console web :
+
+- [app.msgflash.com/login](https://app.msgflash.com/login)
+- [app.msgflash.com/signup](https://app.msgflash.com/signup)
+
+Elle ne concerne pas l’API publique `x-api-key`.
+
+---
+
+## Endpoints utilisés par la console
+
+| Méthode | Endpoint | Usage |
+|---|---|---|
+| `POST` | `/api/auth/signup` | Créer un compte |
+| `POST` | `/api/auth/login` | Ouvrir une session |
+| `GET` | `/api/auth/google` | Démarrer OAuth Google |
+| `POST` | `/api/auth/resend-verification` | Renvoyer le mail de vérification |
+| `GET` | `/api/auth/verify-email/validate?token=...` | Vérifier l’état d’un token |
+| `POST` | `/api/auth/verify-email` | Confirmer la vérification e-mail |
+| `POST` | `/api/auth/forgot-password` | Demander un lien de reset |
+| `GET` | `/api/auth/reset-password/validate?token=...` | Vérifier un lien de reset |
+| `POST` | `/api/auth/reset-password` | Définir un nouveau mot de passe |
+
+---
+
+## Inscription par e-mail
+
+`POST /api/auth/signup` ne connecte plus automatiquement l’utilisateur.
+
+Réponse attendue :
+
+```json
+{
+  "data": {
+    "success": true,
+    "verificationRequired": true,
+    "email": "jean@example.com"
+  }
+}
+```
+
+Comportement UX attendu :
+- compte créé
+- écran “Vérifiez votre e-mail”
+- possibilité de renvoyer le lien
+- retour vers la page de connexion
+
+---
+
+## Connexion par e-mail
+
+`POST /api/auth/login` renvoie toujours un JWT si la connexion réussit.
+
+Cas métier important :
+
+| Code | Sens côté UI |
+|---|---|
+| `UNAUTHORIZED` | email ou mot de passe incorrect |
+| `EMAIL_NOT_VERIFIED` | afficher un message clair et proposer le renvoi du mail |
+
+Exemple `EMAIL_NOT_VERIFIED` :
+
+```json
+{
+  "error": {
+    "code": "EMAIL_NOT_VERIFIED",
+    "message": "Email not verified"
+  }
+}
+```
+
+---
+
+## OAuth Google
+
+Flux :
+1. la console ouvre `GET /api/auth/google`
+2. le backend redirige vers Google
+3. Google revient sur `https://app.msgflash.com/auth/callback`
+4. le token JWT est lu depuis `?token=...`
+5. la console stocke le JWT puis redirige vers `/dashboard`
+
+Si la callback contient `?error=oauth_failed`, la console renvoie l’utilisateur vers `/login?error=oauth_failed`.
+
+---
+
+## Vérification e-mail
+
+Page concernée :
+
+```txt
+/verify-email?token=...
+```
+
+Flux recommandé :
+1. lire `token`
+2. appeler `GET /api/auth/verify-email/validate?token=...`
+3. si valide, appeler `POST /api/auth/verify-email`
+4. afficher le résultat sans connexion automatique
+
+États à gérer :
+- `valid`
+- `expired`
+- `used`
+- `invalid`
+- `already_verified`
+
+Le compte n’est pas auto-connecté après vérification. L’utilisateur revient ensuite sur `/login`.
+
+---
+
+## Mot de passe oublié
+
+Flux :
+1. formulaire `/forgot-password`
+2. `POST /api/auth/forgot-password`
+3. réception d’un lien
+4. page `/reset-password?token=...`
+5. validation du token
+6. `POST /api/auth/reset-password`
+7. retour vers `/login`
+
+---
+
+## Notes UX importantes
+
+- L’inscription classique n’ouvre pas de session automatiquement.
+- La vérification e-mail est obligatoire avant connexion.
+- Le bouton “Renvoyer l’e-mail de vérification” doit rester disponible sur :
+  - l’écran après inscription
+  - l’écran de login quand `EMAIL_NOT_VERIFIED` est reçu
+  - la page `/verify-email` quand le token est expiré ou invalide

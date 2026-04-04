@@ -3,6 +3,7 @@ export const landingBrand = {
   domain: "msgflash.com",
   appUrl: "https://app.msgflash.com",
   docsUrl: "https://docs.msgflash.com",
+  wordpressUrl: "/wordpress",
   apiUrl: "https://srv.msgflash.com",
   supportEmail: "support@msgflash.com",
   helloEmail: "hello@msgflash.com",

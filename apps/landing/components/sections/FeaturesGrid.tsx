@@ -1,47 +1,48 @@
 "use client"
 
 import { motion } from "framer-motion"
-import Image from "next/image"
-import { ArrowRight01Icon } from "hugeicons-react"
+import {
+  ArrowRight01Icon,
+  BubbleChatIcon,
+  Calendar02Icon,
+  FlowConnectionIcon,
+  Megaphone01Icon,
+  Notification03Icon,
+} from "hugeicons-react"
 import { fadeUp, staggerContainer } from "../../lib/animations"
 
 const FEATURE_CARDS = [
   {
     title: "Envoyer des messages",
     description: "Un point unique pour vos messages textuels, médias et réponses simples.",
-    image: "/messages.png",
-    imageAlt: "Interface d'envoi de messages WhatsApp",
+    icon: BubbleChatIcon,
   },
   {
     title: "Planifier des envois",
     description: "Déclenchez vos campagnes et vos rappels depuis une API claire et rapide.",
-    image: "/planification.png",
-    imageAlt: "Interface de planification d'envois WhatsApp",
+    icon: Calendar02Icon,
   },
   {
     title: "Lancer des campagnes",
     description: "Gérez vos listes de diffusion et suivez les performances en temps réel.",
-    image: "/campagnes.png",
-    imageAlt: "Interface de campagnes WhatsApp",
+    icon: Megaphone01Icon,
   },
   {
     title: "Recevoir des événements",
     description: "Récupérez vos webhooks pour chaque livraison ou réponse utilisateur.",
-    image: "/webhooks.png",
-    imageAlt: "Interface de webhooks et événements",
+    icon: Notification03Icon,
   },
   {
     title: "Connecter vos outils",
     description: "Branchez votre backend, n8n, Zapier, Make ou vos workflows internes sans friction.",
-    image: "/apis.png",
-    imageAlt: "Interface d'intégration API et outils externes",
+    icon: FlowConnectionIcon,
   },
 ]
 
 const PLATFORM_REASONS = [
   { title: "API simple", text: "Une documentation claire et des endpoints directs, sans détour." },
   { title: "Connexion rapide", text: "Scannez le QR Code et mettez votre intégration en ligne rapidement." },
-  { title: "Webhooks utiles", text: "Recevez les livraisons, réponses et erreurs dès qu’elles arrivent." },
+  { title: "Webhooks utiles", text: "Recevez les livraisons, réponses et erreurs dès qu'elles arrivent." },
   { title: "Pensé pour les makers", text: "Compatible avec vos outils backend, no-code et automatisations." },
   { title: "Tarification lisible", text: "Pas de licence cachée, pas de surcoût de plateforme surprise." },
   { title: "Trajectoire solide", text: "Pour un bot simple, une campagne ou un orchestrateur plus complet." },
@@ -64,32 +65,26 @@ export function FeaturesGrid({}: FeaturesGridProps) {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
-          className="grid gap-5 lg:grid-cols-2"
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
         >
-          {FEATURE_CARDS.map(({ title, description, image, imageAlt }) => (
+          {FEATURE_CARDS.map(({ title, description, icon: Icon }) => (
             <motion.div
               key={title}
               variants={fadeUp}
-              className="overflow-hidden border border-white/8 bg-[#171717] text-[#F0F0F0]"
+              className="border border-white/8 bg-[#121212] p-5"
             >
-              <div className="relative h-56 overflow-hidden border-b border-white/8 bg-[#0F0F0F] sm:h-64">
-                <Image
-                  src={image}
-                  alt={imageAlt}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover object-top"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-transparent" />
-              </div>
-              <div className="space-y-2 p-5">
-                <p className="font-(family-name:--font-geist-sans) text-sm font-bold uppercase tracking-[0.08em] text-[#F0F0F0]">
-                  {title}
-                </p>
-                <p className="font-(family-name:--font-poppins) text-sm leading-6 text-[#9D9D9D]">
-                  {description}
-                </p>
-                <div className="h-px w-14 bg-[#FFD600]" />
+              <div className="flex h-full flex-col justify-between gap-10">
+                <div className="flex h-14 w-14 items-center justify-center border border-[#FFD600]/20 bg-[#FFD600]/6 text-[#FFD600]">
+                  <Icon className="h-7 w-7" />
+                </div>
+                <div className="border-t border-[#FFD600] pt-4">
+                  <h3 className="font-(family-name:--font-geist-sans) text-sm font-bold uppercase tracking-[0.08em] text-[#F0F0F0]">
+                    {title}
+                  </h3>
+                  <p className="mt-2 font-(family-name:--font-poppins) text-sm leading-6 text-[#969696]">
+                    {description}
+                  </p>
+                </div>
               </div>
             </motion.div>
           ))}

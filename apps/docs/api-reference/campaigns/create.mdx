@@ -16,17 +16,29 @@ POST /api/v1/campaigns
 | `instanceId` | UUID | oui | Instance source |
 | `name` | string | oui | Nom interne |
 | `schedule` | ISO 8601 | oui | Date de démarrage |
-| `templateId` | UUID | non | Template utilisé |
-| `variables` | object | non | Variables `custom.*` globales |
 | `repeat` | string | non | `none`, `daily`, `weekly` |
 | `recipients` | object | oui | Sélecteur de destinataires |
+| `templateId` | UUID | oui si mode template | Template utilisé |
+| `variables` | object | non | Variables `custom.*` globales |
+| `type` | enum | oui si mode direct | `text`, `image`, `video`, `audio`, `document`, `voice_note` |
+| `body` | string | selon type | Obligatoire pour `text`, optionnel pour certains médias |
+| `mediaUrl` | string | selon type | Obligatoire pour les types média |
+
+## Règle de contenu
+
+Une campagne doit avoir exactement un mode de contenu :
+- soit `templateId`
+- soit `type` + contenu direct
+
+Ne pas envoyer les deux en même temps.
 
 ### `recipients`
 
 | Champ | Type | Requis | Description |
 |---|---|---|---|
-| `type` | enum | oui | `all`, `tags`, `explicit` |
+| `type` | enum | oui | `all`, `tags`, `explicit`, `group` |
 | `value` | string[] | selon type | Tags ou IDs de contacts |
+| `groupId` | UUID | si `type=group` | Groupe cible |
 
 ## Réponse succès `201`
 
@@ -35,6 +47,10 @@ POST /api/v1/campaigns
   "data": {
     "id": "cmp_uuid",
     "status": "scheduled",
+    "templateId": "tmpl_uuid",
+    "type": null,
+    "body": null,
+    "mediaUrl": null,
     "stats": {
       "planned": 0,
       "queued": 0,
@@ -52,6 +68,6 @@ POST /api/v1/campaigns
 
 | HTTP | Code | Quand |
 |---|---|---|
-| `400` | `VALIDATION_ERROR` | Body invalide |
+| `400` | `VALIDATION_ERROR` | Campagne vide, body manquant, media manquant, destinataires invalides |
 | `403` | `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` | Plan trop faible |
 | `404` | `NOT_FOUND` | Instance ou template introuvable |

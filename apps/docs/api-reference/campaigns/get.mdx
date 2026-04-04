@@ -22,11 +22,24 @@ GET /api/v1/campaigns/{id}
   "data": {
     "id": "cmp_uuid",
     "name": "Promo Black Friday",
+    "instanceId": "inst_uuid",
+    "templateId": null,
+    "type": "image",
+    "body": "Découvrez notre offre",
+    "mediaUrl": "https://cdn.example.com/promo.jpg",
+    "schedule": "2026-04-02T10:00:00.000Z",
+    "repeat": "none",
     "status": "running",
     "recipients": { "type": "all" }
   }
 }
 ```
+
+## Lecture du contenu
+
+- si `templateId` est présent : la campagne est en mode template
+- sinon si `type` est présent : la campagne est en mode message direct
+- `body` et `mediaUrl` peuvent alors être affichés dans le détail
 
 ## Erreurs courantes
 

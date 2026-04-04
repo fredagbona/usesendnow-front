@@ -1,0 +1,96 @@
+---
+title: Uploads média temporaires
+description: Comment préparer un média temporaire avant envoi direct depuis la console MsgFlash.
+---
+
+## À quoi sert cet upload
+
+Dans la console MsgFlash, les messages média et les campagnes média utilisent un upload temporaire avant l’envoi final.
+
+Cas typiques :
+- image
+- vidéo
+- document
+- audio
+- note vocale
+
+Le backend renvoie ensuite une URL temporaire réutilisable dans l’envoi.
+
+---
+
+## Endpoint utilisé par la console
+
+```txt
+POST /api/media/upload
+```
+
+Authentification :
+
+```txt
+Authorization: Bearer <jwt_console>
+```
+
+Cette route n’est pas une route `x-api-key` publique.
+
+---
+
+## Réponse utile
+
+```json
+{
+  "data": {
+    "id": "med_uuid",
+    "url": "https://cdn.example.com/tmp/file.jpg",
+    "type": "image",
+    "mimeType": "image/jpeg",
+    "sizeBytes": 248112,
+    "originalName": "visuel.jpg",
+    "expiresAt": "2026-04-05T12:00:00.000Z",
+    "suggestedMessageType": "image"
+  }
+}
+```
+
+Champs importants :
+- `url` : URL temporaire à réinjecter dans `mediaUrl`
+- `expiresAt` : date d’expiration
+- `suggestedMessageType` : aide UI pour typer correctement le média
+
+---
+
+## Contraintes produit visibles dans la console
+
+- le lien généré est temporaire
+- le lien peut être public
+- un média programmé au-delà de `expiresAt` peut échouer à l’envoi
+
+La console doit donc prévenir l’utilisateur quand un message ou une campagne est planifié après la date d’expiration.
+
+---
+
+## Tailles et formats gérés côté produit
+
+| Type | Exemples acceptés |
+|---|---|
+| `image` | JPEG, PNG, WEBP, GIF |
+| `video` | MP4, 3GPP |
+| `document` | PDF, DOC, DOCX, XLS, XLSX |
+| `audio` | MP3, OGG, MP4 audio, AAC, AMR |
+| `voice_note` | MP3, OGG, WEBM audio, MP4 audio, AAC, AMR |
+
+Limites produit actuelles :
+- image : 5 Mo
+- document : 10 Mo
+- vidéo : 16 Mo
+- audio : 16 Mo
+- note vocale : 16 Mo
+
+---
+
+## Où ce flux est utilisé
+
+- page “Nouveau message”
+- composeur de campagne v2 en mode message direct
+- enregistrement et upload de note vocale
+
+Pour l’API publique, vous pouvez aussi fournir directement votre propre `mediaUrl` si vous hébergez déjà le fichier.

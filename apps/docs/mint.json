@@ -19,6 +19,7 @@
         "introduction",
         "quickstart",
         "authentication",
+        "guides/dashboard-auth",
         "api-reference/introduction"
       ]
     },
@@ -26,6 +27,7 @@
       "group": "Guides",
       "pages": [
         "guides/send-message",
+        "guides/media-uploads",
         "guides/schedule-message",
         "guides/campaigns",
         "guides/templates",

@@ -6,6 +6,7 @@ const FOOTER_COLUMNS = [
     title: "Produit",
     links: [
       { label: "Automations", href: "#fonctionnalites" },
+      { label: "WordPress", href: landingBrand.wordpressUrl },
       { label: "Tarifs", href: "#tarifs" },
       { label: "API", href: landingBrand.docsUrl },
     ],

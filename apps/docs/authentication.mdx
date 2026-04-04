@@ -12,6 +12,10 @@ description: Comment authentifier vos requêtes au dashboard et à l'API publiqu
 
 Pour toute intégration serveur à serveur, utilisez une clé API.
 
+<Note>
+La console web et l’API publique n’utilisent pas le même mode d’authentification.
+</Note>
+
 ---
 
 ## Format de la clé API
@@ -66,6 +70,21 @@ Pour révoquer une clé :
 3. Confirmez
 
 La révocation est immédiate.
+
+---
+
+## Authentification de la console
+
+Pour la console web, les principaux flux sont :
+- inscription
+- connexion
+- OAuth Google
+- vérification e-mail
+- mot de passe oublié
+
+Guide détaillé :
+
+[Voir le guide d’authentification dashboard](/guides/dashboard-auth)
 
 ---
 

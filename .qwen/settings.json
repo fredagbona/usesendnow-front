@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv *)",
+      "Bash(pnpm run *)",
+      "Bash(grep *)"
+    ]
+  },
+  "$version": 3
+}

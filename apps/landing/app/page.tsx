@@ -3,6 +3,7 @@ import { HeroSection } from "../components/sections/HeroSection";
 import { LogosBar } from "../components/sections/LogosBar";
 import { FeaturesGrid } from "../components/sections/FeaturesGrid";
 import { HowItWorks } from "../components/sections/HowItWorks";
+import { WordPressSection } from "../components/sections/WordPressSection";
 import { Pricing } from "../components/sections/Pricing";
 import { FAQ } from "../components/sections/FAQ";
 import { FinalCTA } from "../components/sections/FinalCTA";
@@ -17,6 +18,7 @@ export default function Home() {
         <LogosBar />
         <FeaturesGrid />
         <HowItWorks />
+        <WordPressSection />
         <Pricing />
         <FAQ />
         <FinalCTA />

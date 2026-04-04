@@ -15,25 +15,25 @@ Authentification : `x-api-key: <api_key>`
 Les campagnes nécessitent le plan Starter ou supérieur.
 </Warning>
 
-## Paramètres
+## Règle métier principale
 
-### Body
+Une campagne doit contenir un vrai contenu à envoyer.
 
-| Champ | Type | Requis | Description |
-|---|---|---|---|
-| `instanceId` | UUID | oui | Instance source |
-| `name` | string | oui | Nom de la campagne |
-| `schedule` | ISO 8601 | oui | Date de démarrage |
-| `templateId` | UUID | non | Template à utiliser |
-| `variables` | object | non | Variables `custom.*` injectées pour tous les contacts |
-| `repeat` | string | non | Règle simple de répétition |
-| `recipients` | object | oui | Sélecteur de destinataires |
+Vous devez fournir :
+- `name`
+- `instanceId`
+- `schedule`
+- `recipients`
 
-Pas de path params ni query params sur la création.
+Et exactement un mode de contenu :
+- soit `templateId`
+- soit un message direct avec `type` + contenu associé
+
+Il est interdit de créer une campagne vide.
 
 ---
 
-## Créer une campagne
+## Mode 1 — Campagne template
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/campaigns \
@@ -48,6 +48,46 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
     "variables": {
       "campaignName": "Black Friday"
     },
+    "recipients": {
+      "type": "all"
+    }
+  }'
+```
+
+## Mode 2 — Campagne message direct texte
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/campaigns \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "YOUR_INSTANCE_ID",
+    "name": "Relance panier",
+    "schedule": "2026-04-02T10:00:00.000Z",
+    "repeat": "none",
+    "type": "text",
+    "body": "Bonjour, votre panier vous attend encore.",
+    "recipients": {
+      "type": "explicit",
+      "value": ["CONTACT_UUID_1", "CONTACT_UUID_2"]
+    }
+  }'
+```
+
+## Mode 3 — Campagne message direct média
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/campaigns \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "YOUR_INSTANCE_ID",
+    "name": "Promo visuelle",
+    "schedule": "2026-04-02T10:00:00.000Z",
+    "repeat": "none",
+    "type": "image",
+    "body": "Découvrez notre offre de la semaine",
+    "mediaUrl": "https://cdn.example.com/promo.jpg",
     "recipients": {
       "type": "all"
     }
@@ -90,6 +130,23 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
   </Tab>
 </Tabs>
 
+<Note>
+Pour `tags`, au moins un tag est requis. Pour `explicit`, au moins un contact est requis.
+</Note>
+
+---
+
+## Types directs supportés
+
+| Type | Contenu requis |
+|---|---|
+| `text` | `body` obligatoire |
+| `image` | `mediaUrl` obligatoire, `body` optionnel |
+| `video` | `mediaUrl` obligatoire, `body` optionnel |
+| `document` | `mediaUrl` obligatoire, `body` optionnel |
+| `audio` | `mediaUrl` obligatoire |
+| `voice_note` | `mediaUrl` obligatoire |
+
 ---
 
 ## Réponse à la création
@@ -100,6 +157,9 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
     "id": "cmp_uuid",
     "instanceId": "inst_uuid",
     "templateId": "tmpl_uuid",
+    "type": null,
+    "body": null,
+    "mediaUrl": null,
     "name": "Promo Black Friday",
     "schedule": "2026-04-02T10:00:00.000Z",
     "status": "scheduled",
@@ -239,7 +299,7 @@ curl https://srv.msgflash.com/api/v1/campaigns/CAMPAIGN_ID \
 
 | Code | HTTP | Quand |
 |---|---|---|
-| `VALIDATION_ERROR` | 400 | Body invalide |
+| `VALIDATION_ERROR` | 400 | Campagne sans contenu, body manquant, media manquant ou destinataires invalides |
 | `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` | 403 | Plan trop faible |
 | `NOT_FOUND` | 404 | Instance ou template introuvable |
 | `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota épuisé |
