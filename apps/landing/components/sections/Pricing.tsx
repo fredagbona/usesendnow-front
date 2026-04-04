@@ -113,7 +113,7 @@ interface PricingProps {}
 
 export function Pricing({}: PricingProps) {
   return (
-    <section id="tarifs" className="border-t border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+    <section className="border-t border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
           <h2 className="font-(family-name:--font-geist-sans) text-[1.9rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.5rem]">
@@ -180,7 +180,7 @@ export function Pricing({}: PricingProps) {
           </div>
         </div>
 
-        <div className="mt-14">
+        <div id="tarifs" className="mt-14">
           <div className="mb-8 flex flex-col gap-3 text-center">
             <h3 className="font-(family-name:--font-geist-sans) text-[1.9rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.5rem]">
               Des plans simples pour démarrer et évoluer
