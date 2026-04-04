@@ -17,6 +17,7 @@ import Modal from "@/components/ui/Modal"
 import Alert from "@/components/ui/Alert"
 import { SkeletonCard, SkeletonTableRow } from "@/components/ui/Skeleton"
 import { ArrowLeft01Icon, AlertDiamondIcon, CreditCardIcon } from "hugeicons-react"
+import { TYPE_LABEL } from "@/lib/messageComposer"
 
 const STATUS_VARIANT: Record<string, "neutral" | "yellow" | "blue" | "orange" | "success" | "error" | "purple"> = {
   draft: "neutral",
@@ -309,6 +310,7 @@ export default function CampaignDetailPage() {
     if (campaign.recipients.type === "group") return campaign.recipients.groupId ?? "—"
     return RECIPIENT_LABEL[campaign.recipients.type] ?? campaign.recipients.type
   }, [campaign])
+  const contentModeLabel = campaign?.templateId ? "Template" : "Message direct"
 
   if (campaignLoading || statsLoading) {
     return (
@@ -415,6 +417,7 @@ export default function CampaignDetailPage() {
         <Card>
           <h2 className="mb-4 text-sm font-semibold text-text">Métadonnées</h2>
           <MetaRow label="Instance" value={<span className="font-mono text-xs">{campaign.instanceId}</span>} />
+          <MetaRow label="Mode de contenu" value={contentModeLabel} />
           {campaign.templateId && (
             <MetaRow
               label="Modèle"
@@ -427,6 +430,22 @@ export default function CampaignDetailPage() {
                 </button>
               }
             />
+          )}
+          {!campaign.templateId && (
+            <>
+              <MetaRow label="Type" value={TYPE_LABEL[campaign.type ?? "text"] ?? campaign.type ?? "—"} />
+              {campaign.body && <MetaRow label="Message" value={<span className="whitespace-pre-wrap">{campaign.body}</span>} />}
+              {campaign.mediaUrl && (
+                <MetaRow
+                  label="Média"
+                  value={
+                    <a href={campaign.mediaUrl} target="_blank" rel="noreferrer" className="text-sm text-primary-ink hover:text-text hover:underline break-all">
+                      {campaign.mediaUrl}
+                    </a>
+                  }
+                />
+              )}
+            </>
           )}
           <MetaRow label="Planification" value={formatDate(campaign.schedule)} />
           <MetaRow label="Répétition" value={REPEAT_LABEL[campaign.repeat] ?? campaign.repeat} />

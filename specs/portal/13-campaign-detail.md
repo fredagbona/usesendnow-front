@@ -64,7 +64,14 @@ Props : `campaign: Campaign`
 
 Affiche :
 - **Instance** : `instanceId` (résoudre le nom si possible)
+- **Content mode** :
+  - si `templateId` présent → `Template`
+  - sinon → `Direct message`
 - **Template** : `templateId` (lien vers `/templates/{id}` si présent)
+- **Direct content** :
+  - `type`
+  - `body` si présent
+  - preview du média si `mediaUrl` présent
 - **Schedule** : date/heure formatée
 - **Repeat** : none | daily | weekly
 - **Recipients** : type (all / tags / explicit) + count si disponible
@@ -128,6 +135,7 @@ Idem page `/campaigns`.
 - `estimatedCompletionAt` est toujours `null` en v1 — ne pas afficher ce champ.
 - Si `stats.total === 0` → progressPercent = 0, afficher "Campaign not started yet."
 - Polling des stats uniquement quand `status === 'running'` (toutes les 15s est raisonnable pour ne pas surcharger).
+- Ne pas supposer qu’une campagne a toujours un `templateId`.
 - Les statuts `paused_quota` et `paused_plan` affichent un message d'info supplémentaire dans l'ActionBar :
   - `paused_quota` : "Paused — monthly quota exhausted. Quota resets on {periodEnd}."
   - `paused_plan` : "Paused — feature unavailable on current plan."

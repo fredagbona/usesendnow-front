@@ -166,6 +166,9 @@ export interface Campaign {
   name: string
   instanceId: string
   templateId: string | null
+  type?: MessageType | null
+  body?: string | null
+  mediaUrl?: string | null
   schedule: string
   repeat: RepeatType
   status: CampaignStatus
@@ -224,6 +227,9 @@ export interface CreateCampaignPayload {
   name: string
   instanceId: string
   templateId?: string
+  type?: Extract<MessageType, "text" | "image" | "video" | "audio" | "document" | "voice_note">
+  body?: string
+  mediaUrl?: string
   variables?: Record<string, string | number>
   schedule: string
   repeat: RepeatType

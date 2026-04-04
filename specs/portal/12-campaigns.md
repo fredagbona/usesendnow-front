@@ -72,13 +72,22 @@ Props : `instances: Instance[]; templates: Template[]; onSuccess: (campaign: Cam
 Champs :
 - `name` — string, required
 - `instanceId` — select instances connectées, required
-- `templateId` — select templates, optional
-- `recipients` — section récipients :
-  - Type : radio `all` | `tags` | `explicit`
-  - Si `tags` → input tags (array de strings)
-  - Si `explicit` → liste de contact IDs (simplifié : textarea de contact IDs séparés par virgule)
 - `schedule` — datetime picker (ISO string), required
 - `repeat` — select : none | daily | weekly
+- `recipients` — section récipients :
+  - Type : radio `all` | `tags` | `explicit`
+  - Si `tags` → au moins un tag requis
+  - Si `explicit` → au moins un contact ID requis
+- `contentMode` — radio required :
+  - `template`
+  - `direct`
+- Si `contentMode === "template"` :
+  - `templateId` — select required
+  - `variables` — optionnel si le template utilise `custom.*`
+- Si `contentMode === "direct"` :
+  - `type` — required
+  - `body` — required si `type === text`
+  - `mediaUrl` — required si type média
 
 Bouton "Create Campaign" — loading state.
 
@@ -110,6 +119,7 @@ Message : "Delete **{name}**? This cannot be undone."
 - Erreur 403 `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` : PlanGateBanner
 - Erreur 429 `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` : toast "Monthly quota exhausted."
 - Erreur 404 `NOT_FOUND` : "Instance not found."
+- Erreur 400 `VALIDATION_ERROR` : afficher l’erreur métier correspondante (`template ou message requis`, `body requis`, `media requis`, etc.)
 
 ### Pauser une campagne
 - Déclencheur : bouton "Pause" sur la ligne
@@ -136,7 +146,10 @@ Message : "Delete **{name}**? This cannot be undone."
 - Campagnes avec `status: paused_quota` ou `paused_plan` → bouton "Resume" présent mais peut échouer si le quota n'a pas été rechargé.
 - Plan Free : `features.campaigns = false` → PlanGateBanner.
 - Seules les instances avec `status: "connected"` peuvent être sélectionnées.
-- Un template n'est pas obligatoire — la campagne peut envoyer un texte brut (body configuré séparément, à préciser dans v2).
+- Une campagne doit avoir exactement un mode de contenu :
+  - soit `templateId`
+  - soit `type` + contenu direct
+- Une campagne ne peut jamais être créée sans contenu.
 
 ---
 
@@ -168,7 +181,20 @@ Request POST /api/campaigns:
 {
   "name": "Black Friday Promo",
   "instanceId": "inst_xyz",
-  "templateId": "tmpl_abc",
+  "schedule": "2026-03-28T10:00:00.000Z",
+  "repeat": "none",
+  "recipients": { "type": "all" },
+  "templateId": "tmpl_abc"
+}
+```
+
+Request POST /api/campaigns (direct text):
+```json
+{
+  "name": "Black Friday Promo",
+  "instanceId": "inst_xyz",
+  "type": "text",
+  "body": "Bonjour, découvrez notre promo.",
   "schedule": "2026-03-28T10:00:00.000Z",
   "repeat": "none",
   "recipients": { "type": "all" }

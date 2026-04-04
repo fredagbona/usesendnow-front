@@ -8,6 +8,7 @@ type RecorderState = "idle" | "recording" | "review"
 
 interface VoiceRecorderPanelProps {
   uploading: boolean
+  hasUploadedVoiceNote: boolean
   onUpload: (file: File) => Promise<void>
   onResetUploadState: () => void
   uploadError?: string | null
@@ -34,6 +35,7 @@ const BACKEND_SUPPORTED_RECORDING_MIME_TYPES = [
 
 export function VoiceRecorderPanel({
   uploading,
+  hasUploadedVoiceNote,
   onUpload,
   onResetUploadState,
   uploadError,
@@ -237,7 +239,7 @@ export function VoiceRecorderPanel({
           <Button type="button" variant="primary" onClick={handleStartRecording}>
             Démarrer l’enregistrement
           </Button>
-          <p className="text-xs text-text-secondary">Le micro ne sera demandé qu’au clic, comme requis par Safari iOS.</p>
+          <p className="text-xs text-text-secondary">Le micro ne sera demandé qu’au clic.</p>
         </div>
       )}
 
@@ -277,9 +279,11 @@ export function VoiceRecorderPanel({
           <div className="flex flex-wrap gap-3">
             <Button type="button" variant="secondary" onClick={resetReview}>Supprimer</Button>
             <Button type="button" variant="outlined" onClick={handleStartRecording}>Réenregistrer</Button>
-            <Button type="button" variant="primary" onClick={handleUploadVoiceNote} loading={uploading}>
-              Uploader la note
-            </Button>
+            {!hasUploadedVoiceNote && (
+              <Button type="button" variant="primary" onClick={handleUploadVoiceNote} loading={uploading}>
+                Uploader la note
+              </Button>
+            )}
           </div>
         </div>
       )}

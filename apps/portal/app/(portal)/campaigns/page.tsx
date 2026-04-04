@@ -1,19 +1,20 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
 import { entriesToVariableMap, getContextVariables, getCustomVariables, getCustomVariableKey, type CustomVariableEntry } from "@/lib/templateEngine"
 import { useCampaigns } from "@/hooks/useCampaigns"
+import { useContacts } from "@/hooks/useContacts"
 import { useInstances } from "@/hooks/useInstances"
 import { useTemplates } from "@/hooks/useTemplates"
 import { useContactGroups } from "@/hooks/useContactGroups"
 import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
 import { formatDate } from "@/lib/format"
-import type { Campaign, SubscriptionResponse, CreateCampaignPayload } from "@usesendnow/types"
+import type { Campaign, SubscriptionResponse, CreateCampaignPayload, MessageType, UploadedMedia } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
 import Badge from "@/components/ui/Badge"
@@ -21,10 +22,14 @@ import Card from "@/components/ui/Card"
 import Modal from "@/components/ui/Modal"
 import Input from "@/components/ui/Input"
 import Select from "@/components/ui/Select"
+import Textarea from "@/components/ui/Textarea"
 import CustomVariableBuilder from "@/components/ui/CustomVariableBuilder"
 import PlanGateBanner from "@/components/ui/PlanGateBanner"
 import EmptyState from "@/components/ui/EmptyState"
 import { SkeletonTableRow } from "@/components/ui/Skeleton"
+import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
+import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
+import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, TYPE_LABEL, formatBytes } from "@/lib/messageComposer"
 import { Megaphone01Icon } from "hugeicons-react"
 
 const STATUS_VARIANT: Record<string, "neutral" | "yellow" | "blue" | "orange" | "success" | "error" | "purple"> = {
@@ -68,6 +73,7 @@ function getCampaignTotal(campaign: Campaign) {
 export default function CampaignsPage() {
   const router = useRouter()
   const { campaigns, loading, prependCampaign, updateCampaignStatus, removeCampaign } = useCampaigns()
+  const { contacts } = useContacts()
   const { instances } = useInstances()
   const { templates } = useTemplates()
   const { groups } = useContactGroups()
@@ -82,32 +88,186 @@ export default function CampaignsPage() {
   const [cancelling, setCancelling] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [customVariables, setCustomVariables] = useState<CustomVariableEntry[]>([])
+  const [contentMode, setContentMode] = useState<"template" | "direct">("template")
+  const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [mediaError, setMediaError] = useState<string | null>(null)
+  const [mediaNotice, setMediaNotice] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadedMediaRef = useRef<UploadedMedia | null>(null)
+  const shouldCleanupMediaRef = useRef(false)
 
   const [form, setForm] = useState<{
     name: string
     instanceId: string
     templateId: string
     recipientType: "all" | "tags" | "explicit" | "group"
-    tags: string
-    explicit: string
+    tags: string[]
+    explicit: string[]
     groupId: string
     schedule: string
     repeat: "none" | "daily" | "weekly"
+    directType: Extract<MessageType, "text" | "image" | "video" | "audio" | "document" | "voice_note">
+    directBody: string
+    directMediaUrl: string
   }>({
     name: "",
     instanceId: "",
     templateId: "",
     recipientType: "all",
-    tags: "",
-    explicit: "",
+    tags: [],
+    explicit: [],
     groupId: "",
     schedule: "",
     repeat: "none",
+    directType: "text",
+    directBody: "",
+    directMediaUrl: "",
   })
 
   const selectedTemplate = templates.find((template) => template.id === form.templateId) ?? null
   const contextVariables = selectedTemplate ? getContextVariables(selectedTemplate.variables) : []
   const requiredCustomVariables = selectedTemplate ? getCustomVariables(selectedTemplate.variables) : []
+  const availableTags = useMemo(
+    () =>
+      Array.from(new Set(contacts.flatMap((contact) => contact.tags).filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b, "fr")
+      ),
+    [contacts]
+  )
+  const isDirectMediaType = FILE_UPLOAD_TYPES.includes(form.directType)
+  const recipientsValid =
+    form.recipientType === "all"
+      || (form.recipientType === "tags" && form.tags.length > 0)
+      || (form.recipientType === "explicit" && form.explicit.length > 0)
+      || (form.recipientType === "group" && Boolean(form.groupId))
+  const contentValid =
+    contentMode === "template"
+      ? Boolean(form.templateId)
+      : form.directType === "text"
+        ? form.directBody.trim().length > 0
+        : Boolean(form.directMediaUrl)
+  const canCreateCampaign =
+    form.name.trim().length > 0
+    && Boolean(form.instanceId)
+    && Boolean(form.schedule)
+    && recipientsValid
+    && contentValid
+
+  const toggleRecipientValue = (field: "tags" | "explicit", value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: prev[field].includes(value)
+        ? prev[field].filter((item) => item !== value)
+        : [...prev[field], value],
+    }))
+  }
+
+  useEffect(() => {
+    uploadedMediaRef.current = uploadedMedia
+  }, [uploadedMedia])
+
+  useEffect(() => {
+    return () => {
+      if (!shouldCleanupMediaRef.current || !uploadedMediaRef.current) return
+      void apiClient.media.delete(uploadedMediaRef.current.id).catch(() => {})
+    }
+  }, [])
+
+  const resetMediaState = () => {
+    setUploadedMedia(null)
+    setUploading(false)
+    setUploadProgress(0)
+    setMediaError(null)
+    setMediaNotice(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const releaseUploadedMedia = () => {
+    if (!uploadedMediaRef.current) return
+    void apiClient.media.delete(uploadedMediaRef.current.id).catch(() => {})
+    shouldCleanupMediaRef.current = false
+  }
+
+  const uploadMediaFile = async (
+    file: File,
+    nextType?: Extract<MessageType, "text" | "image" | "video" | "audio" | "document" | "voice_note">
+  ) => {
+    const targetType = nextType ?? form.directType
+    const maxSize = FILE_LIMITS[targetType] ?? GLOBAL_MAX_FILE_SIZE
+    setMediaError(null)
+    setMediaNotice(null)
+
+    if (file.size > GLOBAL_MAX_FILE_SIZE || file.size > maxSize) {
+      setMediaError(targetType === "voice_note"
+        ? "La note vocale est trop longue. Limitez-vous à 15 minutes."
+        : `Fichier trop volumineux. Maximum ${formatBytes(maxSize)}.`)
+      return
+    }
+
+    const accepted = ACCEPTED_MIME[targetType] ?? []
+    if (accepted.length > 0 && !accepted.includes(file.type)) {
+      setMediaError(`Format non supporté. Accepté : ${ACCEPTED_LABELS[targetType] ?? ""}.`)
+      return
+    }
+
+    if (uploadedMediaRef.current) {
+      void apiClient.media.delete(uploadedMediaRef.current.id).catch(() => {})
+      setMediaNotice("Le précédent fichier temporaire sera remplacé par le nouveau.")
+    }
+
+    shouldCleanupMediaRef.current = true
+    setUploading(true)
+    setUploadProgress(0)
+
+    try {
+      const media = await apiClient.media.upload(file, setUploadProgress)
+      setUploadedMedia(media)
+      setForm((prev) => ({
+        ...prev,
+        directType: nextType ?? (media.suggestedMessageType === "voice_note" && prev.directType === "audio" ? "voice_note" : prev.directType),
+        directMediaUrl: media.url,
+      }))
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        if (err.code === "MEDIA_TYPE_NOT_ALLOWED") {
+          setMediaError("Ce format de fichier n’est pas supporté.")
+        } else if (err.code === "MEDIA_TOO_LARGE") {
+          setMediaError("Le fichier dépasse la taille maximale autorisée.")
+        } else {
+          setMediaError("L’upload du fichier a échoué. Réessayez.")
+        }
+      } else {
+        setMediaError("L’upload du fichier a échoué. Réessayez.")
+      }
+      setUploadedMedia(null)
+      setForm((prev) => ({ ...prev, directMediaUrl: "" }))
+      shouldCleanupMediaRef.current = false
+      throw err
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      await uploadMediaFile(file)
+    } finally {
+      event.target.value = ""
+    }
+  }
+
+  const handleRemoveFile = () => {
+    releaseUploadedMedia()
+    setForm((prev) => ({ ...prev, directMediaUrl: "" }))
+    resetMediaState()
+  }
 
   useEffect(() => {
     apiClient.billing
@@ -128,33 +288,63 @@ export default function CampaignsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!canCreateCampaign) return
     setCreating(true)
     try {
       const payload: CreateCampaignPayload = {
         name: form.name,
         instanceId: form.instanceId,
-        templateId: form.templateId || undefined,
-        variables: form.templateId ? entriesToVariableMap(customVariables) : undefined,
         schedule: new Date(form.schedule).toISOString(),
         repeat: form.repeat,
         recipients: {
           type: form.recipientType,
           ...(form.recipientType === "tags"
-            ? { value: form.tags.split(",").map((t) => t.trim()).filter(Boolean) }
+            ? { value: form.tags }
             : {}),
           ...(form.recipientType === "explicit"
-            ? { value: form.explicit.split(",").map((t) => t.trim()).filter(Boolean) }
+            ? { value: form.explicit }
             : {}),
           ...(form.recipientType === "group"
             ? { groupId: form.groupId }
             : {}),
         },
+        ...(contentMode === "template"
+          ? {
+              templateId: form.templateId || undefined,
+              variables: form.templateId ? entriesToVariableMap(customVariables) : undefined,
+            }
+          : {
+              type: form.directType,
+              ...(form.directType === "text"
+                ? { body: form.directBody.trim() }
+                : {
+                    mediaUrl: form.directMediaUrl,
+                    ...(form.directBody.trim() ? { body: form.directBody.trim() } : {}),
+                  }),
+            }),
       }
       const campaign = await apiClient.campaigns.create(payload)
       prependCampaign(campaign)
       toast.success("Campagne planifiée")
       setCreateModalOpen(false)
       setCustomVariables([])
+      releaseUploadedMedia()
+      resetMediaState()
+      setContentMode("template")
+      setForm({
+        name: "",
+        instanceId: "",
+        templateId: "",
+        recipientType: "all",
+        tags: [],
+        explicit: [],
+        groupId: "",
+        schedule: "",
+        repeat: "none",
+        directType: "text",
+        directBody: "",
+        directMediaUrl: "",
+      })
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "CAMPAIGNS_NOT_AVAILABLE_ON_PLAN") {
@@ -164,6 +354,8 @@ export default function CampaignsPage() {
           toast.error("Quota mensuel épuisé.")
         } else if (err.code === "NOT_FOUND") {
           toast.error("Instance introuvable.")
+        } else if (err.code === "VALIDATION_ERROR") {
+          toast.error("Choisissez un template ou un message direct valide avant de créer la campagne.")
         } else {
           toast.error("Impossible de créer la campagne.")
         }
@@ -381,156 +573,353 @@ export default function CampaignsPage() {
       )}
 
       {/* Create modal */}
-      <Modal open={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Nouvelle campagne" maxWidth="max-w-lg">
-        <form onSubmit={handleCreate} className="space-y-4">
-          <Input
-            label="Nom de la campagne"
-            value={form.name}
-            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-            required
-            autoFocus
-          />
-          <Select
-            label="Instance"
-            value={form.instanceId}
-            onChange={(e) => setForm((p) => ({ ...p, instanceId: e.target.value }))}
-            required
-          >
-            <option value="">Sélectionner une instance...</option>
-            {connectedInstances.map((i) => (
-              <option key={i.id} value={i.id}>{i.name}</option>
-            ))}
-          </Select>
-          <Select
-            label="Modèle (optionnel)"
-            value={form.templateId}
-            onChange={(e) => {
-              const templateId = e.target.value
-              setForm((p) => ({ ...p, templateId }))
-              const template = templates.find((item) => item.id === templateId)
-              setCustomVariables(
-                template
-                  ? getCustomVariables(template.variables).map((variable) => ({
-                      key: getCustomVariableKey(variable),
-                      value: "",
-                    }))
-                  : []
-              )
-            }}
-          >
-            <option value="">Sans modèle</option>
-            {templates.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </Select>
-          {selectedTemplate && (
-            <div className="space-y-3 rounded-xl border border-border bg-bg-subtle p-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-text-body">Variables du template</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedTemplate.variables.map((variable) => (
-                    <Badge key={variable} variant={variable.startsWith("custom.") ? "warning" : "blue"}>
-                      {variable.startsWith("custom.") ? `${variable} · à saisir` : `${variable} · contexte`}
-                    </Badge>
-                  ))}
-                </div>
+      <Modal open={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Nouvelle campagne" maxWidth="max-w-3xl">
+        <form onSubmit={handleCreate} className="space-y-5">
+          <div className="space-y-4 rounded-xl border border-border bg-bg-subtle p-4">
+            <div>
+              <p className="text-sm font-semibold text-text">1. Informations générales</p>
+              <p className="mt-1 text-xs text-text-muted">Choisissez l’instance, la date d’envoi et la fréquence.</p>
+            </div>
+            <Input
+              label="Nom de la campagne"
+              value={form.name}
+              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+              required
+              autoFocus
+            />
+            <Select
+              label="Instance"
+              value={form.instanceId}
+              onChange={(e) => setForm((p) => ({ ...p, instanceId: e.target.value }))}
+              required
+            >
+              <option value="">Sélectionner une instance...</option>
+              {connectedInstances.map((i) => (
+                <option key={i.id} value={i.id}>{i.name}</option>
+              ))}
+            </Select>
+            <Input
+              label="Planification"
+              type="datetime-local"
+              value={form.schedule}
+              onChange={(e) => setForm((p) => ({ ...p, schedule: e.target.value }))}
+              required
+            />
+            <Select
+              label="Répétition"
+              value={form.repeat}
+              onChange={(e) => setForm((p) => ({ ...p, repeat: e.target.value as "none" | "daily" | "weekly" }))}
+            >
+              <option value="none">Aucune répétition</option>
+              <option value="daily">Quotidienne</option>
+              <option value="weekly">Hebdomadaire</option>
+            </Select>
+          </div>
+
+          <div className="space-y-4 rounded-xl border border-border bg-bg-subtle p-4">
+            <div>
+              <p className="text-sm font-semibold text-text">2. Audience</p>
+              <p className="mt-1 text-xs text-text-muted">Définissez précisément quels destinataires recevront cette campagne.</p>
+            </div>
+            <div>
+              <p className="mb-2 text-sm font-medium text-text-body">Destinataires</p>
+              <div className="mb-2 flex flex-wrap gap-4">
+                {([
+                  { value: "all", label: "Tous" },
+                  { value: "tags", label: "Tags" },
+                  { value: "group", label: "Groupe" },
+                  { value: "explicit", label: "Explicite" },
+                ] as const).map(({ value, label }) => (
+                  <label key={value} className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="recipientType"
+                      value={value}
+                      checked={form.recipientType === value}
+                      onChange={() => setForm((p) => ({ ...p, recipientType: value }))}
+                      className="accent-primary"
+                    />
+                    <span className="text-sm text-text-body">{label}</span>
+                  </label>
+                ))}
               </div>
-
-              {contextVariables.length > 0 && (
-                <p className="text-xs text-text-muted">
-                  Résolues automatiquement: {contextVariables.join(", ")}
-                </p>
+              {form.recipientType === "tags" && (
+                <div className="space-y-3 rounded-xl border border-border bg-bg p-4">
+                  <div>
+                    <p className="text-sm font-medium text-text-body">Tags disponibles</p>
+                    <p className="mt-1 text-xs text-text-muted">Sélectionnez un ou plusieurs tags déjà présents sur vos contacts.</p>
+                  </div>
+                  {availableTags.length === 0 ? (
+                    <p className="text-sm text-text-secondary">Aucun tag disponible pour le moment.</p>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {availableTags.map((tag) => {
+                          const selected = form.tags.includes(tag)
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => toggleRecipientValue("tags", tag)}
+                              className={[
+                                "px-3 py-2 rounded-lg border text-sm transition-colors",
+                                selected
+                                  ? "border-primary bg-primary-subtle text-primary-ink font-medium"
+                                  : "border-border bg-bg-subtle text-text-secondary hover:border-border-strong hover:text-text",
+                              ].join(" ")}
+                            >
+                              #{tag}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {form.tags.length > 0 && (
+                        <p className="text-xs text-text-muted">Tags sélectionnés : {form.tags.join(", ")}</p>
+                      )}
+                    </>
+                  )}
+                </div>
               )}
-
-              {requiredCustomVariables.length > 0 && (
-                <CustomVariableBuilder
-                  entries={customVariables}
-                  onChange={setCustomVariables}
-                  hint="Renseignez les valeurs des variables custom.* qui seront injectées pour chaque rendu."
-                />
+              {form.recipientType === "group" && (
+                groups.length === 0 ? (
+                  <p className="text-sm text-text-secondary">
+                    Aucun groupe disponible.{" "}
+                    <a href="/contacts/groups" className="text-primary-ink hover:text-text hover:underline">
+                      Créer un groupe →
+                    </a>
+                  </p>
+                ) : (
+                  <select
+                    value={form.groupId}
+                    onChange={(e) => setForm((p) => ({ ...p, groupId: e.target.value }))}
+                    required
+                    className="w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-text bg-bg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  >
+                    <option value="">Sélectionner un groupe…</option>
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id}>{g.name} ({g.contactCount} contacts)</option>
+                    ))}
+                  </select>
+                )
+              )}
+              {form.recipientType === "explicit" && (
+                <div className="space-y-3 rounded-xl border border-border bg-bg p-4">
+                  <div>
+                    <p className="text-sm font-medium text-text-body">Contacts enregistrés</p>
+                    <p className="mt-1 text-xs text-text-muted">Choisissez précisément les contacts à inclure dans cette campagne.</p>
+                  </div>
+                  {contacts.length === 0 ? (
+                    <p className="text-sm text-text-secondary">
+                      Aucun contact disponible.{" "}
+                      <a href="/contacts" className="text-primary-ink hover:text-text hover:underline">
+                        Ajouter des contacts →
+                      </a>
+                    </p>
+                  ) : (
+                    <>
+                      <div className="max-h-64 overflow-y-auto rounded-lg border border-border bg-bg">
+                        {contacts.map((contact) => {
+                          const selected = form.explicit.includes(contact.id)
+                          return (
+                            <label
+                              key={contact.id}
+                              className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-b-0 cursor-pointer hover:bg-bg-subtle"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleRecipientValue("explicit", contact.id)}
+                                className="mt-1 accent-primary"
+                              />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-text">{contact.name}</p>
+                                <p className="text-xs text-text-secondary">{contact.phone}</p>
+                                {contact.tags.length > 0 && (
+                                  <div className="mt-2 flex flex-wrap gap-1.5">
+                                    {contact.tags.map((tag) => (
+                                      <Badge key={`${contact.id}-${tag}`} variant="neutral">
+                                        #{tag}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                          )
+                        })}
+                      </div>
+                      <p className="text-xs text-text-muted">
+                        {form.explicit.length} contact{form.explicit.length > 1 ? "s" : ""} sélectionné{form.explicit.length > 1 ? "s" : ""}
+                      </p>
+                    </>
+                  )}
+                </div>
               )}
             </div>
-          )}
-          <div>
-            <p className="text-sm font-medium text-text-body mb-2">Destinataires</p>
-            <div className="flex flex-wrap gap-4 mb-2">
+          </div>
+
+          <div className="space-y-4 rounded-xl border border-border bg-bg-subtle p-4">
+            <div>
+              <p className="text-sm font-semibold text-text">3. Contenu</p>
+              <p className="mt-1 text-xs text-text-muted">
+                Choisissez un seul mode : template ou message direct. Une campagne ne peut pas être vide.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4">
               {([
-                { value: "all", label: "Tous" },
-                { value: "tags", label: "Tags" },
-                { value: "group", label: "Groupe" },
-                { value: "explicit", label: "Explicite" },
+                { value: "template", label: "Utiliser un template" },
+                { value: "direct", label: "Écrire un message direct" },
               ] as const).map(({ value, label }) => (
                 <label key={value} className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="radio"
-                    name="recipientType"
+                    name="contentMode"
                     value={value}
-                    checked={form.recipientType === value}
-                    onChange={() => setForm((p) => ({ ...p, recipientType: value }))}
+                    checked={contentMode === value}
+                    onChange={() => {
+                      if (value === "template") {
+                        releaseUploadedMedia()
+                        resetMediaState()
+                        setForm((prev) => ({ ...prev, directMediaUrl: "", directBody: "", directType: "text" }))
+                      } else {
+                        setForm((prev) => ({ ...prev, templateId: "" }))
+                        setCustomVariables([])
+                      }
+                      setContentMode(value)
+                    }}
                     className="accent-primary"
                   />
                   <span className="text-sm text-text-body">{label}</span>
                 </label>
               ))}
             </div>
-            {form.recipientType === "tags" && (
-              <Input
-                placeholder="vip, newsletter"
-                value={form.tags}
-                onChange={(e) => setForm((p) => ({ ...p, tags: e.target.value }))}
-                hint="Séparés par des virgules"
-              />
-            )}
-            {form.recipientType === "group" && (
-              groups.length === 0 ? (
-                <p className="text-sm text-text-secondary">
-                  Aucun groupe disponible.{" "}
-                  <a href="/contacts/groups" className="text-primary-ink hover:text-text hover:underline">
-                    Créer un groupe →
-                  </a>
-                </p>
-              ) : (
-                <select
-                  value={form.groupId}
-                  onChange={(e) => setForm((p) => ({ ...p, groupId: e.target.value }))}
-                  required
-                  className="w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-text bg-bg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+
+            {contentMode === "template" ? (
+              <>
+                <Select
+                  label="Template"
+                  value={form.templateId}
+                  onChange={(e) => {
+                    const templateId = e.target.value
+                    setForm((p) => ({ ...p, templateId }))
+                    const template = templates.find((item) => item.id === templateId)
+                    setCustomVariables(
+                      template
+                        ? getCustomVariables(template.variables).map((variable) => ({
+                            key: getCustomVariableKey(variable),
+                            value: "",
+                          }))
+                        : []
+                    )
+                  }}
                 >
-                  <option value="">Sélectionner un groupe…</option>
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>{g.name} ({g.contactCount} contacts)</option>
+                  <option value="">Sélectionner un template…</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
-                </select>
-              )
-            )}
-            {form.recipientType === "explicit" && (
-              <Input
-                placeholder="id_contact1, id_contact2"
-                value={form.explicit}
-                onChange={(e) => setForm((p) => ({ ...p, explicit: e.target.value }))}
-                hint="IDs de contacts séparés par des virgules"
-              />
+                </Select>
+                {selectedTemplate && (
+                  <div className="space-y-3 rounded-xl border border-border bg-bg p-4">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-text-body">Variables du template</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedTemplate.variables.map((variable) => (
+                          <Badge key={variable} variant={variable.startsWith("custom.") ? "warning" : "blue"}>
+                            {variable.startsWith("custom.") ? `${variable} · à saisir` : `${variable} · contexte`}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    {contextVariables.length > 0 && (
+                      <p className="text-xs text-text-muted">Résolues automatiquement: {contextVariables.join(", ")}</p>
+                    )}
+                    {requiredCustomVariables.length > 0 && (
+                      <CustomVariableBuilder
+                        entries={customVariables}
+                        onChange={setCustomVariables}
+                        hint="Renseignez les valeurs des variables custom.* qui seront injectées pour chaque rendu."
+                      />
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="space-y-4">
+                <Select
+                  label="Type de message"
+                  value={form.directType}
+                  onChange={(e) => {
+                    const nextType = e.target.value as typeof form.directType
+                    releaseUploadedMedia()
+                    resetMediaState()
+                    setForm((prev) => ({
+                      ...prev,
+                      directType: nextType,
+                      directMediaUrl: "",
+                    }))
+                  }}
+                >
+                  {(["text", "image", "video", "audio", "voice_note", "document"] as const).map((type) => (
+                    <option key={type} value={type}>{TYPE_LABEL[type]}</option>
+                  ))}
+                </Select>
+
+                {form.directType === "text" ? (
+                  <Textarea
+                    label="Message"
+                    rows={5}
+                    value={form.directBody}
+                    onChange={(e) => setForm((prev) => ({ ...prev, directBody: e.target.value }))}
+                    placeholder="Bonjour, découvrez notre offre."
+                  />
+                ) : (
+                  <>
+                    {form.directType === "voice_note" ? (
+                      <VoiceRecorderPanel
+                        uploading={uploading}
+                        hasUploadedVoiceNote={!!uploadedMedia && form.directType === "voice_note" && !!form.directMediaUrl}
+                        onUpload={(file) => uploadMediaFile(file, "voice_note")}
+                        onResetUploadState={() => {
+                          releaseUploadedMedia()
+                          setForm((prev) => ({ ...prev, directMediaUrl: "" }))
+                          resetMediaState()
+                        }}
+                        uploadError={mediaError}
+                        uploadNotice={mediaNotice}
+                      />
+                    ) : (
+                      <MediaUploadPanel
+                        type={form.directType}
+                        uploading={uploading}
+                        uploadProgress={uploadProgress}
+                        uploadedMedia={uploadedMedia}
+                        mediaNotice={mediaNotice}
+                        mediaError={mediaError}
+                        scheduledAt={form.schedule}
+                        fileInputRef={fileInputRef}
+                        onFileChange={handleFileSelect}
+                        onRemove={handleRemoveFile}
+                      />
+                    )}
+
+                    {(form.directType === "image" || form.directType === "video" || form.directType === "document") && (
+                      <Textarea
+                        label="Légende"
+                        rows={3}
+                        value={form.directBody}
+                        onChange={(e) => setForm((prev) => ({ ...prev, directBody: e.target.value }))}
+                        placeholder="Ajoutez une légende optionnelle."
+                      />
+                    )}
+                  </>
+                )}
+              </div>
             )}
           </div>
-          <Input
-            label="Planification"
-            type="datetime-local"
-            value={form.schedule}
-            onChange={(e) => setForm((p) => ({ ...p, schedule: e.target.value }))}
-            required
-          />
-          <Select
-            label="Répétition"
-            value={form.repeat}
-            onChange={(e) => setForm((p) => ({ ...p, repeat: e.target.value as "none" | "daily" | "weekly" }))}
-          >
-            <option value="none">Aucune répétition</option>
-            <option value="daily">Quotidienne</option>
-            <option value="weekly">Hebdomadaire</option>
-          </Select>
+
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="secondary" onClick={() => setCreateModalOpen(false)}>Annuler</Button>
-            <Button type="submit" variant="primary" loading={creating}>Créer la campagne</Button>
+            <Button type="submit" variant="primary" loading={creating} disabled={!canCreateCampaign}>Créer la campagne</Button>
           </div>
         </form>
       </Modal>

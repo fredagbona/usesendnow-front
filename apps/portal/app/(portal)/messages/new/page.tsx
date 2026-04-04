@@ -454,12 +454,13 @@ export default function NewMessagePage() {
                 <>
                   {isFileUploadType && (
                     sendForm.type === "voice_note" ? (
-                      <VoiceRecorderPanel
-                        uploading={uploading}
-                        onUpload={(file) => uploadMediaFile(file, "voice_note")}
-                        onResetUploadState={() => {
-                          releaseUploadedMedia()
-                          setSendForm((prev) => ({ ...prev, mediaUrl: "" }))
+              <VoiceRecorderPanel
+                uploading={uploading}
+                hasUploadedVoiceNote={!!uploadedMedia && sendForm.type === "voice_note" && !!sendForm.mediaUrl}
+                onUpload={(file) => uploadMediaFile(file, "voice_note")}
+                onResetUploadState={() => {
+                  releaseUploadedMedia()
+                  setSendForm((prev) => ({ ...prev, mediaUrl: "" }))
                           resetMediaState()
                           setStatusMessage("Prêt à enregistrer une nouvelle note vocale.")
                         }}
