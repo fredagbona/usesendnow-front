@@ -21,6 +21,9 @@ import { SkeletonTableRow } from "@/components/ui/Skeleton"
 import { Key01Icon, AlertDiamondIcon, Copy01Icon, CheckmarkCircle01Icon } from "hugeicons-react"
 import { portalBrand } from "@/lib/brand"
 
+const FREE_PLAN_SHORT_MESSAGE =
+  "Le plan Free inclut 1 clé API pour tester l'intégration, avec toujours 20 messages + statuts maximum par mois."
+
 // ─── Quick Start dark block ────────────────────────────────────────────────────
 
 const SNIPPET = `curl -X POST https://srv.msgflash.com/v1/messages/send \\
@@ -99,6 +102,13 @@ export default function ApiKeysPage() {
   const [newKeyName, setNewKeyName] = useState("")
   const [creating, setCreating] = useState(false)
   const [revoking, setRevoking] = useState<string | null>(null)
+  const maxApiKeys =
+    subscription?.subscription?.plan?.limits?.maxApiKeys ??
+    subscription?.subscription?.plan?.maxApiKeys ??
+    0
+  const activeApiKeysCount = subscription?.usage?.activeApiKeysCount ?? apiKeys.length
+  const isFreePlan = (subscription?.subscription?.plan?.code ?? "free") === "free"
+  const freePlanLimitReached = isFreePlan && maxApiKeys > 0 && activeApiKeysCount >= maxApiKeys
 
   const usageById = new Map(usage.map((entry) => [entry.id, entry]))
 
@@ -106,11 +116,11 @@ export default function ApiKeysPage() {
     apiClient.billing.getSubscription()
       .then((sub) => {
         setSubscription(sub)
-        const maxApiKeys =
+        const maxKeys =
           sub?.subscription?.plan?.limits?.maxApiKeys ??
           sub?.subscription?.plan?.maxApiKeys ??
           0
-        if (maxApiKeys === 0) {
+        if (maxKeys <= 0) {
           setPlanBlocked(true)
         }
       })
@@ -182,7 +192,7 @@ export default function ApiKeysPage() {
               >
                 Documentation API
               </a>
-              <Button variant="primary" onClick={() => setCreateModalOpen(true)}>
+              <Button variant="primary" onClick={() => setCreateModalOpen(true)} disabled={freePlanLimitReached}>
                 Nouvelle clé API
               </Button>
             </div>
@@ -190,9 +200,21 @@ export default function ApiKeysPage() {
         }
       />
 
+      {!planBlocked && isFreePlan && (
+        <div className="mb-6 rounded-2xl border border-primary/30 bg-primary-subtle px-5 py-4 text-sm text-text">
+          {FREE_PLAN_SHORT_MESSAGE}
+        </div>
+      )}
+
       {planBlocked && (
         <div className="mb-6">
           <PlanGateBanner message="Les clés API ne sont pas disponibles sur le plan Gratuit. Changez de plan pour accéder à l'API." />
+        </div>
+      )}
+
+      {!planBlocked && freePlanLimitReached && (
+        <div className="mb-6">
+          <PlanGateBanner message="Vous avez atteint la limite de clés API pour le plan actuel." />
         </div>
       )}
 

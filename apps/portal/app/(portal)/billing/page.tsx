@@ -30,64 +30,37 @@ import {
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 
 const PLAN_ORDER = ["free", "starter", "pro", "plus"]
-const PLAN_MARKETING: Record<string, { price: string; features: string[] }> = {
+const PLAN_MARKETING: Record<string, { contactGroups: string }> = {
   free: {
-    price: "0€",
-    features: [
-      "1 instance",
-      "20 messages / statuts par mois",
-      "1 000 requêtes API / mois",
-      "0 clé API",
-      "0 endpoint webhook",
-      "2 groupes de contacts",
-      "Campagnes : non",
-      "Notes vocales : oui",
-    ],
+    contactGroups: "2 groupes de contacts",
   },
   starter: {
-    price: "9€",
-    features: [
-      "1 instance",
-      "5 000 messages / statuts par mois",
-      "20 000 requêtes API / mois",
-      "3 clés API",
-      "3 endpoints webhook",
-      "10 groupes de contacts",
-      "Campagnes : oui",
-      "Notes vocales : oui",
-    ],
+    contactGroups: "10 groupes de contacts",
   },
   pro: {
-    price: "19€",
-    features: [
-      "5 instances",
-      "25 000 messages / statuts par mois",
-      "100 000 requêtes API / mois",
-      "5 clés API",
-      "10 endpoints webhook",
-      "50 groupes de contacts",
-      "Campagnes : oui",
-      "Notes vocales : oui",
-    ],
+    contactGroups: "50 groupes de contacts",
   },
   plus: {
-    price: "39€",
-    features: [
-      "20 instances",
-      "150 000 messages / statuts par mois",
-      "500 000 requêtes API / mois",
-      "10 clés API",
-      "50 endpoints webhook",
-      "Groupes de contacts illimités",
-      "Campagnes : oui",
-      "Notes vocales : oui",
-    ],
+    contactGroups: "Groupes de contacts illimités",
   },
 }
+
+const FREE_PLAN_NOTE =
+  "Le plan Free inclut 1 clé API pour tester l'intégration. Les autres limites ne changent pas: 20 messages + statuts par mois, 1 instance, 0 webhook et 2 groupes de contacts."
 
 function formatPrice(priceMonthly: number | undefined): string {
   if (!priceMonthly || priceMonthly === 0) return "0€ / mois"
   return `${(priceMonthly / 100).toLocaleString("fr-FR")}€ / mois`
+}
+
+function formatFcfaValue(amount: number | undefined): string {
+  if (!amount || amount === 0) return "0 FCFA / mois"
+  return `${amount.toLocaleString("fr-FR")} FCFA / mois`
+}
+
+function formatEurValue(amount: number | undefined): string {
+  if (amount === undefined || amount === null) return ""
+  return `(${amount.toLocaleString("fr-FR")} €)`
 }
 
 function formatAmount(amount: number, currency: string): string {
@@ -106,6 +79,52 @@ function getPlanLimits(plan: Plan) {
     maxApiKeys:             plan.maxApiKeys             ?? plan.limits?.maxApiKeys             ?? 0,
     maxWebhookEndpoints:    plan.maxWebhookEndpoints    ?? plan.limits?.maxWebhookEndpoints    ?? 0,
   }
+}
+
+function getPlanDisplayPrice(plan: Plan) {
+  if (plan.priceFcfa !== undefined || plan.priceEur !== undefined) {
+    return {
+      primary: formatFcfaValue(plan.priceFcfa),
+      secondary: formatEurValue(plan.priceEur),
+    }
+  }
+
+  if (plan.currency === "XOF" && plan.priceMonthly !== undefined) {
+    const fcfa = plan.priceMonthly / 100
+    return {
+      primary: formatFcfaValue(fcfa),
+      secondary: "",
+    }
+  }
+
+  return {
+    primary: formatPrice(plan.priceMonthly),
+    secondary: "",
+  }
+}
+
+function getPlanFeatures(plan: Plan): string[] {
+  const limits = getPlanLimits(plan)
+  const features = plan.features ?? {
+    campaigns: plan.canUseCampaigns ?? false,
+    statuses: plan.canUseStatuses ?? false,
+    voiceNotes: false,
+    webhooks: false,
+  }
+  const contactGroups = PLAN_MARKETING[plan.code]?.contactGroups
+
+  return [
+    `${limits.maxInstances} ${limits.maxInstances > 1 ? "instances" : "instance"}`,
+    `${limits.monthlyOutboundQuota.toLocaleString("fr-FR")} messages / statuts par mois`,
+    `${limits.monthlyApiRequestQuota.toLocaleString("fr-FR")} requêtes API / mois`,
+    `${limits.maxApiKeys} ${limits.maxApiKeys > 1 ? "clés API" : "clé API"}`,
+    `${limits.maxWebhookEndpoints} ${limits.maxWebhookEndpoints > 1 ? "endpoints webhook" : "endpoint webhook"}`,
+    contactGroups,
+    `Campagnes : ${features.campaigns ? "oui" : "non"}`,
+    `Statuts WhatsApp : ${features.statuses ? "oui" : "non"}`,
+    `Webhooks : ${features.webhooks ? "oui" : "non"}`,
+    `Notes vocales : ${features.voiceNotes ? "oui" : "non"}`,
+  ].filter((feature): feature is string => Boolean(feature))
 }
 
 function planName(code: string, plans: Plan[]): string {
@@ -189,11 +208,8 @@ function PlanCard({
   actioning: string | null
   onSelect: (plan: Plan) => void
 }) {
-  const marketing = PLAN_MARKETING[plan.code] ?? {
-    price: formatPrice(plan.priceMonthly),
-    description: "Plan disponible pour votre compte.",
-    features: [],
-  }
+  const pricing = getPlanDisplayPrice(plan)
+  const features = getPlanFeatures(plan)
 
   return (
     <div className={[
@@ -209,11 +225,16 @@ function PlanCard({
       </div>
 
       <p className="text-xl font-bold text-text mb-4">
-        {marketing.price}
+        {pricing.primary}
       </p>
+      {pricing.secondary && (
+        <p className="text-xs text-text-muted -mt-3 mb-4">
+          {pricing.secondary}
+        </p>
+      )}
 
       <ul className="space-y-2 mb-5 text-sm flex-1">
-        {marketing.features.map((feature) => (
+        {features.map((feature) => (
           <PlanFeatureRow key={feature} label={feature} ok={!feature.endsWith(": non")} />
         ))}
       </ul>
@@ -274,6 +295,7 @@ function BillingPageContent() {
     plans.find((plan) => plan.code === currentPlanCode) ??
     getFallbackPlan(currentPlanCode)
   const limits = getPlanLimits(currentPlan)
+  const currentPlanDisplayPrice = getPlanDisplayPrice(currentPlan)
 
   const sortedPlans = [...plans].sort(
     (a, b) => PLAN_ORDER.indexOf(a.code) - PLAN_ORDER.indexOf(b.code)
@@ -420,6 +442,10 @@ function BillingPageContent() {
         description="Gérez votre plan et suivez votre consommation mensuelle."
       />
 
+      <div className="rounded-2xl border border-primary/30 bg-primary-subtle px-5 py-4 text-sm text-text">
+        {FREE_PLAN_NOTE}
+      </div>
+
       {/* ── Alertes statut ──────────────────────────────────────────────── */}
       {sub?.status === "past_due" && (
         <div className="flex items-start gap-3 p-4 bg-warning-subtle border border-warning/30 rounded-2xl">
@@ -511,9 +537,9 @@ function BillingPageContent() {
                     <span className="font-medium text-text">{formatDate(periodEnd)}</span>
                   </p>
                 )}
-                {currentPlan.priceMonthly !== undefined && currentPlan.priceMonthly > 0 && (
-                  <p className="text-sm text-text-muted">{formatPrice(currentPlan.priceMonthly)}</p>
-                )}
+                <p className="text-sm text-text-muted">
+                  {currentPlanDisplayPrice.primary} {currentPlanDisplayPrice.secondary}
+                </p>
               </div>
               <Button variant="secondary" size="sm" onClick={() => setPlanModalOpen(true)}>
                 Changer de plan

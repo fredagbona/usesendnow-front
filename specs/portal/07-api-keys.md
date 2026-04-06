@@ -28,7 +28,7 @@ Layout standard portal.
 
 ### Zones principales
 - **Header** : titre "API Keys" + bouton "New API Key"
-- **PlanGateBanner** : si plan Free, remplace la liste
+- **PlanInfoBanner** : message contextuel selon le plan
 - **Table des clés** : une ligne par clé
 - **Usage summary** : volume mensuel des requêtes par clé API
 - **NewKeyModal** : modale de création
@@ -38,11 +38,14 @@ Layout standard portal.
 
 ## Composants de la page
 
-### PlanGateBanner
-Affiché si le plan ne permet pas les clés API (`maxApiKeys === 0` ou feature bloquée).
-Message : "API keys are not available on the Free plan. Upgrade to access the API."
-CTA : "Upgrade Plan" → `/billing`
-Le bouton "New API Key" est masqué ou désactivé.
+### PlanInfoBanner
+Cas 1 — plan Free:
+- message : "Free inclut 1 clé API pour tester l'intégration. Le quota reste limité à 20 messages + statuts par mois."
+- le bouton "New API Key" reste disponible tant que `activeApiKeysCount < 1`
+
+Cas 2 — limite atteinte:
+- message : "You've reached your API key limit for the current plan."
+- CTA : "Manage Billing" → `/billing`
 
 ### ApiKeyTable
 Props : `apiKeys: ApiKey[]`, `usage?: ApiKeyUsage[]`
@@ -79,7 +82,7 @@ Message : "Are you sure you want to revoke **{keyName}**? Any application using 
 ## États à gérer
 - `loading` : skeleton de table pendant GET /api-keys
 - `empty` : "No API keys yet. Create your first key." (uniquement si plan le permet)
-- `plan_blocked` : afficher PlanGateBanner
+- `plan_info` : afficher PlanInfoBanner
 - `creating` : loading dans NewApiKeyModal
 - `revoking` : loading sur le bouton "Revoke" de la ligne concernée
 - `error.MAX_API_KEYS_REACHED` : toast "You've reached your API key limit. Revoke an existing key or upgrade."
@@ -100,7 +103,6 @@ Message : "Are you sure you want to revoke **{keyName}**? Any application using 
 - Déclencheur : bouton "New API Key" → NewApiKeyModal → submit
 - Appel API : `POST /api/api-keys` — `{ name: string }`
 - Succès : fermer NewApiKeyModal → ouvrir SecretRevealModal avec `data.secret` + rafraîchir la liste
-- Erreur 403 `API_KEYS_NOT_AVAILABLE_ON_PLAN` : fermer modale + afficher PlanGateBanner
 - Erreur 403 `MAX_API_KEYS_REACHED` : fermer modale + toast "Key limit reached."
 
 ### Révoquer une clé
@@ -114,7 +116,8 @@ Message : "Are you sure you want to revoke **{keyName}**? Any application using 
 ## Règles métier
 - Le secret n'est **jamais** re-affiché après la création. Ne pas stocker le secret en state global ou localStorage.
 - Les clés révoquées ont `revokedAt` non-null — le backend les filtre de la liste (la liste ne montre que les clés actives).
-- Plan Free : `maxApiKeys: 0` → PlanGateBanner, bouton "New API Key" masqué.
+- Plan Free : `maxApiKeys: 1` → autoriser une seule clé API de test.
+- Le plan Free ne change pas de quota outbound : il reste à 20 messages + statuts par mois.
 - Vérifier `maxApiKeys` depuis `subscription.plan.limits.maxApiKeys` (chargé via GET /billing/subscription).
 
 ---
@@ -183,11 +186,21 @@ Response POST /api/api-keys (erreur plan):
 ```json
 {
   "error": {
-    "code": "API_KEYS_NOT_AVAILABLE_ON_PLAN",
-    "message": "API keys are not available on your current plan"
+    "code": "MAX_API_KEYS_REACHED",
+    "message": "API key limit reached for your plan (max 1)."
   }
 }
 ```
+
+---
+
+## Message frontend à reprendre partout
+
+Message court:
+- `Le plan Free inclut 1 clé API pour tester l'intégration, avec toujours 20 messages + statuts maximum par mois.`
+
+Message long:
+- `Le plan Free vous permet de créer une seule clé API pour tester MsgFlash. Cette ouverture ne change pas les autres limites du plan: vous restez limité à 20 messages + statuts par mois, 1 instance, 0 webhook et 2 groupes de contacts.`
 
 Response DELETE /api/api-keys/{id}:
 ```json

@@ -47,12 +47,19 @@ curl https://srv.msgflash.com/api/v1/billing/plans \
       "code": "starter",
       "name": "Starter",
       "priceEur": 9,
-      "priceFcfa": 7200,
+      "priceFcfa": 5500,
       "limits": {
-        "maxInstances": 1
+        "maxInstances": 2,
+        "maxApiKeys": 3,
+        "maxWebhookEndpoints": 3,
+        "monthlyOutboundQuota": 500,
+        "monthlyApiRequestQuota": 10000
       },
       "features": {
-        "campaigns": true
+        "campaigns": true,
+        "statuses": false,
+        "voiceNotes": true,
+        "webhooks": true
       }
     }
   ]
@@ -78,13 +85,13 @@ Exemple :
         "code": "starter",
         "name": "Starter",
         "limits": {
-          "maxInstances": 1,
+          "maxInstances": 2,
           "maxApiKeys": 3,
           "maxWebhookEndpoints": 3
         },
         "features": {
           "campaigns": true,
-          "statuses": true,
+          "statuses": false,
           "webhooks": true
         }
       },
@@ -110,6 +117,10 @@ Exemple :
 
 <Note>
 Les limites se lisent dans `subscription.plan.limits.*`, pas dans `subscription.plan.maxInstances`.
+</Note>
+
+<Note>
+Le plan Free autorise 1 clé API de test. Cette ouverture ne change pas le quota outbound Free: 20 messages + statuts par mois.
 </Note>
 
 ---

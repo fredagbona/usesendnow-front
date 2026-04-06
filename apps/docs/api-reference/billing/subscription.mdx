@@ -16,12 +16,12 @@ GET /api/v1/billing/subscription
   "data": {
     "subscription": {
       "plan": {
-        "code": "starter",
+        "code": "free",
         "limits": {
           "maxInstances": 1
         },
         "features": {
-          "campaigns": true
+          "campaigns": false
         }
       },
       "scheduledPlan": null,
@@ -43,3 +43,7 @@ GET /api/v1/billing/subscription
   }
 }
 ```
+
+<Note>
+Le plan Free expose maintenant `maxApiKeys: 1` côté `subscription.plan.limits`.
+</Note>

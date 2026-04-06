@@ -15,12 +15,23 @@ GET /api/v1/billing/plans
 {
   "data": [
     {
-      "code": "starter",
-      "name": "Starter",
-      "priceEur": 9,
-      "priceFcfa": 7200,
-      "limits": {},
-      "features": {}
+      "code": "free",
+      "name": "Free",
+      "priceEur": 0,
+      "priceFcfa": 0,
+      "limits": {
+        "maxInstances": 1,
+        "maxApiKeys": 1,
+        "maxWebhookEndpoints": 0,
+        "monthlyOutboundQuota": 20,
+        "monthlyApiRequestQuota": 1000
+      },
+      "features": {
+        "campaigns": false,
+        "statuses": false,
+        "voiceNotes": true,
+        "webhooks": false
+      }
     }
   ]
 }

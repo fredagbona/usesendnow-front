@@ -31,6 +31,7 @@ Layout standard portal.
 - **UsageMetrics** : barres de progression pour chaque quota
 - **PlansComparison** : grille des 4 plans (Free / Starter / Pro / Plus)
 - **DangerZone** : bouton d'annulation (si plan payant actif)
+- **PlanPolicyNote** : note produit expliquant les limites importantes du plan Free
 
 ---
 
@@ -140,10 +141,15 @@ Message : "Your subscription will be cancelled at the end of the current period 
 
 ## Règles métier
 - Plan `free` : pas de bouton annulation (pas d'abonnement à annuler).
+- Le plan `free` inclut désormais `1` clé API pour les tests.
+- Cette ouverture ne change pas le quota outbound du plan `free` : `20` messages + statuts par mois.
 - `billingProvider: 'none'` = plan free ou abonnement sans fournisseur de paiement — pas d'annulation possible.
 - `cancelAtPeriodEnd: true` → afficher la date limite d'accès, pas de nouveau bouton d'annulation.
 - Ordre d'affichage des plans : free → starter → pro → plus.
 - Le plan actuel dans la grille doit être visuellement mis en avant (border colorée, badge "Current").
+
+### Message frontend à afficher partout où l’on explique le Free
+- `Le plan Free inclut 1 clé API pour tester l'intégration. Les autres limites ne changent pas: 20 messages + statuts par mois, 1 instance, 0 webhook et 2 groupes de contacts.`
 
 ---
 
@@ -208,7 +214,7 @@ Response GET /api/billing/plans:
       "priceEur": 0,
       "priceFcfa": 0,
       "isActive": true,
-      "limits": { "maxInstances": 1, "maxApiKeys": 0, "maxWebhookEndpoints": 0, "monthlyOutboundQuota": 20, "monthlyApiRequestQuota": 1000 },
+      "limits": { "maxInstances": 1, "maxApiKeys": 1, "maxWebhookEndpoints": 0, "monthlyOutboundQuota": 20, "monthlyApiRequestQuota": 1000 },
       "features": { "campaigns": false, "statuses": false, "voiceNotes": true, "webhooks": false }
     },
     {
