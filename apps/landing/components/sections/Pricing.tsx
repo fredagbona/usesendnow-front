@@ -52,7 +52,7 @@ const PLANS = [
     featured: false,
     features: [
       "2 instances",
-      "500 messages / statuts par mois",
+      "5 000 messages / statuts par mois",
       "10 000 requêtes API / mois",
       "3 clés API",
       "3 endpoints webhook",

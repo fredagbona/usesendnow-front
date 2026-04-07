@@ -105,6 +105,8 @@ function getPlanDisplayPrice(plan: Plan) {
 
 function getPlanFeatures(plan: Plan): string[] {
   const limits = getPlanLimits(plan)
+  const displayedMonthlyOutboundQuota =
+    plan.code === "starter" ? 5000 : limits.monthlyOutboundQuota
   const features = plan.features ?? {
     campaigns: plan.canUseCampaigns ?? false,
     statuses: plan.canUseStatuses ?? false,
@@ -115,7 +117,7 @@ function getPlanFeatures(plan: Plan): string[] {
 
   return [
     `${limits.maxInstances} ${limits.maxInstances > 1 ? "instances" : "instance"}`,
-    `${limits.monthlyOutboundQuota.toLocaleString("fr-FR")} messages / statuts par mois`,
+    `${displayedMonthlyOutboundQuota.toLocaleString("fr-FR")} messages / statuts par mois`,
     `${limits.monthlyApiRequestQuota.toLocaleString("fr-FR")} requêtes API / mois`,
     `${limits.maxApiKeys} ${limits.maxApiKeys > 1 ? "clés API" : "clé API"}`,
     `${limits.maxWebhookEndpoints} ${limits.maxWebhookEndpoints > 1 ? "endpoints webhook" : "endpoint webhook"}`,
