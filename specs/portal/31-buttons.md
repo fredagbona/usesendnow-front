@@ -19,7 +19,7 @@ Permettre à un utilisateur MsgFlash d'envoyer des messages avec boutons interac
 - `title`, `description` obligatoires
 - `buttons` obligatoire, array de 1 à 2 boutons maxi
 - Types de boutons supportés : `reply`, `copy`, `url`, `call`, `pix`
-- Chaque bouton doit avoir `type` et `displayText`
+- Chaque bouton doit avoir `title` et `displayText`
 - Champs optionnels selon le type :
   - `reply` : `id`
   - `copy` : `copyCode`
@@ -81,12 +81,12 @@ Request :
   "footer": "Répondez rapidement",
   "buttons": [
     {
-      "type": "reply",
+      "title": "reply",
       "displayText": "Option 1",
       "id": "opt1"
     },
     {
-      "type": "url",
+      "title": "url",
       "displayText": "Visiter le site",
       "url": "https://example.com"
     }
@@ -135,7 +135,7 @@ Response :
 
 ---
 
-## Messages frontend à afficher mais en francais 
+## Messages frontend à afficher
 
 - `Buttons require a WhatsApp Business account.`
 - `Maximum 2 buttons allowed.`

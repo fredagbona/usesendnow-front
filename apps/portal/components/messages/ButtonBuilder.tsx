@@ -25,12 +25,6 @@ function generateId(): string {
 }
 
 export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps) {
-  const addError = (idx: number, msg: string) => {
-    const updated = [...buttons]
-    ;(updated[idx] as any)._error = msg
-    onChange(updated)
-  }
-
   const clearError = (idx: number) => {
     const updated = [...buttons]
     delete (updated[idx] as any)._error
@@ -46,7 +40,7 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
 
   const handleAdd = () => {
     if (buttons.length >= 2) return
-    onChange([...buttons, { type: "reply", displayText: "", id: generateId() }])
+    onChange([...buttons, { title: "reply", displayText: "", id: generateId() }])
   }
 
   const handleRemove = (idx: number) => {
@@ -54,9 +48,9 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
     onChange(updated)
   }
 
-  const handleTypeChange = (idx: number, type: ButtonType) => {
-    const base: MessageButton = { type, displayText: buttons[idx].displayText }
-    if (type === "reply") base.id = buttons[idx].id || generateId()
+  const handleTypeChange = (idx: number, title: ButtonType) => {
+    const base: MessageButton = { title, displayText: buttons[idx].displayText }
+    if (title === "reply") base.id = buttons[idx].id || generateId()
     onChange([...buttons.slice(0, idx), base, ...buttons.slice(idx + 1)])
   }
 
@@ -100,7 +94,7 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
 
             <Select
               label="Type de bouton"
-              value={btn.type}
+              value={btn.title}
               onChange={(e) => handleTypeChange(idx, e.target.value as ButtonType)}
             >
               {BUTTON_TYPES.map((t) => (
@@ -117,7 +111,7 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
               hint={`${btn.displayText.length}/50`}
             />
 
-            {btn.type === "reply" && (
+            {btn.title === "reply" && (
               <Input
                 label="ID du bouton"
                 value={btn.id ?? ""}
@@ -127,7 +121,7 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
               />
             )}
 
-            {btn.type === "copy" && (
+            {btn.title === "copy" && (
               <Input
                 label="Code à copier"
                 value={btn.copyCode ?? ""}
@@ -137,7 +131,7 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
               />
             )}
 
-            {btn.type === "url" && (
+            {btn.title === "url" && (
               <Input
                 label="URL"
                 value={btn.url ?? ""}
@@ -147,7 +141,7 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
               />
             )}
 
-            {btn.type === "call" && (
+            {btn.title === "call" && (
               <Input
                 label="Numéro de téléphone"
                 value={btn.phoneNumber ?? ""}
@@ -157,7 +151,7 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
               />
             )}
 
-            {btn.type === "pix" && (
+            {btn.title === "pix" && (
               <div className="space-y-3">
                 <Input
                   label="Devise"

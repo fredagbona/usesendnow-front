@@ -88,7 +88,7 @@ export type MessageType = "text" | "image" | "video" | "audio" | "voice_note" | 
 export type ButtonType = "reply" | "copy" | "url" | "call" | "pix"
 
 export interface MessageButton {
-  type: ButtonType
+  title: ButtonType
   displayText: string
   id?: string
   copyCode?: string

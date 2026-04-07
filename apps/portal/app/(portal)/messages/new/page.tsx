@@ -288,19 +288,19 @@ export default function NewMessagePage() {
           toast.error(`Le texte du bouton ${i + 1} ne doit pas dépasser 50 caractères.`)
           return
         }
-        if (btn.type === "url" && !btn.url?.trim()) {
+        if (btn.title === "url" && !btn.url?.trim()) {
           toast.error(`L'URL du bouton ${i + 1} est obligatoire.`)
           return
         }
-        if (btn.type === "call" && !btn.phoneNumber?.trim()) {
+        if (btn.title === "call" && !btn.phoneNumber?.trim()) {
           toast.error(`Le numéro du bouton ${i + 1} est obligatoire.`)
           return
         }
-        if (btn.type === "copy" && !btn.copyCode?.trim()) {
+        if (btn.title === "copy" && !btn.copyCode?.trim()) {
           toast.error(`Le code du bouton ${i + 1} est obligatoire.`)
           return
         }
-        if (btn.type === "pix" && (!btn.currency?.trim() || !btn.name?.trim() || !btn.keyType?.trim() || !btn.key?.trim())) {
+        if (btn.title === "pix" && (!btn.currency?.trim() || !btn.name?.trim() || !btn.keyType?.trim() || !btn.key?.trim())) {
           toast.error(`Tous les champs du bouton Pix ${i + 1} sont obligatoires.`)
           return
         }
@@ -341,10 +341,7 @@ export default function NewMessagePage() {
             title: buttonTitle.trim(),
             description: buttonDescription.trim(),
             footer: buttonFooter.trim() || undefined,
-            buttons: buttons.map((b) => {
-              const { _error, ...clean } = b as any
-              return clean
-            }),
+            buttons: buttons,
             ...(sendForm.scheduledAt ? { scheduledAt: sendForm.scheduledAt } : {}),
           }
         : {
@@ -560,13 +557,13 @@ export default function NewMessagePage() {
                             className="w-full text-center text-sm py-2 px-3 rounded-lg bg-bg-subtle border border-border text-text-body cursor-not-allowed"
                           >
                             {btn.displayText}
-                            {btn.type === "url" && btn.url && (
+                            {btn.title === "url" && btn.url && (
                               <span className="block text-xs text-text-muted mt-0.5 truncate">{btn.url}</span>
                             )}
-                            {btn.type === "call" && btn.phoneNumber && (
+                            {btn.title === "call" && btn.phoneNumber && (
                               <span className="block text-xs text-text-muted mt-0.5 font-mono">{btn.phoneNumber}</span>
                             )}
-                            {btn.type === "copy" && btn.copyCode && (
+                            {btn.title === "copy" && btn.copyCode && (
                               <span className="block text-xs text-text-muted mt-0.5 font-mono">{btn.copyCode}</span>
                             )}
                           </button>

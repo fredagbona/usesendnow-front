@@ -46,7 +46,11 @@ export default function ImportContactsPanel({
   }
 
   const handleImport = async () => {
-    const success = await onImport(lookupId, groupId || undefined, tag || undefined)
+    const success = await onImport(
+      lookupId,
+      groupId.trim() || undefined,
+      tag.trim() || undefined,
+    )
     if (success) {
       setOpen(false)
     }
