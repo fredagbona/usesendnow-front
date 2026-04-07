@@ -25,9 +25,8 @@ const USE_CASES = [
 const PLANS = [
   {
     name: "Gratuit",
-    price: "0 FCFA",
-    secondaryPrice: "0 €",
-    desc: "Pour tester l’infrastructure et brancher un premier numéro.",
+    price: "0€",
+    desc: "Pour tester l'infrastructure et brancher un premier numéro.",
     cta: "Commencer",
     featured: false,
     features: [
@@ -45,8 +44,7 @@ const PLANS = [
   },
   {
     name: "Starter",
-    price: "5 500 FCFA",
-    secondaryPrice: "9 €",
+    price: "9€",
     desc: "Pour lancer vos premiers automatismes en production.",
     cta: "Commencer",
     featured: false,
@@ -65,10 +63,9 @@ const PLANS = [
   },
   {
     name: "Pro",
-    price: "17 000 FCFA",
-    secondaryPrice: "29 €",
+    price: "29€",
     desc: "Pour les équipes qui envoient plus, automatisent plus et monitorent mieux.",
-    cta: "S’abonner",
+    cta: "S'abonner",
     featured: true,
     features: [
       "5 instances",
@@ -85,8 +82,7 @@ const PLANS = [
   },
   {
     name: "Plus",
-    price: "31 200 FCFA",
-    secondaryPrice: "39 €",
+    price: "39€",
     desc: "Pour les volumes élevés, les workflows avancés et les opérations multi-numéros.",
     cta: "Contacter",
     featured: false,
@@ -223,9 +219,6 @@ export function Pricing({}: PricingProps) {
                         / mois
                       </span>
                     </div>
-                    <p className={plan.featured ? "mt-1 font-(family-name:--font-poppins) text-xs text-[#5A4A00]" : "mt-1 font-(family-name:--font-poppins) text-xs text-[#7F7F7F]"}>
-                      ({plan.secondaryPrice})
-                    </p>
                     <p className={plan.featured ? "mt-2 font-(family-name:--font-poppins) text-sm text-[#3A3100]" : "mt-2 font-(family-name:--font-poppins) text-sm text-[#9D9D9D]"}>
                       {plan.desc}
                     </p>

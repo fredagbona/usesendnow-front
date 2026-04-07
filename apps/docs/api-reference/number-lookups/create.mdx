@@ -1,0 +1,48 @@
+---
+title: POST Créer une vérification de numéros
+description: Vérifie un ou plusieurs numéros WhatsApp de façon synchrone ou asynchrone selon le volume.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/number-lookups
+```
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---:|---|
+| `instanceId` | UUID | oui | ID de l’instance connectée à utiliser |
+| `numbers` | string[] | oui | 1 à 10 000 numéros au format international |
+
+## Réponse succès `200` ou `202`
+
+```json
+{
+  "data": {
+    "mode": "sync",
+    "lookupId": "lookup_uuid",
+    "status": "done",
+    "requested": 2,
+    "normalized": 2,
+    "checked": 2,
+    "onWhatsAppCount": 1,
+    "notOnWhatsAppCount": 1,
+    "invalidCount": 0,
+    "result": {
+      "onWhatsApp": [],
+      "notOnWhatsApp": [],
+      "invalid": []
+    }
+  }
+}
+```
+
+## Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `VALIDATION_ERROR` | 400 | Body invalide |
+| `NOT_FOUND` | 404 | Instance introuvable |
+| `PROVIDER_ERROR` | 502 | Erreur côté fournisseur de vérification |

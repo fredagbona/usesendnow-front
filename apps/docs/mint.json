@@ -32,6 +32,7 @@
         "guides/campaigns",
         "guides/templates",
         "guides/contacts",
+        "guides/number-lookups",
         "guides/webhooks",
         "guides/instances",
         "guides/statuses",
@@ -99,6 +100,15 @@
         "api-reference/contact-groups/remove-members",
         "api-reference/contact-groups/list-members",
         "api-reference/contact-groups/contact-groups"
+      ]
+    },
+    {
+      "group": "API Reference · Number Lookups",
+      "pages": [
+        "api-reference/number-lookups/create",
+        "api-reference/number-lookups/list",
+        "api-reference/number-lookups/get",
+        "api-reference/number-lookups/import-contacts"
       ]
     },
     {

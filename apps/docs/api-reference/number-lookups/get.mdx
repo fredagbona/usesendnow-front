@@ -1,0 +1,40 @@
+---
+title: GET Détail d'une vérification
+description: Retourne le statut, les métriques et les résultats d’une vérification de numéros.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/number-lookups/{id}
+```
+
+## Paramètres
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---:|---|---|
+| `id` | UUID | oui | path | ID de la vérification |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "lookup_uuid",
+    "status": "done",
+    "progress": 100,
+    "requestedCount": 1250,
+    "normalizedCount": 1180,
+    "checkedCount": 1180,
+    "onWhatsAppCount": 730,
+    "notOnWhatsAppCount": 450,
+    "invalidCount": 70,
+    "result": {
+      "onWhatsApp": [],
+      "notOnWhatsApp": [],
+      "invalid": []
+    },
+    "completedAt": "2026-04-07T10:00:00.000Z"
+  }
+}
+```

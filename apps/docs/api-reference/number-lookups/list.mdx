@@ -1,0 +1,29 @@
+---
+title: GET Lister les vérifications
+description: Liste les vérifications de numéros déjà lancées sur votre compte.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/number-lookups
+```
+
+## Query params
+
+| Paramètre | Type | Requis | Description |
+|---|---|---:|---|
+| `limit` | integer | non | Taille de page |
+| `cursor` | UUID | non | Curseur de pagination |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "lookups": [],
+    "nextCursor": null,
+    "hasMore": false
+  }
+}
+```

@@ -53,13 +53,13 @@ function formatPrice(priceMonthly: number | undefined): string {
   return `${(priceMonthly / 100).toLocaleString("fr-FR")}€ / mois`
 }
 
-function formatFcfaValue(amount: number | undefined): string {
-  if (!amount || amount === 0) return "0 FCFA / mois"
-  return `${amount.toLocaleString("fr-FR")} FCFA / mois`
+function formatEurValue(amount: number | undefined): string {
+  if (!amount || amount === 0) return "0€ / mois"
+  return `${amount.toLocaleString("fr-FR")}€ / mois`
 }
 
-function formatEurValue(amount: number | undefined): string {
-  if (amount === undefined || amount === null) return ""
+function formatEurSecondary(amount: number | undefined): string {
+  if (amount === undefined || amount === null || amount === 0) return ""
   return `(${amount.toLocaleString("fr-FR")} €)`
 }
 
@@ -82,17 +82,24 @@ function getPlanLimits(plan: Plan) {
 }
 
 function getPlanDisplayPrice(plan: Plan) {
-  if (plan.priceFcfa !== undefined || plan.priceEur !== undefined) {
+  if (plan.priceEur !== undefined) {
     return {
-      primary: formatFcfaValue(plan.priceFcfa),
-      secondary: formatEurValue(plan.priceEur),
+      primary: formatEurValue(plan.priceEur),
+      secondary: "",
+    }
+  }
+
+  if (plan.priceFcfa !== undefined) {
+    return {
+      primary: formatEurValue(plan.priceFcfa),
+      secondary: "",
     }
   }
 
   if (plan.currency === "XOF" && plan.priceMonthly !== undefined) {
-    const fcfa = plan.priceMonthly / 100
+    const eur = plan.priceMonthly / 100
     return {
-      primary: formatFcfaValue(fcfa),
+      primary: formatEurValue(eur),
       secondary: "",
     }
   }
