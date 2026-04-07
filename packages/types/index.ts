@@ -81,7 +81,24 @@ export interface ConnectResponse {
 // ─── Message ─────────────────────────────────────────────────────────────────
 
 export type MessageStatus = "queued" | "sent" | "delivered" | "read" | "failed" | "received" | "cancelled"
-export type MessageType = "text" | "image" | "video" | "audio" | "voice_note" | "document" | "location" | "contact"
+export type MessageType = "text" | "image" | "video" | "audio" | "voice_note" | "document" | "location" | "contact" | "buttons"
+
+// ─── Message Buttons ──────────────────────────────────────────────────────────
+
+export type ButtonType = "reply" | "copy" | "url" | "call" | "pix"
+
+export interface MessageButton {
+  type: ButtonType
+  displayText: string
+  id?: string
+  copyCode?: string
+  url?: string
+  phoneNumber?: string
+  currency?: string
+  name?: string
+  keyType?: string
+  key?: string
+}
 
 export interface TemplateRenderMeta {
   templateId?: string
@@ -124,6 +141,10 @@ export interface SendMessagePayload {
   contactId?: string
   templateId?: string
   variables?: Record<string, string | number>
+  title?: string
+  description?: string
+  footer?: string
+  buttons?: MessageButton[]
 }
 
 // ─── Campaign ────────────────────────────────────────────────────────────────

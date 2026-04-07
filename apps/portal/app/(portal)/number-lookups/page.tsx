@@ -8,11 +8,14 @@ import LookupComposer from "@/components/number-lookups/LookupComposer"
 import LookupSummaryCards from "@/components/number-lookups/LookupSummaryCards"
 import LookupResultsTabs from "@/components/number-lookups/LookupResultsTabs"
 import LookupHistoryTable from "@/components/number-lookups/LookupHistoryTable"
+import LookupDetailModal from "@/components/number-lookups/LookupDetailModal"
 import ImportContactsPanel from "@/components/number-lookups/ImportContactsPanel"
 import { useNumberLookups } from "@/hooks/useNumberLookups"
 import { useInstances } from "@/hooks/useInstances"
 import { useContactGroups } from "@/hooks/useContactGroups"
 import { SkeletonCard } from "@/components/ui/Skeleton"
+import type { NumberLookup } from "@usesendnow/types"
+import { apiClient } from "@usesendnow/api-client"
 
 export default function NumberLookupsPage() {
   const { instances, loading: instancesLoading } = useInstances()
@@ -30,6 +33,7 @@ export default function NumberLookupsPage() {
   } = useNumberLookups()
 
   const [selectedInstanceId, setSelectedInstanceId] = useState("")
+  const [detailLookup, setDetailLookup] = useState<NumberLookup | null>(null)
 
   const handleSubmit = async (instanceId: string, numbers: string[]) => {
     await submitLookup(instanceId, numbers)
@@ -40,8 +44,15 @@ export default function NumberLookupsPage() {
     return importContacts(activeLookup.id, groupId, tag)
   }
 
-  const handleViewLookup = async (id: string) => {
-    await viewLookup(id)
+  const handleViewLookup = async (lookup: NumberLookup) => {
+    if (lookup.result) {
+      // Already have full data from list
+      setDetailLookup(lookup)
+    } else {
+      // Fetch full details
+      const data = await apiClient.numberLookups.get(lookup.id)
+      setDetailLookup(data)
+    }
   }
 
   const handleImportFromHistory = async (id: string) => {
@@ -137,6 +148,9 @@ export default function NumberLookupsPage() {
           importingId={importing ? activeLookup?.id ?? null : null}
         />
       </div>
+
+      {/* Detail modal */}
+      <LookupDetailModal lookup={detailLookup} onClose={() => setDetailLookup(null)} />
     </motion.div>
   )
 }

@@ -20,9 +20,13 @@ POST /api/v1/campaigns
 | `recipients` | object | oui | Sélecteur de destinataires |
 | `templateId` | UUID | oui si mode template | Template utilisé |
 | `variables` | object | non | Variables `custom.*` globales |
-| `type` | enum | oui si mode direct | `text`, `image`, `video`, `audio`, `document`, `voice_note` |
+| `type` | enum | oui si mode direct | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `buttons` |
 | `body` | string | selon type | Obligatoire pour `text`, optionnel pour certains médias |
 | `mediaUrl` | string | selon type | Obligatoire pour les types média |
+| `title` | string | si `buttons` | Titre du message boutons |
+| `description` | string | si `buttons` | Description du message boutons |
+| `footer` | string | non | Pied de page du message boutons |
+| `buttons` | array | si `buttons` | Liste des boutons (max 2) |
 
 ## Règle de contenu
 
@@ -70,4 +74,58 @@ Ne pas envoyer les deux en même temps.
 |---|---|---|
 | `400` | `VALIDATION_ERROR` | Campagne vide, body manquant, media manquant, destinataires invalides |
 | `403` | `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` | Plan trop faible |
+| `403` | `UNSUPPORTED_FEATURE` | Fonctionnalité non supportée (boutons sans WhatsApp Business) |
 | `404` | `NOT_FOUND` | Instance ou template introuvable |
+
+## Exemples
+
+### Campagne texte simple
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/campaigns \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "name": "Newsletter Avril",
+    "schedule": "2026-04-15T09:00:00.000Z",
+    "recipients": {
+      "type": "all"
+    },
+    "type": "text",
+    "body": "Découvrez nos nouvelles offres !"
+  }'
+```
+
+### Campagne avec boutons
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/campaigns \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "name": "Sondage satisfaction",
+    "schedule": "2026-04-15T10:00:00.000Z",
+    "recipients": {
+      "type": "tags",
+      "value": ["client"]
+    },
+    "type": "buttons",
+    "title": "Votre avis compte !",
+    "description": "Êtes-vous satisfait de nos services ?",
+    "footer": "Répondez avant demain",
+    "buttons": [
+      {
+        "type": "reply",
+        "displayText": "Très satisfait",
+        "id": "satisfied"
+      },
+      {
+        "type": "reply",
+        "displayText": "À améliorer",
+        "id": "needs_improvement"
+      }
+    ]
+  }'
+```

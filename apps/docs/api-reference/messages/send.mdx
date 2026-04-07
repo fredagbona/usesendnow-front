@@ -15,7 +15,7 @@ POST /api/v1/messages/send
 |---|---|---|---|
 | `instanceId` | UUID | oui | Instance source |
 | `to` | string | oui | Numéro E.164 |
-| `type` | enum | oui si pas de `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact` |
+| `type` | enum | oui si pas de `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact`, `buttons` |
 | `templateId` | UUID | oui si pas de `type` | Template à rendre |
 | `text` | string | selon type | Corps du message |
 | `mediaUrl` | string | selon type | URL publique du media |
@@ -25,6 +25,10 @@ POST /api/v1/messages/send
 | `locationAddress` | string | non | Adresse |
 | `contactId` | UUID | non | Contact partagé ou contexte template |
 | `variables` | object | non | Valeurs `custom.*` |
+| `title` | string | si `buttons` | Titre du message boutons |
+| `description` | string | si `buttons` | Description du message boutons |
+| `footer` | string | non | Pied de page du message boutons |
+| `buttons` | array | si `buttons` | Liste des boutons (max 2) |
 
 ## Exemple de requête
 
@@ -37,6 +41,48 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     "to": "+33612345678",
     "type": "text",
     "text": "Bonjour"
+  }'
+```
+
+## Messages avec boutons
+
+Les messages avec boutons nécessitent un compte WhatsApp Business. Ils permettent d'ajouter jusqu'à 2 boutons interactifs.
+
+### Types de boutons supportés
+
+| Type | Description | Champs requis |
+|---|---|---|
+| `reply` | Bouton de réponse rapide | `displayText`, `id` |
+| `copy` | Bouton pour copier du texte | `displayText`, `copyCode` |
+| `url` | Bouton ouvrant une URL | `displayText`, `url` |
+| `call` | Bouton pour appeler | `displayText`, `phoneNumber` |
+| `pix` | Bouton de paiement Pix (Brésil) | `displayText`, `currency`, `name`, `keyType`, `key` |
+
+### Exemple de message avec boutons
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/messages/send \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "to": "+33612345678",
+    "type": "buttons",
+    "title": "Choisissez une option",
+    "description": "Que souhaitez-vous faire ?",
+    "footer": "Répondez rapidement",
+    "buttons": [
+      {
+        "type": "reply",
+        "displayText": "Voir le menu",
+        "id": "menu_option"
+      },
+      {
+        "type": "url",
+        "displayText": "Visiter le site",
+        "url": "https://example.com"
+      }
+    ]
   }'
 ```
 
@@ -71,5 +117,6 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
 | `400` | `TEMPLATE_VARIABLES_MISSING` | Variables requises manquantes |
 | `400` | `TEMPLATE_CONTEXT_UNAVAILABLE` | Contact ou instance de contexte invalide |
 | `403` | `SUBSCRIPTION_INACTIVE` | Souscription non exploitable |
+| `403` | `UNSUPPORTED_FEATURE` | Fonctionnalité non supportée (boutons sans WhatsApp Business) |
 | `404` | `NOT_FOUND` | Instance, contact ou template introuvable |
 | `429` | `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | Quota d'envoi épuisé |

@@ -16,11 +16,11 @@ POST /api/v1/messages/schedule
 | `instanceId` | UUID | oui | Instance source |
 | `to` | string | oui | Numéro E.164 |
 | `scheduledAt` | ISO 8601 | oui | Date/heure d'envoi |
-| `type` | enum | oui si pas de `templateId` | Type du message libre |
+| `type` | enum | oui si pas de `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact`, `buttons` |
 | `templateId` | UUID | oui si pas de `type` | Template à rendre |
 | `variables` | object | non | Valeurs `custom.*` |
 
-Les autres champs suivent les mêmes règles que `/messages/send`.
+Les autres champs suivent les mêmes règles que `/messages/send`, y compris les champs spécifiques aux boutons (`title`, `description`, `footer`, `buttons`).
 
 ## Exemple de requête
 
@@ -34,6 +34,29 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
     "type": "text",
     "text": "Bonjour dans 30 minutes",
     "scheduledAt": "2026-04-02T08:00:00.000Z"
+  }'
+```
+
+## Exemple avec boutons
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "to": "+33612345678",
+    "type": "buttons",
+    "title": "Rappel programmé",
+    "description": "Votre rendez-vous est dans 30 minutes",
+    "scheduledAt": "2026-04-02T08:00:00.000Z",
+    "buttons": [
+      {
+        "type": "reply",
+        "displayText": "Confirmer",
+        "id": "confirm_appointment"
+      }
+    ]
   }'
 ```
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
@@ -8,7 +8,7 @@ import { useApiKeys } from "@/hooks/useApiKeys"
 import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
 import { formatRelativeDate, formatDate } from "@/lib/format"
-import type { SubscriptionResponse } from "@usesendnow/types"
+import type { ApiKey, ApiKeyUsage } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
 import Card from "@/components/ui/Card"
@@ -94,38 +94,14 @@ function getUsageShare(requestCount: number, total: number) {
 
 export default function ApiKeysPage() {
   const { apiKeys, usage, periodKey, totalRequests, loading, error, addApiKey, removeApiKey } = useApiKeys()
-  const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
-  const [planBlocked, setPlanBlocked] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [secretModal, setSecretModal] = useState<{ secret: string; keyPrefix: string } | null>(null)
   const [revokeTarget, setRevokeTarget] = useState<{ id: string; name: string } | null>(null)
   const [newKeyName, setNewKeyName] = useState("")
   const [creating, setCreating] = useState(false)
   const [revoking, setRevoking] = useState<string | null>(null)
-  const maxApiKeys =
-    subscription?.subscription?.plan?.limits?.maxApiKeys ??
-    subscription?.subscription?.plan?.maxApiKeys ??
-    0
-  const activeApiKeysCount = subscription?.usage?.activeApiKeysCount ?? apiKeys.length
-  const isFreePlan = (subscription?.subscription?.plan?.code ?? "free") === "free"
-  const freePlanLimitReached = isFreePlan && maxApiKeys > 0 && activeApiKeysCount >= maxApiKeys
 
   const usageById = new Map(usage.map((entry) => [entry.id, entry]))
-
-  useEffect(() => {
-    apiClient.billing.getSubscription()
-      .then((sub) => {
-        setSubscription(sub)
-        const maxKeys =
-          sub?.subscription?.plan?.limits?.maxApiKeys ??
-          sub?.subscription?.plan?.maxApiKeys ??
-          0
-        if (maxKeys <= 0) {
-          setPlanBlocked(true)
-        }
-      })
-      .catch(() => {})
-  }, [])
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -140,17 +116,15 @@ export default function ApiKeysPage() {
         lastUsedAt: null,
         revokedAt: null,
         createdAt: data.createdAt,
-      })
+      } as ApiKey)
       setCreateModalOpen(false)
       setNewKeyName("")
       setSecretModal({ secret: data.secret, keyPrefix: data.keyPrefix })
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "API_KEYS_NOT_AVAILABLE_ON_PLAN") {
-          setCreateModalOpen(false)
-          setPlanBlocked(true)
+          toast.error("Les clés API ne sont pas disponibles sur le plan Gratuit. Changez de plan pour y accéder.")
         } else if (err.code === "MAX_API_KEYS_REACHED") {
-          setCreateModalOpen(false)
           toast.error("Vous avez atteint la limite de clés API. Révoquez une clé existante ou changez de plan.")
         } else {
           toast.error("Impossible de créer la clé API.")
@@ -182,59 +156,78 @@ export default function ApiKeysPage() {
         title="Clés API"
         description="Gérez vos clés d'accès pour l'API publique."
         action={
-          !planBlocked && (
-            <div className="flex flex-wrap items-center gap-2">
-              <a
-                href={portalBrand.docsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 border border-border bg-bg px-4 py-2 text-sm font-(family-name:--font-geist-sans) font-bold uppercase tracking-[0.08em] text-text transition-colors hover:bg-bg-subtle"
-              >
-                Documentation API
-              </a>
-              <Button variant="primary" onClick={() => setCreateModalOpen(true)} disabled={freePlanLimitReached}>
-                Nouvelle clé API
-              </Button>
-            </div>
-          )
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={portalBrand.docsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 border border-border bg-bg px-4 py-2 text-sm font-(family-name:--font-geist-sans) font-bold uppercase tracking-[0.08em] text-text transition-colors hover:bg-bg-subtle"
+            >
+              Documentation API
+            </a>
+            <Button variant="primary" onClick={() => setCreateModalOpen(true)}>
+              Nouvelle clé API
+            </Button>
+          </div>
         }
       />
 
-      {!planBlocked && isFreePlan && (
-        <div className="mb-6 rounded-2xl border border-primary/30 bg-primary-subtle px-5 py-4 text-sm text-text">
-          {FREE_PLAN_SHORT_MESSAGE}
-        </div>
-      )}
-
-      {planBlocked && (
-        <div className="mb-6">
-          <PlanGateBanner message="Les clés API ne sont pas disponibles sur le plan Gratuit. Changez de plan pour accéder à l'API." />
-        </div>
-      )}
-
-      {!planBlocked && freePlanLimitReached && (
-        <div className="mb-6">
-          <PlanGateBanner message="Vous avez atteint la limite de clés API pour le plan actuel." />
-        </div>
-      )}
+      <div className="mb-6 rounded-2xl border border-primary/30 bg-primary-subtle px-5 py-4 text-sm text-text">
+        {FREE_PLAN_SHORT_MESSAGE}
+      </div>
 
       {/* Quick start — dark code block */}
-      {!planBlocked && (
-        <QuickStartBlock />
-      )}
+      <QuickStartBlock />
 
-      {!planBlocked && (
-        <Card>
-          {error && (
-            <div className="mb-4 text-sm text-error-hover">
-              Impossible de charger les clés API.
+      <Card>
+        {error && (
+          <div className="mb-4 text-sm text-error-hover">
+            Impossible de charger les clés API.
+          </div>
+        )}
+        {loading ? (
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                {["Nom", "Préfixe", "Requêtes (mois)", "Dernière utilisation", "Créée le", "Actions"].map((h) => (
+                  <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3].map((i) => <SkeletonTableRow key={i} cols={6} />)}
+            </tbody>
+          </table>
+        ) : apiKeys.length === 0 ? (
+          <EmptyState
+            icon={<Key01Icon className="w-8 h-8" />}
+            title="Aucune clé API pour le moment."
+            description="Créez votre première clé."
+            ctaLabel="Nouvelle clé API"
+            onCta={() => setCreateModalOpen(true)}
+          />
+        ) : (
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">
+                  Résumé d'utilisation
+                </p>
+                <p className="text-sm text-text-body mt-1">
+                  {totalRequests.toLocaleString("fr-FR")} requêtes sur {periodKey ?? "ce mois-ci"}
+                </p>
+              </div>
+              <p className="text-xs text-text-muted">
+                Clés actives : {apiKeys.length}
+              </p>
             </div>
-          )}
-          {loading ? (
+
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  {["Nom", "Préfixe", "Requêtes (mois)", "Dernière utilisation", "Créée le", "Actions"].map((h) => (
+                  {["Clé", "Usage ce mois", "Dernière requête", "Dernière utilisation", "Créée le", "Actions"].map((h) => (
                     <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">
                       {h}
                     </th>
@@ -242,110 +235,71 @@ export default function ApiKeysPage() {
                 </tr>
               </thead>
               <tbody>
-                {[1, 2, 3].map((i) => <SkeletonTableRow key={i} cols={6} />)}
+                {apiKeys.map((key) => {
+                  const usageItem = usageById.get(key.id)
+                  const requestCount = usageItem?.requestCount ?? 0
+                  const usageShare = getUsageShare(requestCount, totalRequests)
+                  const isRevoked = Boolean(usageItem?.revokedAt ?? key.revokedAt)
+                  return (
+                    <tr key={key.id} className="border-b border-border last:border-0 hover:bg-bg-subtle">
+                      <td className="py-3 pr-4">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-medium text-text">{key.name}</span>
+                            <span
+                              className={[
+                                "inline-flex items-center border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]",
+                                isRevoked
+                                  ? "border-error/30 bg-error-subtle text-error-hover"
+                                  : "border-primary/20 bg-primary-subtle text-primary-ink",
+                              ].join(" ")}
+                            >
+                              {isRevoked ? "Révoquée" : "Active"}
+                            </span>
+                          </div>
+                          <code className="inline-flex text-xs font-mono bg-bg-subtle border border-border px-2 py-0.5 rounded">
+                            {key.keyPrefix}
+                          </code>
+                        </div>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <div className="space-y-2">
+                          <div className="text-sm text-text-secondary">
+                            {requestCount.toLocaleString("fr-FR")} requêtes
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-text-muted">
+                            <span className="inline-flex border border-border bg-bg-subtle px-2 py-0.5 rounded">
+                              {usageShare}% du trafic mensuel
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 pr-4 text-sm text-text-secondary">
+                        {usageItem?.lastRequestAt ? formatRelativeDate(usageItem.lastRequestAt) : "Aucune"}
+                      </td>
+                      <td className="py-3 pr-4 text-sm text-text-secondary">
+                        {usageItem?.lastUsedAt ?? key.lastUsedAt ? formatRelativeDate(usageItem?.lastUsedAt ?? key.lastUsedAt!) : "Jamais"}
+                      </td>
+                      <td className="py-3 pr-4 text-sm text-text-secondary">{formatDate(key.createdAt)}</td>
+                      <td className="py-3">
+                        <Button
+                          variant="outlined"
+                          size="sm"
+                          className="text-error-hover border-error hover:bg-error-subtle"
+                          loading={revoking === key.id}
+                          onClick={() => setRevokeTarget({ id: key.id, name: key.name })}
+                        >
+                          Révoquer
+                        </Button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
-          ) : apiKeys.length === 0 ? (
-            <EmptyState
-              icon={<Key01Icon className="w-8 h-8" />}
-              title="Aucune clé API pour le moment."
-              description="Créez votre première clé."
-              ctaLabel="Nouvelle clé API"
-              onCta={() => setCreateModalOpen(true)}
-            />
-          ) : (
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">
-                    Résumé d'utilisation
-                  </p>
-                  <p className="text-sm text-text-body mt-1">
-                    {totalRequests.toLocaleString("fr-FR")} requêtes sur {periodKey ?? "ce mois-ci"}
-                  </p>
-                </div>
-                <p className="text-xs text-text-muted">
-                  Clés actives : {apiKeys.length}
-                </p>
-              </div>
-
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    {["Clé", "Usage ce mois", "Dernière requête", "Dernière utilisation", "Créée le", "Actions"].map((h) => (
-                      <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {apiKeys.map((key) => {
-                    const usageItem = usageById.get(key.id)
-                    const requestCount = usageItem?.requestCount ?? 0
-                    const usageShare = getUsageShare(requestCount, totalRequests)
-                    const isRevoked = Boolean(usageItem?.revokedAt ?? key.revokedAt)
-                    return (
-                      <tr key={key.id} className="border-b border-border last:border-0 hover:bg-bg-subtle">
-                        <td className="py-3 pr-4">
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-sm font-medium text-text">{key.name}</span>
-                              <span
-                                className={[
-                                  "inline-flex items-center border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]",
-                                  isRevoked
-                                    ? "border-error/30 bg-error-subtle text-error-hover"
-                                    : "border-primary/20 bg-primary-subtle text-primary-ink",
-                                ].join(" ")}
-                              >
-                                {isRevoked ? "Révoquée" : "Active"}
-                              </span>
-                            </div>
-                            <code className="inline-flex text-xs font-mono bg-bg-subtle border border-border px-2 py-0.5 rounded">
-                              {key.keyPrefix}
-                            </code>
-                          </div>
-                        </td>
-                        <td className="py-3 pr-4">
-                          <div className="space-y-2">
-                            <div className="text-sm text-text-secondary">
-                              {requestCount.toLocaleString("fr-FR")} requêtes
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-text-muted">
-                              <span className="inline-flex border border-border bg-bg-subtle px-2 py-0.5 rounded">
-                                {usageShare}% du trafic mensuel
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 pr-4 text-sm text-text-secondary">
-                          {usageItem?.lastRequestAt ? formatRelativeDate(usageItem.lastRequestAt) : "Aucune"}
-                        </td>
-                        <td className="py-3 pr-4 text-sm text-text-secondary">
-                          {usageItem?.lastUsedAt ?? key.lastUsedAt ? formatRelativeDate(usageItem?.lastUsedAt ?? key.lastUsedAt!) : "Jamais"}
-                        </td>
-                        <td className="py-3 pr-4 text-sm text-text-secondary">{formatDate(key.createdAt)}</td>
-                        <td className="py-3">
-                          <Button
-                            variant="outlined"
-                            size="sm"
-                            className="text-error-hover border-error hover:bg-error-subtle"
-                            loading={revoking === key.id}
-                            onClick={() => setRevokeTarget({ id: key.id, name: key.name })}
-                          >
-                            Révoquer
-                          </Button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      )}
+          </div>
+        )}
+      </Card>
 
       {/* Create modal */}
       <Modal

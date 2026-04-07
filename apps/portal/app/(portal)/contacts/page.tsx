@@ -29,6 +29,7 @@ import {
   InformationCircleIcon,
   CheckmarkCircle01Icon,
   AlertCircleIcon,
+  Delete01Icon,
 } from "hugeicons-react"
 
 // ─── Contact Modal ─────────────────────────────────────────────────────────────
@@ -467,6 +468,8 @@ export default function ContactsPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   // Contact groups lookup map
   const [contactGroups, setContactGroups] = useState<Map<string, Array<{ id: string; name: string; color?: string }>>>(new Map())
@@ -538,6 +541,56 @@ export default function ContactsPage() {
     }
   }
 
+  // ─── Selection helpers ────────────────────────────────────────────────────
+
+  const filteredIds = useMemo(() => filtered.map((c) => c.id), [filtered])
+
+  const allSelected = filtered.length > 0 && filteredIds.every((id) => selectedIds.has(id))
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredIds))
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    setBulkDeleting(true)
+    try {
+      const result = await apiClient.contacts.deleteMany(Array.from(selectedIds))
+      selectedIds.forEach((id) => removeContact(id))
+      if (result.notFound && result.notFound.length > 0) {
+        toast.warning(`${result.deletedCount} contact${result.deletedCount > 1 ? "s" : ""} supprimé${result.deletedCount > 1 ? "s" : ""}, ${result.notFound.length} introuvable${result.notFound.length > 1 ? "s" : ""}`)
+      } else {
+        toast.success(`${result.deletedCount} contact${result.deletedCount > 1 ? "s" : ""} supprimé${result.deletedCount > 1 ? "s" : ""}`)
+      }
+      setSelectedIds(new Set())
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        if (err.code === "VALIDATION_ERROR") {
+          toast.error("Sélection invalide. Réessayez.")
+        } else if (err.code === "FORBIDDEN") {
+          toast.error("Accès refusé pour supprimer ces contacts.")
+        } else {
+          toast.error("Impossible de supprimer les contacts.")
+        }
+      }
+    } finally {
+      setBulkDeleting(false)
+    }
+  }
+
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
@@ -606,18 +659,46 @@ export default function ContactsPage() {
           </div>
 
           <Card>
+            {/* Bulk action bar */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center justify-between px-5 py-3 bg-primary-subtle border border-primary/30 rounded-xl mb-4">
+                <div className="flex items-center gap-3">
+                  <CheckmarkCircle01Icon className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-text">
+                    <strong>{selectedIds.size}</strong> contact{selectedIds.size > 1 ? "s" : ""} sélectionné{selectedIds.size > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="secondary" size="sm" onClick={() => setSelectedIds(new Set())}>
+                    Désélectionner tout
+                  </Button>
+                  <Button variant="danger" size="sm" loading={bulkDeleting} onClick={handleBulkDelete}>
+                    <Delete01Icon className="w-4 h-4 mr-1.5" />
+                    Supprimer
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <>
                 <div className="hidden sm:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border">
+                        <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4 w-10">
+                          <input
+                            type="checkbox"
+                            disabled
+                            className="h-4 w-4 rounded border-border-strong accent-primary cursor-not-allowed"
+                          />
+                        </th>
                         {["Nom", "Téléphone", "Tags", "Groupes", "Créé le", ""].map((h) => (
                           <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody>{[1, 2, 3].map((i) => <SkeletonTableRow key={i} cols={6} />)}</tbody>
+                    <tbody>{[1, 2, 3].map((i) => <SkeletonTableRow key={i} cols={7} />)}</tbody>
                   </table>
                 </div>
                 <div className="sm:hidden space-y-2">
@@ -647,6 +728,14 @@ export default function ContactsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border">
+                        <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4 w-10">
+                          <input
+                            type="checkbox"
+                            checked={allSelected}
+                            onChange={toggleSelectAll}
+                            className="h-4 w-4 rounded border-border-strong accent-primary cursor-pointer"
+                          />
+                        </th>
                         {["Nom", "Téléphone", "Tags", "Groupes", "Créé le", ""].map((h) => (
                           <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                         ))}
@@ -657,6 +746,14 @@ export default function ContactsPage() {
                         const cGroups = contactGroups.get(contact.id) ?? []
                         return (
                           <tr key={contact.id} className="border-b border-border last:border-0 hover:bg-bg-subtle">
+                            <td className="py-3 pr-4">
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(contact.id)}
+                                onChange={() => toggleSelect(contact.id)}
+                                className="h-4 w-4 rounded border-border-strong accent-primary cursor-pointer"
+                              />
+                            </td>
                             <td className="py-3 pr-4 text-sm font-semibold text-text">{contact.name}</td>
                             <td className="py-3 pr-4 text-sm font-mono text-text-body whitespace-nowrap">{contact.phone}</td>
                             <td className="py-3 pr-4">
@@ -703,7 +800,13 @@ export default function ContactsPage() {
                     const cGroups = contactGroups.get(contact.id) ?? []
                     return (
                       <div key={contact.id} className="py-3">
-                        <div className="flex items-start justify-between gap-2 mb-1">
+                        <div className="flex items-start gap-2 mb-1">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(contact.id)}
+                            onChange={() => toggleSelect(contact.id)}
+                            className="h-4 w-4 mt-1 rounded border-border-strong accent-primary cursor-pointer shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold text-text truncate">{contact.name}</p>
                             <p className="text-xs font-mono text-text-muted">{contact.phone}</p>

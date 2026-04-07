@@ -38,9 +38,17 @@ export function parsePhoneCsv(text: string): string[] {
 
 /**
  * Génère le contenu d'un fichier CSV template avec une seule colonne `phone`.
+ * Inclut 5 exemples de numéros (Japon, Suède, Allemagne, France) pour guider l'utilisateur.
  */
 export function generatePhoneCsvTemplate(): string {
-  return "phone\n"
+  return [
+    "phone",
+    "+819012345678",
+    "+818098765432",
+    "+46701234567",
+    "+4915112345678",
+    "+33612345000",
+  ].join("\n") + "\n"
 }
 
 /**

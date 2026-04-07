@@ -7,7 +7,7 @@ import { EyeIcon, Contact01Icon } from "hugeicons-react"
 
 interface LookupHistoryTableProps {
   lookups: NumberLookup[]
-  onView: (id: string) => void
+  onView: (lookup: NumberLookup) => void
   onImport: (id: string) => void
   importingId: string | null
 }
@@ -81,7 +81,7 @@ export default function LookupHistoryTable({
                   <td className="px-5 py-3 text-sm text-error">{lookup.invalidCount}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => onView(lookup.id)}>
+                      <Button variant="ghost" size="sm" onClick={() => onView(lookup)}>
                         <EyeIcon className="w-4 h-4" />
                       </Button>
                       {canImport ? (
@@ -126,7 +126,7 @@ export default function LookupHistoryTable({
                   <span>Invalides: <strong className="text-error">{lookup.invalidCount}</strong></span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => onView(lookup.id)}>
+                  <Button variant="ghost" size="sm" onClick={() => onView(lookup)}>
                     <EyeIcon className="w-4 h-4" />
                   </Button>
                   {canImport ? (

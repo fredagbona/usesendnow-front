@@ -333,6 +333,9 @@ const contacts = {
 
   delete: (id: string) => del<{ deleted: boolean }>(`/api/contacts/${id}`),
 
+  deleteMany: (contactIds: string[]) =>
+    request<{ deletedCount: number; requested: number; notFound: string[] }>("DELETE", "/api/contacts/bulk", { contactIds }),
+
   getGroups: (id: string) => get<ContactGroupsOfContact>(`/api/contacts/${id}/groups`),
 
   export: async (groupId?: string): Promise<{ blob: Blob; filename: string }> => {
