@@ -607,6 +607,71 @@ export interface ContactImportsResponse {
   hasMore: boolean
 }
 
+// ─── Number Lookups ──────────────────────────────────────────────────────────
+
+export type LookupStatus = "pending" | "processing" | "done" | "failed"
+export type LookupMode = "sync" | "async"
+
+export interface LookupResultEntry {
+  input: string
+  normalized?: string
+  jid?: string
+  reason?: string
+}
+
+export interface LookupResult {
+  onWhatsApp: LookupResultEntry[]
+  notOnWhatsApp: LookupResultEntry[]
+  invalid: LookupResultEntry[]
+}
+
+export interface NumberLookup {
+  id: string
+  instanceId: string
+  status: LookupStatus
+  progress?: number
+  requestedCount: number
+  normalizedCount: number
+  checkedCount: number
+  onWhatsAppCount: number
+  notOnWhatsAppCount: number
+  invalidCount: number
+  result?: LookupResult
+  completedAt?: string
+  createdAt: string
+}
+
+export interface CreateLookupPayload {
+  instanceId: string
+  numbers: string[]
+}
+
+export interface CreateLookupResponse {
+  mode: LookupMode
+  lookupId: string
+  status: LookupStatus
+  requested: number
+  normalized?: number
+  checked?: number
+  onWhatsAppCount?: number
+  notOnWhatsAppCount?: number
+  invalidCount?: number
+  result?: LookupResult
+  message?: string
+}
+
+export interface ImportContactsResponse {
+  requested: number
+  created: number
+  updated: number
+  skipped: number
+}
+
+export interface ImportContactsPayload {
+  groupId?: string
+  tag?: string
+}
+
 // ─── API Error ────────────────────────────────────────────────────────────────
 
 export interface ApiError {

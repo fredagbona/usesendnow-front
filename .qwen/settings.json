@@ -3,7 +3,8 @@
     "allow": [
       "Bash(mv *)",
       "Bash(pnpm run *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(mkdir *)"
     ]
   },
   "$version": 3

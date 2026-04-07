@@ -50,6 +50,11 @@ import type {
   ContactImportsResponse,
   ApiError,
   UploadedMedia,
+  NumberLookup,
+  CreateLookupPayload,
+  CreateLookupResponse,
+  ImportContactsResponse,
+  ImportContactsPayload,
 } from "@usesendnow/types"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -502,6 +507,20 @@ const statuses = {
     get<StatusesListResponse>(`/api/statuses?page=${page}&limit=${limit}`),
 }
 
+// ─── Number Lookups ──────────────────────────────────────────────────────────
+
+const numberLookups = {
+  create: (payload: CreateLookupPayload) =>
+    post<CreateLookupResponse>("/api/number-lookups", payload),
+
+  list: () => get<NumberLookup[]>("/api/number-lookups"),
+
+  get: (id: string) => get<NumberLookup>(`/api/number-lookups/${id}`),
+
+  importContacts: (id: string, payload: ImportContactsPayload) =>
+    post<ImportContactsResponse>(`/api/number-lookups/${id}/import-contacts`, payload),
+}
+
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 export const apiClient = {
@@ -517,6 +536,7 @@ export const apiClient = {
   webhooks,
   billing,
   statuses,
+  numberLookups,
 }
 
 export { ApiClientError }
