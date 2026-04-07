@@ -45,21 +45,13 @@ const PLAN_MARKETING: Record<string, { contactGroups: string }> = {
   },
 }
 
-const FREE_PLAN_NOTE =
-  "Le plan Free inclut 1 clé API pour tester l'intégration. Les autres limites ne changent pas: 20 messages + statuts par mois, 1 instance, 0 webhook et 2 groupes de contacts."
-
 function formatPrice(priceMonthly: number | undefined): string {
   if (!priceMonthly || priceMonthly === 0) return "0€ / mois"
   return `${(priceMonthly / 100).toLocaleString("fr-FR")}€ / mois`
 }
 
 function formatEurValue(amount: number | undefined): string {
-  if (!amount || amount === 0) return "0€ / mois"
-  return `${amount.toLocaleString("fr-FR")}€ / mois`
-}
-
-function formatEurSecondary(amount: number | undefined): string {
-  if (amount === undefined || amount === null || amount === 0) return ""
+  if (amount === undefined || amount === null) return ""
   return `(${amount.toLocaleString("fr-FR")} €)`
 }
 
@@ -450,10 +442,6 @@ function BillingPageContent() {
         title="Facturation"
         description="Gérez votre plan et suivez votre consommation mensuelle."
       />
-
-      <div className="rounded-2xl border border-primary/30 bg-primary-subtle px-5 py-4 text-sm text-text">
-        {FREE_PLAN_NOTE}
-      </div>
 
       {/* ── Alertes statut ──────────────────────────────────────────────── */}
       {sub?.status === "past_due" && (

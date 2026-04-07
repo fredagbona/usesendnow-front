@@ -625,8 +625,16 @@ export interface LookupResult {
   invalid: LookupResultEntry[]
 }
 
+export interface NumberLookupInstance {
+  id: string
+  name: string
+  waNumber: string | null
+  status: string
+}
+
 export interface NumberLookup {
   id: string
+  userId: string
   instanceId: string
   status: LookupStatus
   progress?: number
@@ -637,8 +645,13 @@ export interface NumberLookup {
   notOnWhatsAppCount: number
   invalidCount: number
   result?: LookupResult
+  input?: { numbers: string[] }
+  error?: string | null
   completedAt?: string
   createdAt: string
+  updatedAt: string
+  importedAt?: string | null
+  instance?: NumberLookupInstance
 }
 
 export interface CreateLookupPayload {
@@ -670,6 +683,12 @@ export interface ImportContactsResponse {
 export interface ImportContactsPayload {
   groupId?: string
   tag?: string
+}
+
+export interface NumberLookupsListResponse {
+  lookups: NumberLookup[]
+  nextCursor: string | null
+  hasMore: boolean
 }
 
 // ─── API Error ────────────────────────────────────────────────────────────────

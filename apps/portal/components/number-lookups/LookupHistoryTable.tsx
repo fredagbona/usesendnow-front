@@ -1,14 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
-import type { NumberLookup, Instance } from "@usesendnow/types"
+import type { NumberLookup } from "@usesendnow/types"
 import Badge from "@/components/ui/Badge"
 import Button from "@/components/ui/Button"
 import { EyeIcon, Contact01Icon } from "hugeicons-react"
 
 interface LookupHistoryTableProps {
   lookups: NumberLookup[]
-  instances: Instance[]
   onView: (id: string) => void
   onImport: (id: string) => void
   importingId: string | null
@@ -33,17 +31,10 @@ function formatDate(dateStr: string): string {
 
 export default function LookupHistoryTable({
   lookups,
-  instances,
   onView,
   onImport,
   importingId,
 }: LookupHistoryTableProps) {
-  const instanceMap = useMemo(() => {
-    const map = new Map<string, string>()
-    instances.forEach((inst) => map.set(inst.id, inst.name))
-    return map
-  }, [instances])
-
   if (lookups.length === 0) {
     return (
       <div className="bg-bg border border-border rounded-2xl p-10 text-center">
@@ -71,14 +62,15 @@ export default function LookupHistoryTable({
           <tbody>
             {lookups.map((lookup) => {
               const config = STATUS_CONFIG[lookup.status] ?? STATUS_CONFIG.pending
-              const canImport = lookup.status === "done"
+              const instanceName = lookup.instance?.name ?? "—"
+              const canImport = lookup.status === "done" && !lookup.importedAt
               return (
                 <tr key={lookup.id} className="border-b border-border last:border-0 hover:bg-bg-subtle transition-colors">
                   <td className="px-5 py-3 text-sm text-text-body whitespace-nowrap">
                     {formatDate(lookup.createdAt)}
                   </td>
                   <td className="px-5 py-3 text-sm font-medium text-text whitespace-nowrap">
-                    {instanceMap.get(lookup.instanceId) ?? "—"}
+                    {instanceName}
                   </td>
                   <td className="px-5 py-3">
                     <Badge variant={config.variant}>{config.label}</Badge>
@@ -92,7 +84,7 @@ export default function LookupHistoryTable({
                       <Button variant="ghost" size="sm" onClick={() => onView(lookup.id)}>
                         <EyeIcon className="w-4 h-4" />
                       </Button>
-                      {canImport && (
+                      {canImport ? (
                         <Button
                           variant="primary"
                           size="sm"
@@ -101,7 +93,9 @@ export default function LookupHistoryTable({
                         >
                           <Contact01Icon className="w-4 h-4" />
                         </Button>
-                      )}
+                      ) : lookup.importedAt ? (
+                        <Badge variant="info">Importé</Badge>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -115,12 +109,13 @@ export default function LookupHistoryTable({
       <div className="sm:hidden divide-y divide-border">
         {lookups.map((lookup) => {
           const config = STATUS_CONFIG[lookup.status] ?? STATUS_CONFIG.pending
-          const canImport = lookup.status === "done"
+          const instanceName = lookup.instance?.name ?? "—"
+          const canImport = lookup.status === "done" && !lookup.importedAt
           return (
             <div key={lookup.id} className="px-4 py-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-text">
-                  {formatDate(lookup.createdAt)}
+                  {formatDate(lookup.createdAt)} · {instanceName}
                 </span>
                 <Badge variant={config.variant}>{config.label}</Badge>
               </div>
@@ -134,11 +129,13 @@ export default function LookupHistoryTable({
                   <Button variant="ghost" size="sm" onClick={() => onView(lookup.id)}>
                     <EyeIcon className="w-4 h-4" />
                   </Button>
-                  {canImport && (
+                  {canImport ? (
                     <Button variant="primary" size="sm" loading={importingId === lookup.id} onClick={() => onImport(lookup.id)}>
                       <Contact01Icon className="w-4 h-4" />
                     </Button>
-                  )}
+                  ) : lookup.importedAt ? (
+                    <Badge variant="info">Importé</Badge>
+                  ) : null}
                 </div>
               </div>
             </div>

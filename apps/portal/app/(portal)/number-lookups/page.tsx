@@ -132,7 +132,6 @@ export default function NumberLookupsPage() {
         <h2 className="text-sm font-medium text-text mb-4">Historique</h2>
         <LookupHistoryTable
           lookups={lookups}
-          instances={instances}
           onView={handleViewLookup}
           onImport={handleImportFromHistory}
           importingId={importing ? activeLookup?.id ?? null : null}

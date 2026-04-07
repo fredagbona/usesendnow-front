@@ -203,7 +203,7 @@ Pour les statuts image:
 ```json
 {
   "instanceId": "inst_xxx",
-  "to": "+22901000000",
+  "to": "+41791234567",
   "type": "image",
   "text": "Votre produit est prêt",
   "mediaUrl": "https://res.cloudinary.com/..."
@@ -215,7 +215,7 @@ Pour les statuts image:
 ```json
 {
   "instanceId": "inst_xxx",
-  "to": "+22901000000",
+  "to": "+41791234567",
   "type": "document",
   "text": "Voici votre facture",
   "mediaUrl": "https://res.cloudinary.com/..."
@@ -227,7 +227,7 @@ Pour les statuts image:
 ```json
 {
   "instanceId": "inst_xxx",
-  "to": "+22901000000",
+  "to": "+41791234567",
   "type": "audio",
   "mediaUrl": "https://res.cloudinary.com/..."
 }
@@ -238,7 +238,7 @@ Pour les statuts image:
 ```json
 {
   "instanceId": "inst_xxx",
-  "to": "+22901000000",
+  "to": "+41791234567",
   "type": "voice_note",
   "mediaUrl": "https://res.cloudinary.com/..."
 }

@@ -215,7 +215,7 @@ groupId: <optional>
 ### Format CSV attendu (à documenter dans l'UI)
 ```
 phone,name,tags
-+22901000000,Kouassi Amara,vip|benin
++41791234567,Kouassi Amara,vip|benin
 +22501000000,Fatou Diallo,client
 +33612345678,Jean Dupont,
 ```
@@ -320,7 +320,7 @@ const handleExport = async (groupId?: string) => {
 ### Format CSV exporté
 ```
 phone,name,tags,groups,createdAt
-+22901000000,Kouassi Amara,vip|benin,Clients VIP|Bénin,2026-03-01T10:00:00Z
++41791234567,Kouassi Amara,vip|benin,Clients VIP|Bénin,2026-03-01T10:00:00Z
 +22501000000,Fatou Diallo,client,Clients VIP,2026-02-15T08:00:00Z
 ```
 
@@ -489,7 +489,7 @@ type CampaignRecipients =
 ```json
 {
   "contacts": [
-    { "id": "cnt_abc", "name": "Kouassi Amara", "phone": "+22901000000", "tags": ["vip"], "addedAt": "2026-03-27T10:00:00Z" }
+    { "id": "cnt_abc", "name": "Kouassi Amara", "phone": "+41791234567", "tags": ["vip"], "addedAt": "2026-03-27T10:00:00Z" }
   ],
   "nextCursor": "cnt_xyz",
   "hasMore": true,

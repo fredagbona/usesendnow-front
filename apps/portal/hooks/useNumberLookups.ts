@@ -49,8 +49,11 @@ export function useNumberLookups() {
     setLoading(true)
     setError(null)
     try {
-      const data = await apiClient.numberLookups.list()
-      setLookups(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+      const response = await apiClient.numberLookups.list()
+      const sorted = (response.lookups ?? []).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+      setLookups(sorted)
     } catch {
       setError("Impossible de charger l'historique des lookups.")
     } finally {
@@ -69,8 +72,10 @@ export function useNumberLookups() {
 
       if (result.mode === "sync" && result.result) {
         // Build a NumberLookup from sync result for display
+        const now = new Date().toISOString()
         const syncLookup: NumberLookup = {
           id: result.lookupId,
+          userId: "",
           instanceId,
           status: result.status,
           requestedCount: result.requested,
@@ -80,7 +85,8 @@ export function useNumberLookups() {
           notOnWhatsAppCount: result.notOnWhatsAppCount ?? 0,
           invalidCount: result.invalidCount ?? 0,
           result: result.result,
-          createdAt: new Date().toISOString(),
+          createdAt: now,
+          updatedAt: now,
         }
         setActiveLookup(syncLookup)
         toast.success("Lookup completed")

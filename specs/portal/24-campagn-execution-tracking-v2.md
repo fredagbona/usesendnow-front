@@ -204,7 +204,7 @@ Status filter supporte:
         "id": "msg_001",
         "contactId": "cnt_001",
         "contactName": "Awa Doe",
-        "to": "+22901000000",
+        "to": "+41791234567",
         "type": "text",
         "status": "delivered",
         "error": null,

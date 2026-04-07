@@ -55,6 +55,7 @@ import type {
   CreateLookupResponse,
   ImportContactsResponse,
   ImportContactsPayload,
+  NumberLookupsListResponse,
 } from "@usesendnow/types"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -513,7 +514,7 @@ const numberLookups = {
   create: (payload: CreateLookupPayload) =>
     post<CreateLookupResponse>("/api/number-lookups", payload),
 
-  list: () => get<NumberLookup[]>("/api/number-lookups"),
+  list: () => get<NumberLookupsListResponse>("/api/number-lookups"),
 
   get: (id: string) => get<NumberLookup>(`/api/number-lookups/${id}`),
 

@@ -227,7 +227,7 @@ Visual: fake terminal/code block showing webhook payload JSON:
 {
   "event": "message.delivered",
   "messageId": "msg_abc123",
-  "to": "+22901000000",
+  "to": "+41791234567",
   "timestamp": "2026-03-27T10:00:00Z"
 }
 style: bg-black, text-[#25D366], font-mono text-sm, rounded-lg
@@ -306,7 +306,7 @@ x-api-key: usn_live_xxxxxxxxxxxx
 
 {
   "instanceId": "inst_abc123",
-  "to": "+22901000000",
+  "to": "+41791234567",
   "type": "text",
   "text": { "body": "Bonjour 👋 depuis UseSendNow !" }
 }
