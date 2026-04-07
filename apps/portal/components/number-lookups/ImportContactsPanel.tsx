@@ -1,6 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { toast } from "@/lib/toast"
+import { ApiClientError } from "@usesendnow/api-client"
+import { apiClient } from "@usesendnow/api-client"
 import Button from "@/components/ui/Button"
 import Select from "@/components/ui/Select"
 import Input from "@/components/ui/Input"
@@ -9,34 +12,35 @@ import type { ContactGroup } from "@usesendnow/types"
 
 interface ImportContactsPanelProps {
   lookupId: string
-  onImport: (lookupId: string, groupId?: string, tag?: string) => Promise<boolean>
   importing: boolean
+  onImported: () => void
   groups: ContactGroup[]
   onValidCount: number
 }
 
 export default function ImportContactsPanel({
   lookupId,
-  onImport,
-  importing,
+  importing: importingProp,
+  onImported,
   groups,
   onValidCount,
 }: ImportContactsPanelProps) {
   const [groupId, setGroupId] = useState("")
   const [tag, setTag] = useState("")
   const [open, setOpen] = useState(false)
+  const [importing, setImporting] = useState(false)
 
-  // Reset form when lookupId changes
-  useEffect(() => {
+  const handleOpen = () => {
     setGroupId("")
     setTag("")
-  }, [lookupId])
+    setOpen(true)
+  }
 
   if (!open) {
     return (
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={handleOpen}
         className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-border-strong rounded-xl text-sm font-medium text-text-secondary hover:text-text hover:border-primary hover:bg-primary-subtle transition-colors"
       >
         <Contact01Icon className="w-4 h-4" />
@@ -46,13 +50,39 @@ export default function ImportContactsPanel({
   }
 
   const handleImport = async () => {
-    const success = await onImport(
-      lookupId,
-      groupId.trim() || undefined,
-      tag.trim() || undefined,
-    )
-    if (success) {
+    setImporting(true)
+    try {
+      const payload: { groupId?: string; tag?: string } = {}
+      const trimmedGroup = groupId.trim()
+      const trimmedTag = tag.trim()
+      if (trimmedGroup) {
+        payload.groupId = trimmedGroup
+      }
+      if (trimmedTag) {
+        payload.tag = trimmedTag
+      }
+      const result = await apiClient.numberLookups.importContacts(lookupId, payload)
+      if (result.skipped > 0 && result.created === 0 && result.updated === 0) {
+        toast.info("Certains contacts ont été importés, d'autres ont été ignorés.")
+      } else {
+        toast.success("Contacts importés avec succès")
+      }
+      setGroupId("")
+      setTag("")
       setOpen(false)
+      onImported()
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        if (err.code === "LOOKUP_NOT_READY") {
+          toast.error("Le lookup n'est pas encore terminé.")
+        } else if (err.code === "CONTACT_GROUP_NOT_FOUND") {
+          toast.error("Le groupe cible est introuvable.")
+        } else {
+          toast.error("Impossible d'importer les contacts. Réessayez.")
+        }
+      }
+    } finally {
+      setImporting(false)
     }
   }
 

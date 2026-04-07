@@ -81,18 +81,24 @@ export default function LookupHistoryTable({
                   <td className="px-5 py-3 text-sm text-error">{lookup.invalidCount}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => onView(lookup)}>
+                      <button
+                        type="button"
+                        onClick={() => onView(lookup)}
+                        title="Voir les détails"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-text-secondary hover:text-text hover:bg-bg-subtle transition-colors cursor-pointer"
+                      >
                         <EyeIcon className="w-4 h-4" />
-                      </Button>
+                      </button>
                       {canImport ? (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          loading={importingId === lookup.id}
+                        <button
+                          type="button"
                           onClick={() => onImport(lookup.id)}
+                          title="Importer les contacts"
+                          disabled={importingId === lookup.id}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-text-secondary hover:text-primary hover:bg-primary-subtle transition-colors disabled:opacity-50 cursor-pointer"
                         >
                           <Contact01Icon className="w-4 h-4" />
-                        </Button>
+                        </button>
                       ) : lookup.importedAt ? (
                         <Badge variant="info">Importé</Badge>
                       ) : null}
@@ -126,13 +132,24 @@ export default function LookupHistoryTable({
                   <span>Invalides: <strong className="text-error">{lookup.invalidCount}</strong></span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => onView(lookup)}>
+                  <button
+                    type="button"
+                    onClick={() => onView(lookup)}
+                    title="Voir les détails"
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-text-secondary hover:text-text hover:bg-bg-subtle transition-colors cursor-pointer"
+                  >
                     <EyeIcon className="w-4 h-4" />
-                  </Button>
+                  </button>
                   {canImport ? (
-                    <Button variant="primary" size="sm" loading={importingId === lookup.id} onClick={() => onImport(lookup.id)}>
+                    <button
+                      type="button"
+                      onClick={() => onImport(lookup.id)}
+                      title="Importer les contacts"
+                      disabled={importingId === lookup.id}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-text-secondary hover:text-primary hover:bg-primary-subtle transition-colors disabled:opacity-50 cursor-pointer"
+                    >
                       <Contact01Icon className="w-4 h-4" />
-                    </Button>
+                    </button>
                   ) : lookup.importedAt ? (
                     <Badge variant="info">Importé</Badge>
                   ) : null}

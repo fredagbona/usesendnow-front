@@ -1,0 +1,580 @@
+"use client"
+
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
+import { toast } from "@/lib/toast"
+import { fadeIn } from "@/lib/animations"
+import { entriesToVariableMap, getContextVariables, getCustomVariables, getCustomVariableKey, type CustomVariableEntry } from "@/lib/templateEngine"
+import { useCampaigns } from "@/hooks/useCampaigns"
+import { useContacts } from "@/hooks/useContacts"
+import { useInstances } from "@/hooks/useInstances"
+import { useTemplates } from "@/hooks/useTemplates"
+import { useContactGroups } from "@/hooks/useContactGroups"
+import { apiClient, ApiClientError } from "@usesendnow/api-client"
+import { formatDate } from "@/lib/format"
+import type { Campaign, SubscriptionResponse, CreateCampaignPayload, MessageType, UploadedMedia, RepeatType } from "@usesendnow/types"
+import PageHeader from "@/components/layout/PageHeader"
+import Button from "@/components/ui/Button"
+import Card from "@/components/ui/Card"
+import Input from "@/components/ui/Input"
+import Select from "@/components/ui/Select"
+import Textarea from "@/components/ui/Textarea"
+import CustomVariableBuilder from "@/components/ui/CustomVariableBuilder"
+import PlanGateBanner from "@/components/ui/PlanGateBanner"
+import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
+import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
+import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, TYPE_LABEL, formatBytes } from "@/lib/messageComposer"
+import { Megaphone01Icon, ArrowLeft01Icon, InformationCircleIcon, AlertDiamondIcon } from "hugeicons-react"
+
+export default function NewCampaignPage() {
+  const router = useRouter()
+  const { campaigns, prependCampaign } = useCampaigns()
+  const { contacts } = useContacts()
+  const { instances } = useInstances()
+  const { templates } = useTemplates()
+  const { groups } = useContactGroups()
+  const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
+  const [planBlocked, setPlanBlocked] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [customVariables, setCustomVariables] = useState<CustomVariableEntry[]>([])
+  const [contentMode, setContentMode] = useState<"template" | "direct">("template")
+  const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [mediaError, setMediaError] = useState<string | null>(null)
+  const [mediaNotice, setMediaNotice] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadedMediaRef = useRef<UploadedMedia | null>(null)
+  const shouldCleanupMediaRef = useRef(false)
+
+  const [form, setForm] = useState<{
+    name: string
+    instanceId: string
+    templateId: string
+    recipientType: "all" | "tags" | "explicit" | "group"
+    tags: string[]
+    explicit: string[]
+    groupId: string
+    schedule: string
+    repeat: "none" | "daily" | "weekly"
+    directType: Extract<MessageType, "text" | "image" | "video" | "audio" | "document" | "voice_note">
+    directBody: string
+    directMediaUrl: string
+  }>({
+    name: "",
+    instanceId: "",
+    templateId: "",
+    recipientType: "all",
+    tags: [],
+    explicit: [],
+    groupId: "",
+    schedule: "",
+    repeat: "none",
+    directType: "text",
+    directBody: "",
+    directMediaUrl: "",
+  })
+
+  const selectedTemplate = templates.find((t) => t.id === form.templateId) ?? null
+  const contextVariables = selectedTemplate ? getContextVariables(selectedTemplate.variables) : []
+  const requiredCustomVariables = selectedTemplate ? getCustomVariables(selectedTemplate.variables) : []
+  const availableTags = useMemo(
+    () =>
+      Array.from(new Set(contacts.flatMap((c) => c.tags).filter(Boolean))).sort((a, b) => a.localeCompare(b, "fr")),
+    [contacts]
+  )
+  const isDirectMediaType = FILE_UPLOAD_TYPES.includes(form.directType)
+  const recipientsValid =
+    form.recipientType === "all"
+      || (form.recipientType === "tags" && form.tags.length > 0)
+      || (form.recipientType === "explicit" && form.explicit.length > 0)
+      || (form.recipientType === "group" && Boolean(form.groupId))
+  const contentValid =
+    contentMode === "template"
+      ? Boolean(form.templateId)
+      : form.directType === "text"
+        ? form.directBody.trim().length > 0
+        : Boolean(form.directMediaUrl)
+  const canCreateCampaign =
+    form.name.trim().length > 0
+    && Boolean(form.instanceId)
+    && Boolean(form.schedule)
+    && recipientsValid
+    && contentValid
+
+  const toggleRecipientValue = (field: "tags" | "explicit", value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: prev[field].includes(value)
+        ? prev[field].filter((item) => item !== value)
+        : [...prev[field], value],
+    }))
+  }
+
+  useEffect(() => {
+    uploadedMediaRef.current = uploadedMedia
+  }, [uploadedMedia])
+
+  useEffect(() => {
+    return () => {
+      if (!shouldCleanupMediaRef.current || !uploadedMediaRef.current) return
+      void apiClient.media.delete(uploadedMediaRef.current.id).catch(() => {})
+    }
+  }, [])
+
+  const resetMediaState = () => {
+    setUploadedMedia(null)
+    setUploading(false)
+    setUploadProgress(0)
+    setMediaError(null)
+    setMediaNotice(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  const releaseUploadedMedia = () => {
+    if (!uploadedMediaRef.current) return
+    void apiClient.media.delete(uploadedMediaRef.current.id).catch(() => {})
+    shouldCleanupMediaRef.current = false
+  }
+
+  const uploadMediaFile = async (
+    file: File,
+    nextType?: Extract<MessageType, "text" | "image" | "video" | "audio" | "document" | "voice_note">
+  ) => {
+    const targetType = nextType ?? form.directType
+    const maxSize = FILE_LIMITS[targetType] ?? GLOBAL_MAX_FILE_SIZE
+    setMediaError(null)
+    setMediaNotice(null)
+
+    if (file.size > GLOBAL_MAX_FILE_SIZE || file.size > maxSize) {
+      setMediaError(targetType === "voice_note" ? "La note vocale est trop longue." : `Fichier trop volumineux. Maximum ${formatBytes(maxSize)}.`)
+      return
+    }
+
+    const accepted = ACCEPTED_MIME[targetType] ?? []
+    if (accepted.length > 0 && !accepted.includes(file.type)) {
+      setMediaError(`Format non supporté. Accepté : ${ACCEPTED_LABELS[targetType] ?? ""}.`)
+      return
+    }
+
+    if (uploadedMediaRef.current) {
+      void apiClient.media.delete(uploadedMediaRef.current.id).catch(() => {})
+      setMediaNotice("Le précédent fichier sera remplacé.")
+    }
+
+    shouldCleanupMediaRef.current = true
+    setUploading(true)
+    setUploadProgress(0)
+
+    try {
+      const media = await apiClient.media.upload(file, setUploadProgress)
+      setUploadedMedia(media)
+      setForm((prev) => ({
+        ...prev,
+        directType: nextType ?? (media.suggestedMessageType === "voice_note" && prev.directType === "audio" ? "voice_note" : prev.directType),
+        directMediaUrl: media.url,
+      }))
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        if (err.code === "MEDIA_TYPE_NOT_ALLOWED") setMediaError("Ce format n'est pas supporté.")
+        else if (err.code === "MEDIA_TOO_LARGE") setMediaError("Le fichier dépasse la taille maximale.")
+        else setMediaError("L'upload a échoué.")
+      } else {
+        setMediaError("L'upload a échoué.")
+      }
+      setUploadedMedia(null)
+      setForm((prev) => ({ ...prev, directMediaUrl: "" }))
+      shouldCleanupMediaRef.current = false
+      throw err
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    try {
+      await uploadMediaFile(file)
+    } finally {
+      event.target.value = ""
+    }
+  }
+
+  const handleRemoveFile = () => {
+    releaseUploadedMedia()
+    setForm((prev) => ({ ...prev, directMediaUrl: "" }))
+    resetMediaState()
+  }
+
+  const handleDirectTypeChange = (type: Extract<MessageType, "text" | "image" | "video" | "audio" | "document" | "voice_note">) => {
+    if (type === form.directType) return
+    releaseUploadedMedia()
+    resetMediaState()
+    setForm((prev) => ({ ...prev, directType: type, directMediaUrl: "", directBody: "" }))
+  }
+
+  const handleTemplateChange = (templateId: string) => {
+    const template = templates.find((t) => t.id === templateId) ?? null
+    setForm((prev) => ({ ...prev, templateId }))
+    setCustomVariables(
+      template
+        ? getCustomVariables(template.variables).map((v) => ({ key: getCustomVariableKey(v), value: "" }))
+        : []
+    )
+  }
+
+  useEffect(() => {
+    apiClient.billing.getSubscription()
+      .then((sub) => {
+        setSubscription(sub)
+        const hasCampaigns = sub?.subscription?.plan?.features?.campaigns ?? false
+        if (!hasCampaigns) setPlanBlocked(true)
+      })
+      .catch(() => setPlanBlocked(true))
+  }, [])
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!canCreateCampaign) return
+
+    setCreating(true)
+    try {
+      const schedule = form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString()
+      const repeat: RepeatType = form.repeat !== "none" ? form.repeat : "none"
+
+      let payload: CreateCampaignPayload
+
+      if (contentMode === "template") {
+        payload = {
+          name: form.name.trim(),
+          instanceId: form.instanceId,
+          templateId: form.templateId,
+          schedule: form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString(),
+          repeat,
+          variables: entriesToVariableMap(customVariables),
+          recipients: {
+            type: form.recipientType,
+            value: form.recipientType === "explicit" ? form.explicit : form.recipientType === "tags" ? form.tags : undefined,
+            groupId: form.recipientType === "group" ? form.groupId : undefined,
+          },
+        }
+      } else {
+        payload = {
+          name: form.name.trim(),
+          instanceId: form.instanceId,
+          type: form.directType,
+          body: form.directType === "text" ? form.directBody.trim() : undefined,
+          mediaUrl: isDirectMediaType ? form.directMediaUrl : undefined,
+          schedule: form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString(),
+          repeat,
+          recipients: {
+            type: form.recipientType,
+            value: form.recipientType === "explicit" ? form.explicit : form.recipientType === "tags" ? form.tags : undefined,
+            groupId: form.recipientType === "group" ? form.groupId : undefined,
+          },
+        }
+      }
+
+      const campaign = await apiClient.campaigns.create(payload)
+      prependCampaign(campaign)
+      toast.success("Campagne créée avec succès.")
+      router.push("/campaigns")
+      router.refresh()
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        if (err.code === "CAMPAIGNS_NOT_AVAILABLE_ON_PLAN") {
+          toast.error("Les campagnes ne sont pas disponibles sur votre plan.")
+        } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
+          toast.error("Quota mensuel épuisé.")
+        } else if (err.code === "NOT_FOUND") {
+          toast.error("Instance ou template introuvable.")
+        } else if (err.code === "VALIDATION_ERROR") {
+          toast.error("Vérifiez les champs du formulaire.")
+        } else {
+          toast.error("Impossible de créer la campagne.")
+        }
+      } else {
+        toast.error("Impossible de créer la campagne.")
+      }
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  if (planBlocked) {
+    return (
+      <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6 max-w-4xl">
+        <PageHeader
+          title="Nouvelle campagne"
+          description="Créez une campagne d'envoi groupé"
+          action={<Button variant="secondary" onClick={() => router.push("/campaigns")}>Retour aux campagnes</Button>}
+        />
+        <PlanGateBanner message="Les campagnes ne sont pas disponibles sur le plan Gratuit. Passez au plan Starter pour y accéder." />
+      </motion.div>
+    )
+  }
+
+  return (
+    <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6 max-w-6xl">
+      <PageHeader
+        title="Nouvelle campagne"
+        description="Configurez et planifiez l'envoi groupé à vos contacts."
+        action={<Button variant="secondary" onClick={() => router.push("/campaigns")}>Retour aux campagnes</Button>}
+      />
+
+      <form onSubmit={handleCreate} className="space-y-6">
+        {/* General info + Recipients side by side on desktop */}
+        <div className="grid gap-6 xl:grid-cols-2">
+          {/* General info */}
+          <Card className="space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Megaphone01Icon className="w-5 h-5 text-text-secondary" />
+              <h3 className="text-base font-medium text-text">Informations générales</h3>
+            </div>
+
+            <Input
+              label="Nom de la campagne"
+              value={form.name}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="ex. Relance paniers abandonnés"
+              required
+              autoFocus
+            />
+
+            <Select label="Instance" value={form.instanceId} onChange={(e) => setForm((prev) => ({ ...prev, instanceId: e.target.value }))} required>
+              <option value="">— Sélectionner une instance —</option>
+              {instances.filter((i) => i.status === "connected").map((i) => (
+                <option key={i.id} value={i.id}>{i.name}</option>
+              ))}
+            </Select>
+
+            <Input
+              label="Planifier le lancement"
+              type="datetime-local"
+              value={form.schedule}
+              onChange={(e) => setForm((prev) => ({ ...prev, schedule: e.target.value }))}
+              required
+            />
+
+            <Select label="Répétition" value={form.repeat} onChange={(e) => setForm((prev) => ({ ...prev, repeat: e.target.value as "none" | "daily" | "weekly" }))}>
+              <option value="none">Aucune</option>
+              <option value="daily">Quotidienne</option>
+              <option value="weekly">Hebdomadaire</option>
+            </Select>
+          </Card>
+
+          {/* Recipients */}
+          <Card className="space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Megaphone01Icon className="w-5 h-5 text-text-secondary" />
+              <h3 className="text-base font-medium text-text">Destinataires</h3>
+            </div>
+
+            <Select
+              label="Type de destinataires"
+              value={form.recipientType}
+              onChange={(e) => setForm((prev) => ({ ...prev, recipientType: e.target.value as "all" | "tags" | "explicit" | "group" }))}
+            >
+              <option value="all">Tous les contacts</option>
+              <option value="tags">Par tags</option>
+              <option value="explicit">Contacts explicites</option>
+              <option value="group">Par groupe</option>
+            </Select>
+
+            {form.recipientType === "tags" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-body">Tags</label>
+                <div className="flex flex-wrap gap-2">
+                  {availableTags.length === 0 ? (
+                    <p className="text-xs text-text-muted">Aucun tag disponible.</p>
+                  ) : (
+                    availableTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleRecipientValue("tags", tag)}
+                        className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                          form.tags.includes(tag) ? "bg-primary-subtle border-primary text-primary-text" : "bg-bg-subtle border-border text-text-secondary hover:border-border-strong"
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {form.recipientType === "explicit" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-body">Contacts</label>
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {contacts.map((c) => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm text-text-body">
+                      <input
+                        type="checkbox"
+                        checked={form.explicit.includes(c.id)}
+                        onChange={() => toggleRecipientValue("explicit", c.id)}
+                        className="h-4 w-4 rounded border-border-strong accent-primary"
+                      />
+                      {c.name} ({c.phone})
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {form.recipientType === "group" && (
+              <Select
+                label="Groupe de contacts"
+                value={form.groupId}
+                onChange={(e) => setForm((prev) => ({ ...prev, groupId: e.target.value }))}
+                required={form.recipientType === "group"}
+              >
+                <option value="">— Sélectionner un groupe —</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </Select>
+            )}
+          </Card>
+        </div>
+
+        {/* Content */}
+        <Card className="space-y-4">
+          <div className="flex gap-1 p-1 bg-bg-muted rounded-xl w-fit">
+            {([
+              { value: "template", label: "Template" },
+              { value: "direct", label: "Rédaction libre" },
+            ] as const).map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => {
+                  setContentMode(tab.value)
+                  if (tab.value === "direct") {
+                    releaseUploadedMedia()
+                    resetMediaState()
+                  }
+                }}
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-all cursor-pointer ${
+                  contentMode === tab.value ? "bg-bg border border-border text-text shadow-sm" : "text-text-secondary hover:text-text"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {contentMode === "template" ? (
+            <div className="space-y-4">
+              <Select label="Template" value={form.templateId} onChange={(e) => handleTemplateChange(e.target.value)} required>
+                <option value="">— Sélectionner un template —</option>
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </Select>
+
+              {selectedTemplate && (
+                <>
+                  {contextVariables.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-text-body">Variables de contexte</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {contextVariables.map((key) => (
+                          <span key={key} className="rounded-full border border-border bg-bg-subtle px-3 py-1 text-xs text-text-secondary">{key}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {requiredCustomVariables.length > 0 && (
+                    <CustomVariableBuilder
+                      entries={customVariables.length > 0 ? customVariables : requiredCustomVariables.map((v) => ({ key: getCustomVariableKey(v), value: "" }))}
+                      onChange={setCustomVariables}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <Select label="Type de message" value={form.directType} onChange={(e) => handleDirectTypeChange(e.target.value as typeof form.directType)}>
+                {(["text", "image", "video", "document", "audio", "voice_note"] as typeof form.directType[]).map((t) => (
+                  <option key={t} value={t}>{TYPE_LABEL[t] ?? t}</option>
+                ))}
+              </Select>
+
+              {form.directType === "text" ? (
+                <Textarea
+                  label="Message"
+                  value={form.directBody}
+                  onChange={(e) => setForm((prev) => ({ ...prev, directBody: e.target.value }))}
+                  placeholder="Votre message..."
+                  rows={5}
+                  required
+                  maxLength={4096}
+                />
+              ) : (
+                <>
+                  {form.directType === "voice_note" ? (
+                    <VoiceRecorderPanel
+                      uploading={uploading}
+                      hasUploadedVoiceNote={!!uploadedMedia}
+                      onUpload={(file) => uploadMediaFile(file, "voice_note")}
+                      onResetUploadState={() => { releaseUploadedMedia(); setForm((prev) => ({ ...prev, directMediaUrl: "" })); resetMediaState() }}
+                      uploadError={mediaError}
+                      uploadNotice={mediaNotice}
+                    />
+                  ) : (
+                    <MediaUploadPanel
+                      type={form.directType}
+                      uploading={uploading}
+                      uploadProgress={uploadProgress}
+                      uploadedMedia={uploadedMedia}
+                      mediaNotice={mediaNotice}
+                      mediaError={mediaError}
+                      scheduledAt={form.schedule}
+                      fileInputRef={fileInputRef}
+                      onFileChange={handleFileSelect}
+                      onRemove={handleRemoveFile}
+                    />
+                  )}
+
+                  {form.directType !== "voice_note" && (
+                    <Textarea
+                      label="Légende (optionnel)"
+                      value={form.directBody}
+                      onChange={(e) => setForm((prev) => ({ ...prev, directBody: e.target.value }))}
+                      placeholder="Texte accompagnant le média..."
+                      rows={3}
+                      maxLength={1024}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </Card>
+
+        {/* Submit */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-text-secondary">
+            {!canCreateCampaign && (
+              <span className="flex items-center gap-1.5">
+                <InformationCircleIcon className="w-4 h-4" />
+                Remplissez tous les champs requis pour créer la campagne.
+              </span>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button type="button" variant="secondary" onClick={() => router.push("/campaigns")}>Annuler</Button>
+            <Button type="submit" variant="primary" loading={creating} disabled={!canCreateCampaign}>Créer la campagne</Button>
+          </div>
+        </div>
+      </form>
+    </motion.div>
+  )
+}

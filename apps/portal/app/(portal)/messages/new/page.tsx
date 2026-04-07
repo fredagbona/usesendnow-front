@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "@/lib/toast"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
-import type { MessageType, SendMessagePayload, Template, UploadedMedia, MessageButton } from "@usesendnow/types"
+import type { MessageType, SendMessagePayload, Template, UploadedMedia } from "@usesendnow/types"
 import { useContacts } from "@/hooks/useContacts"
 import { useInstances } from "@/hooks/useInstances"
 import { useTemplates } from "@/hooks/useTemplates"
@@ -22,10 +22,8 @@ import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { RecipientSelector, type RecipientMode } from "@/components/messages/RecipientSelector"
 import { SendStatusPanel } from "@/components/messages/SendStatusPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
-import ButtonBuilder from "@/components/messages/ButtonBuilder"
-import { AlertCircleIcon } from "hugeicons-react"
 
-type ComposeMode = "freeform" | "template" | "buttons"
+type ComposeMode = "freeform" | "template"
 
 export default function NewMessagePage() {
   const router = useRouter()
@@ -56,10 +54,6 @@ export default function NewMessagePage() {
     contactId: "",
   })
   const [templateVariables, setTemplateVariables] = useState<CustomVariableEntry[]>([])
-  const [buttons, setButtons] = useState<MessageButton[]>([])
-  const [buttonTitle, setButtonTitle] = useState("")
-  const [buttonDescription, setButtonDescription] = useState("")
-  const [buttonFooter, setButtonFooter] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadedMediaRef = useRef<UploadedMedia | null>(null)
   const shouldCleanupMediaRef = useRef(false)
@@ -261,52 +255,6 @@ export default function NewMessagePage() {
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault()
 
-    if (composeMode === "buttons") {
-      if (!buttonTitle.trim()) {
-        toast.error("Le titre est obligatoire.")
-        return
-      }
-      if (!buttonDescription.trim()) {
-        toast.error("La description est obligatoire.")
-        return
-      }
-      if (buttons.length === 0) {
-        toast.error("Ajoutez au moins un bouton.")
-        return
-      }
-      if (buttons.length > 2) {
-        toast.error("Maximum 2 boutons autorisés.")
-        return
-      }
-      for (let i = 0; i < buttons.length; i++) {
-        const btn = buttons[i]
-        if (!btn.displayText.trim()) {
-          toast.error(`Le texte du bouton ${i + 1} est obligatoire.`)
-          return
-        }
-        if (btn.displayText.length > 50) {
-          toast.error(`Le texte du bouton ${i + 1} ne doit pas dépasser 50 caractères.`)
-          return
-        }
-        if (btn.title === "url" && !btn.url?.trim()) {
-          toast.error(`L'URL du bouton ${i + 1} est obligatoire.`)
-          return
-        }
-        if (btn.title === "call" && !btn.phoneNumber?.trim()) {
-          toast.error(`Le numéro du bouton ${i + 1} est obligatoire.`)
-          return
-        }
-        if (btn.title === "copy" && !btn.copyCode?.trim()) {
-          toast.error(`Le code du bouton ${i + 1} est obligatoire.`)
-          return
-        }
-        if (btn.title === "pix" && (!btn.currency?.trim() || !btn.name?.trim() || !btn.keyType?.trim() || !btn.key?.trim())) {
-          toast.error(`Tous les champs du bouton Pix ${i + 1} sont obligatoires.`)
-          return
-        }
-      }
-    }
-
     if (composeMode === "freeform" && FILE_UPLOAD_TYPES.includes(sendForm.type) && !sendForm.mediaUrl) {
       setMediaError("Aucun fichier sélectionné.")
       return
@@ -332,17 +280,6 @@ export default function NewMessagePage() {
             templateId: sendForm.templateId,
             contactId: sendForm.contactId || undefined,
             variables: entriesToVariableMap(templateVariables),
-          }
-        : composeMode === "buttons"
-        ? {
-            instanceId: sendForm.instanceId,
-            to: sendForm.to,
-            type: "buttons",
-            title: buttonTitle.trim(),
-            description: buttonDescription.trim(),
-            footer: buttonFooter.trim() || undefined,
-            buttons: buttons,
-            ...(sendForm.scheduledAt ? { scheduledAt: sendForm.scheduledAt } : {}),
           }
         : {
             instanceId: sendForm.instanceId,
@@ -407,7 +344,6 @@ export default function NewMessagePage() {
               {([
                 { value: "freeform", label: "Rédaction libre" },
                 { value: "template", label: "Utiliser un template" },
-                { value: "buttons", label: "Boutons" },
               ] as const).map((tab) => (
                 <button
                   key={tab.value}
@@ -498,92 +434,6 @@ export default function NewMessagePage() {
                 </>
               )}
             </Card>
-          ) : composeMode === "buttons" ? (
-            <Card className="space-y-5">
-              <div className="rounded-xl border border-warning/30 bg-warning-subtle p-3">
-                <div className="flex items-start gap-2">
-                  <AlertCircleIcon className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-                  <p className="text-xs text-warning-text">
-                    Les boutons interactifs nécessitent un compte WhatsApp Business.
-                  </p>
-                </div>
-              </div>
-
-              <Input
-                label="Titre"
-                value={buttonTitle}
-                onChange={(e) => setButtonTitle(e.target.value)}
-                placeholder="Choisissez une option"
-                required
-              />
-
-              <MessageTextarea
-                label="Description"
-                value={buttonDescription}
-                onChange={(value) => setButtonDescription(value)}
-                placeholder="Que souhaitez-vous faire ?"
-                rows={3}
-                maxLength={1024}
-              />
-
-              <Input
-                label="Footer (optionnel)"
-                value={buttonFooter}
-                onChange={(e) => setButtonFooter(e.target.value)}
-                placeholder="Répondez rapidement"
-                hint="Texte discret en bas du message"
-              />
-
-              <ButtonBuilder buttons={buttons} onChange={setButtons} />
-
-              {/* Preview */}
-              {(buttonTitle || buttonDescription || buttons.length > 0) && (
-                <div className="rounded-xl border border-border bg-bg-subtle p-4">
-                  <p className="text-sm font-medium text-text-body mb-3">Aperçu</p>
-                  <div className="bg-white border border-border rounded-xl p-4 max-w-sm">
-                    {buttonTitle && (
-                      <p className="text-sm font-bold text-text mb-1">{buttonTitle}</p>
-                    )}
-                    {buttonDescription && (
-                      <p className="text-xs text-text-secondary mb-2">{buttonDescription}</p>
-                    )}
-                    {buttons.length > 0 && (
-                      <div className="space-y-1.5 mt-3">
-                        {buttons.map((btn, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            disabled
-                            className="w-full text-center text-sm py-2 px-3 rounded-lg bg-bg-subtle border border-border text-text-body cursor-not-allowed"
-                          >
-                            {btn.displayText}
-                            {btn.title === "url" && btn.url && (
-                              <span className="block text-xs text-text-muted mt-0.5 truncate">{btn.url}</span>
-                            )}
-                            {btn.title === "call" && btn.phoneNumber && (
-                              <span className="block text-xs text-text-muted mt-0.5 font-mono">{btn.phoneNumber}</span>
-                            )}
-                            {btn.title === "copy" && btn.copyCode && (
-                              <span className="block text-xs text-text-muted mt-0.5 font-mono">{btn.copyCode}</span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {buttonFooter && (
-                      <p className="text-xs text-text-muted mt-3 text-center">{buttonFooter}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <Input
-                label="Planifier (optionnel)"
-                type="datetime-local"
-                value={sendForm.scheduledAt}
-                onChange={(event) => setSendForm((prev) => ({ ...prev, scheduledAt: event.target.value }))}
-              />
-            </Card>
           ) : (
             <Card className="space-y-5">
               <Select label="Type de message" value={sendForm.type} onChange={(event) => handleTypeChange(event.target.value as MessageType)}>
@@ -664,7 +514,7 @@ export default function NewMessagePage() {
           <div className="flex flex-wrap justify-end gap-3">
             <Button type="button" variant="secondary" onClick={() => router.push("/messages")}>Annuler</Button>
             <Button type="submit" variant="primary" loading={sending || uploading}>
-              {composeMode === "template" ? "Envoyer le template" : composeMode === "buttons" ? "Envoyer le message avec boutons" : sendForm.scheduledAt ? "Planifier le message" : "Envoyer le message"}
+              {composeMode === "template" ? "Envoyer le template" : sendForm.scheduledAt ? "Planifier le message" : "Envoyer le message"}
             </Button>
           </div>
         </form>

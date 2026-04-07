@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
@@ -36,15 +37,12 @@ const EVENT_LABEL: Record<WebhookEvent, string> = {
 }
 
 export default function WebhooksPage() {
+  const router = useRouter()
   const { webhooks, loading, addWebhook, removeWebhook } = useWebhooks()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [planBlocked, setPlanBlocked] = useState(false)
-  const [createModalOpen, setCreateModalOpen] = useState(false)
   const [secretModal, setSecretModal] = useState<{ secret: string; url: string } | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; url: string } | null>(null)
-  const [newUrl, setNewUrl] = useState("")
-  const [selectedEvents, setSelectedEvents] = useState<WebhookEvent[]>([])
-  const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
 
   useEffect(() => {
@@ -58,49 +56,6 @@ export default function WebhooksPage() {
       })
       .catch(() => {})
   }, [])
-
-  const toggleEvent = (event: WebhookEvent) => {
-    setSelectedEvents((prev) =>
-      prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event]
-    )
-  }
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newUrl.trim() || selectedEvents.length === 0) return
-    setCreating(true)
-    try {
-      const data = await apiClient.webhooks.create({ url: newUrl.trim(), events: selectedEvents })
-      addWebhook({
-        id: data.id,
-        userId: "",
-        url: data.url,
-        secret: data.secret,
-        events: data.events,
-        active: data.active,
-        createdAt: data.createdAt,
-        updatedAt: data.createdAt,
-      })
-      setCreateModalOpen(false)
-      setNewUrl("")
-      setSelectedEvents([])
-      setSecretModal({ secret: data.secret, url: data.url })
-    } catch (err) {
-      if (err instanceof ApiClientError) {
-        if (err.code === "WEBHOOKS_NOT_AVAILABLE_ON_PLAN") {
-          setCreateModalOpen(false)
-          setPlanBlocked(true)
-        } else if (err.code === "MAX_WEBHOOK_ENDPOINTS_REACHED") {
-          toast.error("Limite d'endpoints webhook atteinte pour votre plan.")
-          setCreateModalOpen(false)
-        } else {
-          toast.error("Impossible d'enregistrer l'endpoint.")
-        }
-      }
-    } finally {
-      setCreating(false)
-    }
-  }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -124,7 +79,7 @@ export default function WebhooksPage() {
         description="Recevez des notifications d'événements en temps réel"
         action={
           !planBlocked && (
-            <Button variant="primary" onClick={() => setCreateModalOpen(true)}>
+            <Button variant="primary" onClick={() => router.push("/webhooks/new")}>
               Ajouter un endpoint
             </Button>
           )
@@ -148,7 +103,7 @@ export default function WebhooksPage() {
             title="Aucun webhook enregistré"
             description="Ajoutez un endpoint pour recevoir des notifications d'événements."
             ctaLabel="Ajouter un endpoint"
-            onCta={() => setCreateModalOpen(true)}
+            onCta={() => router.push("/webhooks/new")}
           />
         ) : (
           <div className="space-y-4">
@@ -184,58 +139,6 @@ export default function WebhooksPage() {
         )
       )}
 
-      {/* Create modal */}
-      <Modal
-        open={createModalOpen}
-        onClose={() => { setCreateModalOpen(false); setNewUrl(""); setSelectedEvents([]) }}
-        title="Enregistrer un endpoint"
-        maxWidth="max-w-lg"
-      >
-        <form onSubmit={handleCreate} className="space-y-4">
-          <Input
-            label="URL de l'endpoint"
-            type="url"
-            value={newUrl}
-            onChange={(e) => setNewUrl(e.target.value)}
-            placeholder="https://monapp.com/hooks/msgflash"
-            required
-            autoFocus
-          />
-          <div>
-            <p className="text-sm font-medium text-text-body mb-2">Événements</p>
-            <div className="space-y-2">
-              {WEBHOOK_EVENTS.map((ev) => (
-                <label key={ev} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedEvents.includes(ev)}
-                    onChange={() => toggleEvent(ev)}
-                    className="accent-primary"
-                  />
-                  <span className="text-sm text-text-body">{EVENT_LABEL[ev]}</span>
-                  <span className="text-xs text-text-muted font-mono">{ev}</span>
-                </label>
-              ))}
-            </div>
-            {selectedEvents.length === 0 && (
-              <p className="text-xs text-error-hover mt-1">Sélectionnez au moins un événement.</p>
-            )}
-          </div>
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="secondary" onClick={() => setCreateModalOpen(false)}>
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={creating}
-              disabled={selectedEvents.length === 0}
-            >
-              Enregistrer l'endpoint
-            </Button>
-          </div>
-        </form>
-      </Modal>
 
       {/* Secret reveal modal */}
       <Modal

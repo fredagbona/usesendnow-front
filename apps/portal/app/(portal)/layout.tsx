@@ -34,7 +34,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      router.replace("/login")
+      window.location.href = "/login"
       return
     }
     setChecked(true)

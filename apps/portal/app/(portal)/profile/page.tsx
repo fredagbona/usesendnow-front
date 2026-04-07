@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
 import { apiClient } from "@usesendnow/api-client"
-import type { User } from "@usesendnow/types"
+import type { User, SubscriptionResponse } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Avatar from "@/components/ui/Avatar"
 import Button from "@/components/ui/Button"
@@ -16,6 +16,7 @@ import { Mail01Icon, CreditCardIcon } from "hugeicons-react"
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
+  const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -26,9 +27,13 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("")
 
   useEffect(() => {
-    apiClient.auth.me()
-      .then((u) => {
+    Promise.all([
+      apiClient.auth.me(),
+      apiClient.billing.getSubscription().catch(() => null),
+    ])
+      .then(([u, sub]) => {
         setUser(u)
+        setSubscription(sub)
         setFullName(u.fullName)
         setPhone(u.phone)
         setDisplayName(u.displayName ?? "")
@@ -90,6 +95,11 @@ export default function ProfilePage() {
     )
   }
 
+  const planName =
+    subscription?.subscription?.plan?.name ??
+    subscription?.subscription?.plan?.code ??
+    user.plan ?? "Gratuit"
+
   const isDirty =
     fullName.trim() !== user.fullName ||
     phone.trim() !== user.phone ||
@@ -123,7 +133,7 @@ export default function ProfilePage() {
           <div className="w-full flex flex-col gap-2">
             <div className="flex items-center gap-2 px-3 py-2 bg-primary-subtle rounded-xl border border-primary/20">
               <CreditCardIcon className="w-4 h-4 text-primary shrink-0" />
-              <span className="text-sm font-medium text-primary-text truncate">Plan {user.plan}</span>
+              <span className="text-sm font-medium text-primary-text truncate">Plan {planName}</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-2 bg-bg-subtle rounded-xl border border-border">
               <Mail01Icon className="w-4 h-4 text-text-muted shrink-0" />

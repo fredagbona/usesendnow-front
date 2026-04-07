@@ -30,6 +30,7 @@ export default function NumberLookupsPage() {
     viewLookup,
     importContacts,
     setActiveLookup,
+    refetch: refetchLookups,
   } = useNumberLookups()
 
   const [selectedInstanceId, setSelectedInstanceId] = useState("")
@@ -112,7 +113,10 @@ export default function NumberLookupsPage() {
           {hasResult && (
             <ImportContactsPanel
               lookupId={activeLookup.id}
-              onImport={handleImport}
+              onImported={() => {
+                refetchLookups()
+                setActiveLookup(null)
+              }}
               importing={importing}
               groups={groups}
               onValidCount={activeLookup.onWhatsAppCount}
@@ -150,7 +154,11 @@ export default function NumberLookupsPage() {
       </div>
 
       {/* Detail modal */}
-      <LookupDetailModal lookup={detailLookup} onClose={() => setDetailLookup(null)} />
+      <LookupDetailModal
+        lookup={detailLookup}
+        onClose={() => setDetailLookup(null)}
+        onImport={handleImportFromHistory}
+      />
     </motion.div>
   )
 }

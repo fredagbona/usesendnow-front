@@ -4,11 +4,12 @@ import type { NumberLookup } from "@usesendnow/types"
 import Badge from "@/components/ui/Badge"
 import Button from "@/components/ui/Button"
 import Modal from "@/components/ui/Modal"
-import { Calendar01Icon, CheckmarkCircle01Icon, Cancel01Icon, AlertCircleIcon } from "hugeicons-react"
+import { Calendar01Icon, CheckmarkCircle01Icon, Cancel01Icon, AlertCircleIcon, Contact01Icon } from "hugeicons-react"
 
 interface LookupDetailModalProps {
   lookup: NumberLookup | null
   onClose: () => void
+  onImport?: (lookupId: string) => void
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -35,12 +36,13 @@ function formatDate(dateStr: string): string {
   })
 }
 
-export default function LookupDetailModal({ lookup, onClose }: LookupDetailModalProps) {
+export default function LookupDetailModal({ lookup, onClose, onImport }: LookupDetailModalProps) {
   if (!lookup) return null
 
   const result = lookup.result
   const instanceName = lookup.instance?.name ?? "—"
   const instanceStatus = lookup.instance?.status ?? "—"
+  const canImport = lookup.status === "done" && !lookup.importedAt
 
   return (
     <Modal open={!!lookup} onClose={onClose} title="Détails du lookup" maxWidth="max-w-2xl">
@@ -196,7 +198,18 @@ export default function LookupDetailModal({ lookup, onClose }: LookupDetailModal
           </p>
         )}
 
-        <div className="flex justify-end pt-2">
+        <div className="flex items-center justify-between pt-2 border-t border-border pt-4">
+          <div className="flex items-center gap-2">
+            {canImport && onImport && (
+              <Button variant="primary" size="sm" onClick={() => onImport(lookup.id)}>
+                <Contact01Icon className="w-4 h-4 mr-1.5" />
+                Importer {lookup.onWhatsAppCount} contact{lookup.onWhatsAppCount > 1 ? "s" : ""}
+              </Button>
+            )}
+            {lookup.importedAt && (
+              <Badge variant="info">Contacts déjà importés</Badge>
+            )}
+          </div>
           <Button variant="secondary" size="sm" onClick={onClose}>
             <Cancel01Icon className="w-4 h-4 mr-1.5" />
             Fermer

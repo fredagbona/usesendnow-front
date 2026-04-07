@@ -21,8 +21,7 @@ import { SkeletonTableRow } from "@/components/ui/Skeleton"
 import { Key01Icon, AlertDiamondIcon, Copy01Icon, CheckmarkCircle01Icon } from "hugeicons-react"
 import { portalBrand } from "@/lib/brand"
 
-const FREE_PLAN_SHORT_MESSAGE =
-  "Le plan Free inclut 1 clé API pour tester l'intégration, avec toujours 20 messages + statuts maximum par mois."
+
 
 // ─── Quick Start dark block ────────────────────────────────────────────────────
 
@@ -172,9 +171,6 @@ export default function ApiKeysPage() {
         }
       />
 
-      <div className="mb-6 rounded-2xl border border-primary/30 bg-primary-subtle px-5 py-4 text-sm text-text">
-        {FREE_PLAN_SHORT_MESSAGE}
-      </div>
 
       {/* Quick start — dark code block */}
       <QuickStartBlock />

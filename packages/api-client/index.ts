@@ -110,7 +110,8 @@ async function request<T>(
     const err = json.error ?? { code: "UNKNOWN_ERROR", message: "An error occurred" }
 
     if (res.status === 401) {
-      if (typeof window !== "undefined") {
+      const hadToken = !!getToken()
+      if (hadToken && typeof window !== "undefined") {
         localStorage.removeItem("usn_token")
         window.location.href = "/login"
       }

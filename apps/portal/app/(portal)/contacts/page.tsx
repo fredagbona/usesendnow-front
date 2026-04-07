@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
@@ -455,13 +455,18 @@ type Tab = "contacts" | "imports"
 
 export default function ContactsPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { contacts, loading, addContact, updateContact, removeContact } = useContacts()
   const { groups } = useContactGroups()
   const { imports, loading: importsLoading } = useContactImports()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [tab, setTab] = useState<Tab>("contacts")
-  const [search, setSearch] = useState(searchParams.get("search") ?? "")
+  const [search, setSearch] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      return params.get("search") ?? ""
+    }
+    return ""
+  })
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Contact | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null)
@@ -477,10 +482,6 @@ export default function ContactsPage() {
   useEffect(() => {
     apiClient.billing.getSubscription().then(setSubscription).catch(() => {})
   }, [])
-
-  useEffect(() => {
-    setSearch(searchParams.get("search") ?? "")
-  }, [searchParams])
 
   // Load groups for each contact (batch)
   useEffect(() => {

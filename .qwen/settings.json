@@ -4,7 +4,10 @@
       "Bash(mv *)",
       "Bash(pnpm run *)",
       "Bash(grep *)",
-      "Bash(mkdir *)"
+      "Bash(mkdir *)",
+      "Bash(git checkout *)",
+      "Bash(sed *)",
+      "Bash(python3 *)"
     ]
   },
   "$version": 3

@@ -128,8 +128,14 @@ export function useNumberLookups() {
     setImporting(true)
     try {
       const payload: { groupId?: string; tag?: string } = {}
-      if (groupId) payload.groupId = groupId
-      if (tag) payload.tag = tag
+      // Only include groupId if it's a valid, non-empty value
+      if (groupId && groupId.trim() !== "") {
+        payload.groupId = groupId.trim()
+      }
+      // Only include tag if it's a valid, non-empty value
+      if (tag && tag.trim() !== "") {
+        payload.tag = tag.trim()
+      }
       const result = await apiClient.numberLookups.importContacts(lookupId, payload)
       if (result.skipped > 0 && result.created === 0 && result.updated === 0) {
         toast.info("Certains contacts ont été importés, d'autres ont été ignorés.")

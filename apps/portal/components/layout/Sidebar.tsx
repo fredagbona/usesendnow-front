@@ -25,7 +25,7 @@ const NAV_ITEMS = [
   { label: "Messages",        href: "/messages",      icon: Message01Icon },
   { label: "Campagnes",       href: "/campaigns",     icon: Megaphone01Icon },
   { label: "Contacts",        href: "/contacts",      icon: UserGroupIcon },
-  { label: "Modèles",         href: "/templates",     icon: File01Icon },
+  { label: "Templates",       href: "/templates",     icon: File01Icon },
   { label: "Webhooks",        href: "/webhooks",      icon: WebhookIcon },
   { label: "Number Lookups",  href: "/number-lookups", icon: Search01Icon },
 ] as const

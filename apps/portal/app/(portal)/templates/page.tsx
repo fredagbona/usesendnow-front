@@ -35,27 +35,23 @@ const TYPE_LABEL: Record<TemplateType, string> = {
   document: "Document",
 }
 
-function TemplateFormModal({
-  open,
-  mode,
+function TemplateEditModal({
   template,
   onSuccess,
   onClose,
 }: {
-  open: boolean
-  mode: "create" | "edit"
-  template?: Template
+  template: Template
   onSuccess: (template: Template) => void
   onClose: () => void
 }) {
-  const [name, setName] = useState(template?.name ?? "")
-  const [type, setType] = useState<TemplateType>(template?.type ?? "text")
-  const [body, setBody] = useState(template?.body ?? "")
-  const [mediaUrl, setMediaUrl] = useState(template?.mediaUrl ?? "")
+  const [name, setName] = useState(template.name)
+  const [body, setBody] = useState(template.body ?? "")
+  const [mediaUrl, setMediaUrl] = useState(template.mediaUrl ?? "")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const detectedVariables = useMemo(() => parseTemplateVariables(body), [body])
+  const requiresMedia = template.type !== "text"
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -63,24 +59,14 @@ function TemplateFormModal({
     setError(null)
 
     try {
-      const payload = {
+      const response = await api.templates.update(template.id, {
         name: name.trim(),
-        type,
         body: body.trim() || null,
-        mediaUrl: type === "text" ? null : mediaUrl.trim() || null,
-      }
-
-      const response = mode === "create"
-        ? await api.templates.create(payload)
-        : await api.templates.update(template!.id, {
-            name: payload.name,
-            body: payload.body,
-            mediaUrl: payload.mediaUrl,
-          })
-
+        mediaUrl: requiresMedia ? mediaUrl.trim() || null : null,
+      })
       onSuccess(response)
       onClose()
-      toast.success(mode === "create" ? "Template créé" : "Template mis à jour")
+      toast.success("Template mis à jour")
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "TEMPLATE_INVALID") {
         setError("Ce template contient des placeholders invalides ou une configuration média incomplète.")
@@ -94,52 +80,35 @@ function TemplateFormModal({
     }
   }
 
-  const requiresMedia = type !== "text"
-
   return (
-    <Modal open={open} onClose={onClose} title={mode === "create" ? "Nouveau template" : "Modifier le template"} maxWidth="max-w-2xl">
+    <Modal open onClose={onClose} title="Modifier le template" maxWidth="max-w-2xl">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input label="Nom" value={name} onChange={(event) => setName(event.target.value)} required autoFocus />
-        <Select
-          label="Type"
-          value={type}
-          onChange={(event) => setType(event.target.value as TemplateType)}
-          disabled={mode === "edit"}
-        >
-          {TEMPLATE_TYPES.map((templateType) => (
-            <option key={templateType} value={templateType}>{TYPE_LABEL[templateType]}</option>
-          ))}
+        <Input label="Nom" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+        <Select label="Type" value={template.type} disabled>
+          <option>{TYPE_LABEL[template.type]}</option>
         </Select>
-
         <Textarea
           label={requiresMedia ? "Corps (optionnel)" : "Corps"}
           value={body}
-          onChange={(event) => setBody(event.target.value)}
+          onChange={(e) => setBody(e.target.value)}
           required={!requiresMedia}
           rows={5}
           placeholder="Bonjour {{contact.firstName}}, utilisez {{custom.code}} aujourd'hui."
         />
-
         <TemplateVariableGuide variables={detectedVariables} />
-
         {requiresMedia && (
           <Input
             label="Media URL"
             type="url"
             value={mediaUrl}
-            onChange={(event) => setMediaUrl(event.target.value)}
+            onChange={(e) => setMediaUrl(e.target.value)}
             placeholder="https://cdn.msgflash.com/assets/promo.jpg"
-            required
           />
         )}
-
         {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
-
         <div className="flex justify-end gap-2 pt-1">
           <Button type="button" variant="secondary" onClick={onClose}>Annuler</Button>
-          <Button type="submit" variant="primary" loading={loading}>
-            {mode === "create" ? "Créer le template" : "Enregistrer"}
-          </Button>
+          <Button type="submit" variant="primary" loading={loading}>Enregistrer</Button>
         </div>
       </form>
     </Modal>
@@ -149,7 +118,6 @@ function TemplateFormModal({
 export default function TemplatesPage() {
   const router = useRouter()
   const { templates, total, page, limit, loading, goToPage, addTemplate, updateTemplate, removeTemplate } = useTemplates()
-  const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Template | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Template | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -176,7 +144,7 @@ export default function TemplatesPage() {
       <PageHeader
         title="Templates"
         description={total > 0 ? `${total} template${total !== 1 ? "s" : ""}` : "Bibliothèque de messages réutilisables"}
-        action={<Button variant="primary" onClick={() => setCreateOpen(true)}>Nouveau template</Button>}
+        action={<Button variant="primary" onClick={() => router.push("/templates/new")}>Nouveau template</Button>}
       />
 
       {loading ? (
@@ -189,7 +157,7 @@ export default function TemplatesPage() {
           title="Aucun template pour l’instant"
           description="Créez votre premier template texte ou média."
           ctaLabel="Nouveau template"
-          onCta={() => setCreateOpen(true)}
+          onCta={() => router.push("/templates/new")}
         />
       ) : (
         <>
@@ -247,12 +215,8 @@ export default function TemplatesPage() {
         </>
       )}
 
-      <TemplateFormModal open={createOpen} mode="create" onSuccess={addTemplate} onClose={() => setCreateOpen(false)} />
-
       {editTarget && (
-        <TemplateFormModal
-          open
-          mode="edit"
+        <TemplateEditModal
           template={editTarget}
           onSuccess={(template) => {
             updateTemplate(template)
