@@ -8,5 +8,5 @@ export const landingBrand = {
   supportEmail: "support@msgflash.com",
   helloEmail: "hello@msgflash.com",
   privacyEmail: "privacy@msgflash.com",
-  tagline: "L'infrastructure WhatsApp pour vos produits et automatisations en Afrique.",
+  tagline: "L'infrastructure WhatsApp pour vos produits et automatisations.",
 } as const
