@@ -1,0 +1,70 @@
+---
+title: GET Santé d'une instance
+description: Retourne l'état warmup/safety d'une instance pour guider les envois.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/instances/{id}/health
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID de l'instance |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "instanceId": "inst_uuid",
+    "safetyState": "warming",
+    "safetyScore": 56,
+    "firstConnectedAt": "2026-04-10T08:00:00.000Z",
+    "warmupPolicy": {
+      "state": "warming",
+      "instanceAgeDays": 1.4,
+      "hourlyOutboundCap": 25,
+      "dailyOutboundCap": 100,
+      "hourlyUniqueRecipientsCap": 25,
+      "dailyUniqueRecipientsCap": 100,
+      "maxCampaignRecipients": 100,
+      "maxColdRatio": 0.4
+    },
+    "usageWindowSummary": {
+      "outbound1h": 4,
+      "outbound24h": 18,
+      "uniqueRecipients1h": 4,
+      "uniqueRecipients24h": 16,
+      "inboundReplies24h": 2,
+      "inboundReplies7d": 3
+    },
+    "recommendations": [
+      "Start with previously engaged contacts before scaling volume."
+    ]
+  }
+}
+```
+
+## États possibles
+
+| État | Description |
+|---|---|
+| `new` | Instance très récente, warmup initial |
+| `warming` | Warmup en cours |
+| `stable` | Instance plus mature |
+| `at_risk` | Signaux récents plus risqués |
+| `restricted` | Risque élevé détecté |
+
+<Note>
+Cette V1 retourne uniquement de la guidance. Elle ne bloque pas directement les envois.
+</Note>
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `404` | `NOT_FOUND` | Instance inexistante ou hors de votre compte |

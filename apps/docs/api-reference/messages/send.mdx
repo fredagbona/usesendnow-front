@@ -119,6 +119,21 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     "body": "Bonjour",
     "mediaUrl": null,
     "status": "queued",
+    "warnings": [
+      "This instance is still in the warmup phase."
+    ],
+    "safety": {
+      "decision": "warn",
+      "riskLevel": "medium",
+      "state": "warming",
+      "score": 56,
+      "reasons": [
+        "This instance is still in the warmup phase."
+      ],
+      "recommendations": [
+        "Start with previously engaged contacts before scaling volume."
+      ]
+    },
     "error": null,
     "providerMessageId": null,
     "createdAt": "2026-04-01T10:00:00.000Z",
@@ -126,6 +141,10 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
   }
 }
 ```
+
+<Note>
+En V1, les warnings safety n'empêchent pas l'envoi. Ils servent uniquement de guidance.
+</Note>
 
 ## Erreurs courantes
 

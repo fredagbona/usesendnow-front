@@ -21,7 +21,22 @@ POST /api/v1/campaigns/{id}/resume
 {
   "data": {
     "id": "cmp_uuid",
-    "status": "running"
+    "status": "running",
+    "safety": {
+      "decision": "warn",
+      "riskLevel": "medium",
+      "state": "warming",
+      "reasons": [
+        "This instance is still warming up and campaign pacing should stay gradual."
+      ],
+      "recommendations": [
+        "Start with previously engaged contacts before scaling volume."
+      ]
+    }
   }
 }
 ```
+
+<Note>
+Le resume peut retourner de la guidance safety. En V1, elle n'empêche pas la reprise.
+</Note>

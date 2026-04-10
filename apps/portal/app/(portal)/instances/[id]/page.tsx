@@ -6,6 +6,8 @@ import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
 import { useInstance } from "@/hooks/useInstances"
+import { useInstanceHealth } from "@/hooks/useInstanceHealth"
+import InstanceHealthCard from "@/components/instances/InstanceHealthCard"
 import { apiClient } from "@usesendnow/api-client"
 import type { ConnectResponse } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
@@ -34,6 +36,7 @@ export default function InstanceDetailPage() {
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
   const { instance, liveStatus, loading, error, refreshState, updateStatus } = useInstance(id)
+  const { health, loading: healthLoading, error: healthError, refetch: healthRefetch } = useInstanceHealth(id)
   const [connectData, setConnectData] = useState<ConnectResponse | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -223,6 +226,14 @@ export default function InstanceDetailPage() {
           </div>
         )}
       </Card>
+
+      {/* Health / Warmup card */}
+      <InstanceHealthCard
+        health={health}
+        loading={healthLoading}
+        error={healthError}
+        onRetry={healthRefetch}
+      />
 
       {/* Danger zone */}
       <div className="border border-error/30 bg-error-subtle rounded-2xl p-6">

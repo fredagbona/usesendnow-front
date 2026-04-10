@@ -712,6 +712,73 @@ export interface NumberLookupsListResponse {
   hasMore: boolean
 }
 
+// ─── Instance Warmup & Health ────────────────────────────────────────────────
+
+export type SafetyState = "new" | "warming" | "stable" | "at_risk" | "restricted"
+
+export interface WarmupPolicy {
+  state: SafetyState
+  instanceAgeDays: number
+  hourlyOutboundCap: number
+  dailyOutboundCap: number
+  hourlyUniqueRecipientsCap: number
+  dailyUniqueRecipientsCap: number
+  maxCampaignRecipients: number
+  maxColdRatio: number
+}
+
+export interface UsageWindowSummary {
+  outbound1h: number
+  outbound24h: number
+  uniqueRecipients1h: number
+  uniqueRecipients24h: number
+  inboundReplies24h: number
+  inboundReplies7d: number
+}
+
+export interface InstanceHealth {
+  instanceId: string
+  safetyState: SafetyState
+  safetyScore: number
+  firstConnectedAt: string | null
+  warmupPolicy: WarmupPolicy
+  usageWindowSummary: UsageWindowSummary
+  recommendations: string[]
+}
+
+// ─── Campaign Safety ─────────────────────────────────────────────────────────
+
+export type SafetyDecision = "allow" | "warn"
+
+export interface SafetyAppliedLimits {
+  hourlyOutboundCap?: number
+  dailyOutboundCap?: number
+  maxCampaignRecipients?: number
+  maxColdRatio?: number
+}
+
+export interface SafetyAudience {
+  totalRecipients: number
+  warmCount: number
+  coldCount: number
+  unknownCount: number
+  blockedCount: number
+  coldRatio: number
+  warmRatio: number
+  unknownRatio: number
+}
+
+export interface SafetyAssessment {
+  decision: SafetyDecision
+  riskLevel: "low" | "medium" | "high"
+  score?: number
+  state?: SafetyState
+  reasons: string[]
+  recommendations: string[]
+  appliedLimits?: SafetyAppliedLimits
+  audience?: SafetyAudience
+}
+
 // ─── API Error ────────────────────────────────────────────────────────────────
 
 export interface ApiError {

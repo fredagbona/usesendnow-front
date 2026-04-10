@@ -13,7 +13,7 @@ import { useTemplates } from "@/hooks/useTemplates"
 import { useContactGroups } from "@/hooks/useContactGroups"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
 import { formatDate } from "@/lib/format"
-import type { Campaign, SubscriptionResponse, CreateCampaignPayload, MessageType, UploadedMedia, RepeatType } from "@usesendnow/types"
+import type { Campaign, SubscriptionResponse, CreateCampaignPayload, MessageType, UploadedMedia, RepeatType, SafetyAssessment } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
 import Card from "@/components/ui/Card"
@@ -22,6 +22,7 @@ import Select from "@/components/ui/Select"
 import Textarea from "@/components/ui/Textarea"
 import CustomVariableBuilder from "@/components/ui/CustomVariableBuilder"
 import PlanGateBanner from "@/components/ui/PlanGateBanner"
+import CampaignSafetyHints from "@/components/campaigns/CampaignSafetyHints"
 import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
 import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, TYPE_LABEL, formatBytes } from "@/lib/messageComposer"
@@ -44,9 +45,17 @@ export default function NewCampaignPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [mediaError, setMediaError] = useState<string | null>(null)
   const [mediaNotice, setMediaNotice] = useState<string | null>(null)
+  const [safetyHints, setSafetyHints] = useState<SafetyAssessment | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadedMediaRef = useRef<UploadedMedia | null>(null)
   const shouldCleanupMediaRef = useRef(false)
+
+  // Reset safety hints on unmount (navigation away from page)
+  useEffect(() => {
+    return () => {
+      setSafetyHints(null)
+    }
+  }, [])
 
   const [form, setForm] = useState<{
     name: string
@@ -279,7 +288,16 @@ export default function NewCampaignPage() {
 
       const campaign = await apiClient.campaigns.create(payload)
       prependCampaign(campaign)
-      toast.success("Campagne créée avec succès.")
+
+      // Check for safety warnings
+      const safetyData = (campaign as any)?.safety
+      if (safetyData && safetyData.decision === "warn") {
+        setSafetyHints(safetyData)
+        toast.success("Campagne créée avec recommandations de warmup")
+      } else {
+        toast.success("Campagne créée avec succès.")
+      }
+
       router.push("/campaigns")
       router.refresh()
     } catch (err) {
@@ -560,6 +578,10 @@ export default function NewCampaignPage() {
         </Card>
 
         {/* Submit */}
+        {safetyHints && (
+          <CampaignSafetyHints safety={safetyHints} />
+        )}
+
         <div className="flex items-center justify-between">
           <div className="text-sm text-text-secondary">
             {!canCreateCampaign && (

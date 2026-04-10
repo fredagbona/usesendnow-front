@@ -66,10 +66,22 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
 {
   "data": {
     "id": "msg_uuid",
-    "status": "queued"
+    "status": "queued",
+    "warnings": [
+      "This instance is still in the warmup phase."
+    ],
+    "safety": {
+      "decision": "warn",
+      "riskLevel": "medium",
+      "state": "warming"
+    }
   }
 }
 ```
+
+<Note>
+Les warnings safety sont informatifs. En V1, ils ne bloquent pas les messages planifiés.
+</Note>
 
 ## Erreurs courantes
 

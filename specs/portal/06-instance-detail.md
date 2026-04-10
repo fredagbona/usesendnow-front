@@ -17,6 +17,7 @@ Affiche le statut live, permet de connecter via QR code ou pairing code, de déc
 |---|---|---|---|
 | GET | /api/instances/{id} | JWT | Charger les données de l'instance |
 | GET | /api/instances/{id}/state | JWT | Statut live (polling) |
+| GET | /api/instances/{id}/health | JWT | Santé warmup/safety de l'instance |
 | POST | /api/instances/{id}/connect | JWT | Déclencher la connexion (QR / pairing) |
 | POST | /api/instances/{id}/logout | JWT | Déconnecter WhatsApp |
 | DELETE | /api/instances/{id} | JWT | Supprimer l'instance (soft delete) |
@@ -29,6 +30,7 @@ Layout standard portal.
 ### Zones principales
 - **Header** : nom de l'instance + badge statut + bouton "Back to Instances"
 - **ConnectionCard** : zone principale de gestion de connexion
+- **InstanceHealthCard** : score, état et recommandations warmup
 - **DangerZone** : section suppression en bas de page
 
 ---
@@ -72,6 +74,26 @@ Composant invisible qui poll `GET /api/instances/{id}/state` toutes les 5 second
 S'arrête quand le statut devient `connected` ou `disconnected`.
 Props : `instanceId: string; onStateChange: (state: string) => void`
 
+### InstanceHealthCard
+Charge `GET /api/instances/{id}/health`.
+
+Affiche :
+- `safetyState`
+- `safetyScore`
+- `firstConnectedAt`
+- `warmupPolicy.hourlyOutboundCap`
+- `warmupPolicy.dailyOutboundCap`
+- `warmupPolicy.maxCampaignRecipients`
+- `usageWindowSummary`
+- `recommendations`
+
+Rendu recommandé :
+- `new` : gray/yellow
+- `warming` : yellow
+- `stable` : green
+- `at_risk` : orange
+- `restricted` : red
+
 ### DangerZone
 Section avec bouton "Delete this instance" (rouge, outline).
 Ouvre une modale de confirmation avant `DELETE /api/instances/{id}`.
@@ -86,6 +108,7 @@ Bouton "Delete" rouge + bouton "Cancel".
 ## États à gérer
 - `loading.initial` : skeleton pendant GET /api/instances/{id}
 - `loading.connect` : spinner dans ConnectionCard pendant POST /connect
+- `loading.health` : skeleton dans InstanceHealthCard
 - `loading.logout` : spinner pendant POST /logout
 - `loading.delete` : spinner pendant DELETE
 - `polling` : actif quand statut = `connecting`
@@ -98,7 +121,7 @@ Bouton "Delete" rouge + bouton "Cancel".
 ## Actions utilisateur
 
 ### Charger l'instance
-- Au montage : `GET /api/instances/{id}` pour les données, `GET /api/instances/{id}/state` pour le statut live
+- Au montage : `GET /api/instances/{id}` pour les données, `GET /api/instances/{id}/state` pour le statut live, `GET /api/instances/{id}/health` pour le warmup
 
 ### Connecter via QR Code
 - Déclencheur : bouton "Connect via QR Code"
@@ -134,6 +157,7 @@ Bouton "Delete" rouge + bouton "Cancel".
 - Le QR code expire côté Evolution API — si l'utilisateur attend trop longtemps, proposer "Regenerate QR" (re-appel de POST /connect).
 - La suppression est un soft delete côté backend (`deletedAt`). Les messages liés restent en DB.
 - Un statut `connected` depuis l'API `/state` retourne `providerState: "open"`.
+- L’endpoint `/health` n’est pas bloquant : il sert à informer, pas à restreindre l’utilisateur en V1.
 
 ---
 

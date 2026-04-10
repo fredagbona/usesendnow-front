@@ -381,9 +381,16 @@ export default function CampaignsPage() {
   const handleResume = async (id: string) => {
     setResuming(id)
     try {
-      await apiClient.campaigns.resume(id)
+      const response = await apiClient.campaigns.resume(id)
       updateCampaignStatus(id, "running")
-      toast.success("Campagne reprise")
+
+      // Check for safety warnings
+      const safetyData = (response as any)?.safety
+      if (safetyData && safetyData.decision === "warn") {
+        toast.success("Campagne reprise avec recommandations de warmup")
+      } else {
+        toast.success("Campagne reprise")
+      }
     } catch {
       toast.error("Impossible de reprendre la campagne.")
     } finally {

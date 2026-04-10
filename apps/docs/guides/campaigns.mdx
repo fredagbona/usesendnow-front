@@ -181,6 +181,10 @@ Pour `tags`, au moins un tag est requis. Pour `explicit`, au moins un contact es
 }
 ```
 
+<Note>
+La réponse peut contenir un bloc `safety` avec `decision`, `riskLevel`, `reasons` et `recommendations`. En V1, cette guidance ne bloque pas la campagne.
+</Note>
+
 ---
 
 ## Statuts d'une campagne
@@ -216,6 +220,8 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/resume \
 ```
 
 Ces actions sont valides uniquement sur les statuts compatibles.
+
+Le `resume` peut lui aussi retourner un bloc `safety` si l'instance est encore en warmup ou si l'audience est plus risquée que recommandé.
 
 ### Paramètres path
 

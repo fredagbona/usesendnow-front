@@ -44,7 +44,8 @@
       "pages": [
         "api-reference/instances/list",
         "api-reference/instances/get",
-        "api-reference/instances/state"
+        "api-reference/instances/state",
+        "api-reference/instances/health"
       ]
     },
     {

@@ -91,6 +91,20 @@ Champs :
 
 Bouton "Create Campaign" — loading state.
 
+### CampaignSafetyHints
+Bloc non bloquant affiché après la réponse de création ou de resume si `data.safety.decision === "warn"`.
+
+Affiche :
+- `riskLevel`
+- `reasons`
+- `recommendations`
+- `appliedLimits.maxCampaignRecipients`
+- `appliedLimits.maxColdRatio`
+
+Ton recommandé :
+- titre : `Warmup guidance`
+- style : jaune/orange informatif, jamais rouge bloquant en V1
+
 ### DeleteCampaignModal
 Props : `campaignName: string; onConfirm: () => void; onCancel: () => void`
 Message : "Delete **{name}**? This cannot be undone."
@@ -102,6 +116,7 @@ Message : "Delete **{name}**? This cannot be undone."
 - `empty` : "No campaigns yet. Create your first campaign." (si plan le permet)
 - `plan_blocked` : PlanGateBanner
 - `creating` : loading dans la modale
+- `creating.warned` : création réussie avec hints safety
 - `pausing` : loading sur le bouton Pause de la ligne concernée
 - `resuming` : loading sur le bouton Resume
 - `deleting` : loading sur le bouton Delete
@@ -116,6 +131,10 @@ Message : "Delete **{name}**? This cannot be undone."
 - Déclencheur : bouton "New Campaign" → NewCampaignModal → submit
 - Appel API : `POST /api/campaigns` — payload complet
 - Succès : fermer modale + prepend à la liste + toast "Campaign scheduled"
+- Si la réponse contient `data.safety.decision === "warn"` :
+  - garder le succès
+  - afficher `CampaignSafetyHints`
+  - toast recommandé : `Campaign scheduled with warmup guidance`
 - Erreur 403 `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` : PlanGateBanner
 - Erreur 429 `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` : toast "Monthly quota exhausted."
 - Erreur 404 `NOT_FOUND` : "Instance not found."
@@ -130,6 +149,9 @@ Message : "Delete **{name}**? This cannot be undone."
 - Déclencheur : bouton "Resume" sur la ligne
 - Appel API : `PATCH /api/campaigns/{id}/resume`
 - Succès : mettre à jour le statut local → `running` + toast "Campaign resumed"
+- Si la réponse contient `data.safety.decision === "warn"` :
+  - afficher un toast informatif
+  - message recommandé : `Campaign resumed with warmup guidance`
 
 ### Supprimer une campagne
 - Déclencheur : bouton "Delete" → DeleteCampaignModal → "Delete"
@@ -150,6 +172,8 @@ Message : "Delete **{name}**? This cannot be undone."
   - soit `templateId`
   - soit `type` + contenu direct
 - Une campagne ne peut jamais être créée sans contenu.
+- En V1, les hints safety ne bloquent jamais la création.
+- Le frontend doit toujours afficher les raisons et recommandations si `decision === "warn"`.
 
 ---
 
@@ -208,6 +232,17 @@ Response POST /api/campaigns:
     "id": "cmp_new456",
     "name": "Black Friday Promo",
     "status": "scheduled",
+    "safety": {
+      "decision": "warn",
+      "riskLevel": "medium",
+      "state": "warming",
+      "reasons": [
+        "This instance is still warming up and campaign pacing should stay gradual."
+      ],
+      "recommendations": [
+        "Start with previously engaged contacts before scaling volume."
+      ]
+    },
     "stats": { "queued": 0, "sent": 0, "delivered": 0, "failed": 0 },
     "createdAt": "2026-03-27T10:00:00.000Z"
   }

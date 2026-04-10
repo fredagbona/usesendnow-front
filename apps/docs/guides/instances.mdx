@@ -10,6 +10,7 @@ description: Comprendre les instances WhatsApp et interroger leur état via l'AP
 | `GET` | `/api/v1/instances` | Lister les instances de votre compte |
 | `GET` | `/api/v1/instances/{id}` | Détail d'une instance |
 | `GET` | `/api/v1/instances/{id}/state` | État live depuis le provider |
+| `GET` | `/api/v1/instances/{id}/health` | Warmup / santé d'envoi de l'instance |
 
 Authentification : `x-api-key: <api_key>`
 
@@ -131,3 +132,21 @@ curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID/state \
 | Code | HTTP | Quand |
 |---|---|---|
 | `NOT_FOUND` | 404 | Instance inexistante ou hors de votre compte |
+
+## Santé d'instance
+
+```bash
+curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID/health \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+Cette route retourne :
+- `safetyState`
+- `safetyScore`
+- `warmupPolicy`
+- `usageWindowSummary`
+- `recommendations`
+
+<Note>
+La V1 du warmup renvoie de la guidance uniquement. Elle ne bloque pas encore directement les envois via cette route.
+</Note>

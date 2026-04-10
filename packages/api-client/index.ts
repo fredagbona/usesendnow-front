@@ -56,6 +56,7 @@ import type {
   ImportContactsResponse,
   ImportContactsPayload,
   NumberLookupsListResponse,
+  InstanceHealth,
 } from "@usesendnow/types"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -257,6 +258,8 @@ const instances = {
   logout: (id: string) => post<{ success: boolean }>(`/api/instances/${id}/logout`),
 
   delete: (id: string) => del<{ deleted: boolean }>(`/api/instances/${id}`),
+
+  getHealth: (id: string) => get<InstanceHealth>(`/api/instances/${id}/health`),
 }
 
 // ─── Messages ─────────────────────────────────────────────────────────────────

@@ -63,10 +63,34 @@ Ne pas envoyer les deux en même temps.
       "read": 0,
       "failed": 0,
       "cancelled": 0
+    },
+    "safety": {
+      "decision": "warn",
+      "riskLevel": "medium",
+      "score": 56,
+      "state": "warming",
+      "reasons": [
+        "This instance is still warming up and campaign pacing should stay gradual."
+      ],
+      "recommendations": [
+        "Start with previously engaged contacts before scaling volume."
+      ],
+      "appliedLimits": {
+        "maxCampaignRecipients": 100,
+        "maxColdRatio": 0.4
+      },
+      "audience": {
+        "totalRecipients": 120,
+        "coldRatio": 0.625
+      }
     }
   }
 }
 ```
+
+<Note>
+En V1, `safety.decision` vaut `allow` ou `warn`. Un warning n'empêche pas la création de la campagne.
+</Note>
 
 ## Erreurs courantes
 
