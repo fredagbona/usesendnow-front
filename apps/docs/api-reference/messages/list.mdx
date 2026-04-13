@@ -30,7 +30,27 @@ curl "https://srv.msgflash.com/api/v1/messages?limit=20&status=delivered" \
 ```json
 {
   "data": {
-    "messages": [],
+    "messages": [
+      {
+        "id": "msg_uuid",
+        "userId": "user_uuid",
+        "instanceId": "inst_uuid",
+        "contactId": null,
+        "campaignId": null,
+        "direction": "outbound",
+        "type": "text",
+        "from": null,
+        "to": "+33612345678",
+        "body": "Bonjour",
+        "mediaUrl": null,
+        "status": "delivered",
+        "error": null,
+        "meta": {},
+        "providerMessageId": "BAE5D1A2B3C4D5E6",
+        "createdAt": "2026-04-01T10:00:00.000Z",
+        "updatedAt": "2026-04-01T10:01:10.000Z"
+      }
+    ],
     "nextCursor": null,
     "hasMore": false
   }

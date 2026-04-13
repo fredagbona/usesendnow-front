@@ -9,11 +9,25 @@ description: Planifie un message futur, en mode libre ou via template.
 POST /api/v1/messages/schedule
 ```
 
+## Important — comment obtenir `instanceId`
+
+`instanceId` est l’identifiant technique requis pour planifier un message.
+
+Pour l’obtenir :
+1. appeler `GET /api/v1/instances`
+2. choisir l’instance souhaitée
+3. récupérer `data[n].id`
+4. utiliser cette valeur dans `instanceId`
+
+Ne pas envoyer :
+- `name`
+- `waNumber`
+
 ## Body
 
 | Champ | Type | Requis | Description |
 |---|---|---|---|
-| `instanceId` | UUID | oui | Instance source |
+| `instanceId` | UUID | oui | Identifiant technique de l'instance MsgFlash, obtenu via `GET /api/v1/instances` |
 | `to` | string | oui | Numéro E.164 |
 | `scheduledAt` | ISO 8601 | oui | Date/heure d'envoi |
 | `type` | enum | oui si pas de `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact`, `buttons` |
@@ -66,15 +80,30 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
 {
   "data": {
     "id": "msg_uuid",
+    "userId": "user_uuid",
+    "instanceId": "inst_uuid",
+    "contactId": null,
+    "campaignId": null,
+    "direction": "outbound",
+    "type": "text",
+    "from": null,
+    "to": "+33612345678",
+    "body": "Bonjour dans 30 minutes",
+    "mediaUrl": null,
     "status": "queued",
+    "error": null,
+    "providerMessageId": null,
     "warnings": [
       "This instance is still in the warmup phase."
     ],
     "safety": {
       "decision": "warn",
       "riskLevel": "medium",
-      "state": "warming"
-    }
+      "state": "warming",
+      "score": 56
+    },
+    "createdAt": "2026-04-02T07:30:00.000Z",
+    "updatedAt": "2026-04-02T07:30:00.000Z"
   }
 }
 ```

@@ -63,6 +63,18 @@ Cette route n'accepte ni query params ni body.
 }
 ```
 
+<Tip>
+Utilisez `data[].id` comme vraie valeur `instanceId` dans `/api/v1/messages/send`, `/api/v1/messages/schedule`, `/api/v1/campaigns` et les autres endpoints d'envoi.
+</Tip>
+
+<Warning>
+`name` et `waNumber` ne remplacent pas `instanceId`.
+
+- `id` = identifiant technique à envoyer à MsgFlash
+- `name` = libellé lisible pour l'utilisateur
+- `waNumber` = numéro connecté affiché à l'écran
+</Warning>
+
 ### Erreurs courantes
 
 | Code | HTTP | Quand |

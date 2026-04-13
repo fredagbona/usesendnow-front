@@ -9,11 +9,30 @@ description: Envoie un message immédiat, en mode libre ou via un template.
 POST /api/v1/messages/send
 ```
 
+## Important — comment obtenir `instanceId`
+
+`instanceId` est obligatoire pour envoyer un message.
+
+Ne pas utiliser à la place :
+- `name`
+- `waNumber`
+
+Pour obtenir le bon `instanceId` :
+1. appeler `GET /api/v1/instances`
+2. sélectionner l’instance voulue
+3. récupérer `data[n].id`
+4. envoyer cette valeur dans le champ `instanceId`
+
+Exemple :
+- `id` = identifiant technique requis par l’API
+- `name` = libellé lisible
+- `waNumber` = numéro connecté affiché à l’utilisateur
+
 ## Body
 
 | Champ | Type | Requis | Description |
 |---|---|---|---|
-| `instanceId` | UUID | oui | Instance source |
+| `instanceId` | UUID | oui | Identifiant technique de l'instance MsgFlash, obtenu via `GET /api/v1/instances` |
 | `to` | string | oui | Numéro E.164 |
 | `type` | enum | oui si pas de `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact`, `buttons` |
 | `templateId` | UUID | oui si pas de `type` | Template à rendre |

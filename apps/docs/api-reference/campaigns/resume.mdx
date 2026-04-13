@@ -21,18 +21,32 @@ POST /api/v1/campaigns/{id}/resume
 {
   "data": {
     "id": "cmp_uuid",
+    "userId": "user_uuid",
+    "instanceId": "inst_uuid",
+    "name": "Promo Black Friday",
+    "templateId": null,
+    "type": "text",
+    "body": "Bonjour, découvrez notre promo.",
+    "mediaUrl": null,
+    "schedule": "2026-04-02T10:00:00.000Z",
+    "repeat": "none",
     "status": "running",
+    "recipients": { "type": "all" },
+    "templateVariables": null,
     "safety": {
       "decision": "warn",
       "riskLevel": "medium",
       "state": "warming",
+      "score": 56,
       "reasons": [
         "This instance is still warming up and campaign pacing should stay gradual."
       ],
       "recommendations": [
         "Start with previously engaged contacts before scaling volume."
       ]
-    }
+    },
+    "createdAt": "2026-04-01T17:00:00.000Z",
+    "updatedAt": "2026-04-02T10:06:00.000Z"
   }
 }
 ```

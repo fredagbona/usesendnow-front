@@ -16,7 +16,7 @@ import Badge from "@/components/ui/Badge"
 import Card from "@/components/ui/Card"
 import Modal from "@/components/ui/Modal"
 import { SkeletonCard } from "@/components/ui/Skeleton"
-import { ArrowLeft01Icon, AlertDiamondIcon } from "hugeicons-react"
+import { ArrowLeft01Icon, AlertDiamondIcon, Copy01Icon, Tick01Icon } from "hugeicons-react"
 
 const STATUS_VARIANT: Record<string, "success" | "yellow" | "neutral" | "error"> = {
   connected:    "success",
@@ -42,6 +42,7 @@ export default function InstanceDetailPage() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [copiedField, setCopiedField] = useState<"id" | "instanceId" | null>(null)
 
   const poll = useCallback(async () => {
     const status = await refreshState()
@@ -103,6 +104,16 @@ export default function InstanceDetailPage() {
     }
   }
 
+  const handleCopyValue = async (value: string, field: "id" | "instanceId") => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedField(field)
+      setTimeout(() => setCopiedField(null), 2000)
+    } catch {
+      toast.error("Impossible de copier cette valeur.")
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -145,6 +156,37 @@ export default function InstanceDetailPage() {
           </div>
         }
       />
+
+      <Card>
+        <h2 className="mb-5 text-sm font-semibold text-text">Détails API</h2>
+        <div className="space-y-4">
+          <ApiDetailRow
+            label="UUID"
+            value={instance.id}
+            copyLabel="Copier l’UUID"
+            copied={copiedField === "id"}
+            onCopy={() => handleCopyValue(instance.id, "id")}
+          />
+          <ApiDetailRow
+            label="Instance ID"
+            value={instance.instanceId}
+            copyLabel="Copier l’instanceId"
+            copied={copiedField === "instanceId"}
+            onCopy={() => handleCopyValue(instance.instanceId, "instanceId")}
+          />
+          <div className="rounded-2xl border border-border bg-bg-subtle p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+              Numéro WhatsApp lié
+            </p>
+            <p className="mt-1 break-all font-mono text-sm text-text">
+              {instance.waNumber ?? "Non encore disponible"}
+            </p>
+            <p className="mt-2 text-xs text-text-muted">
+              Le numéro WhatsApp lié n’est fiable qu’une fois l’instance connectée et synchronisée.
+            </p>
+          </div>
+        </div>
+      </Card>
 
       {/* Suspended banner */}
       {status === "suspended" && (
@@ -269,5 +311,45 @@ export default function InstanceDetailPage() {
         </div>
       </Modal>
     </motion.div>
+  )
+}
+
+function ApiDetailRow({
+  label,
+  value,
+  copyLabel,
+  copied,
+  onCopy,
+}: {
+  label: string
+  value: string
+  copyLabel: string
+  copied: boolean
+  onCopy: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-bg-subtle p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+          {label}
+        </p>
+        <p className="mt-1 break-all font-mono text-sm text-text">
+          {value}
+        </p>
+      </div>
+      <Button variant="secondary" size="sm" onClick={onCopy}>
+        {copied ? (
+          <>
+            <Tick01Icon className="h-4 w-4" />
+            Copié
+          </>
+        ) : (
+          <>
+            <Copy01Icon className="h-4 w-4" />
+            {copyLabel}
+          </>
+        )}
+      </Button>
+    </div>
   )
 }

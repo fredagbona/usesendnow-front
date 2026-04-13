@@ -54,6 +54,7 @@ export type InstanceStatus = "connected" | "connecting" | "disconnected" | "susp
 
 export interface Instance {
   id: string
+  instanceId: string
   userId: string
   name: string
   waNumber: string | null

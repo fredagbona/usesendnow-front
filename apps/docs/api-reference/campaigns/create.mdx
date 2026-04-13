@@ -9,11 +9,25 @@ description: Crée et programme une campagne d'envoi.
 POST /api/v1/campaigns
 ```
 
+## Important — comment obtenir `instanceId`
+
+`instanceId` est obligatoire pour créer une campagne.
+
+Pour l’obtenir :
+1. appeler `GET /api/v1/instances`
+2. choisir une instance avec `status = "connected"` si possible
+3. récupérer `data[n].id`
+4. envoyer cette valeur dans `instanceId`
+
+Ne pas utiliser à la place :
+- `name`
+- `waNumber`
+
 ## Body
 
 | Champ | Type | Requis | Description |
 |---|---|---|---|
-| `instanceId` | UUID | oui | Instance source |
+| `instanceId` | UUID | oui | Identifiant technique de l'instance MsgFlash, obtenu via `GET /api/v1/instances` |
 | `name` | string | oui | Nom interne |
 | `schedule` | ISO 8601 | oui | Date de démarrage |
 | `repeat` | string | non | `none`, `daily`, `weekly` |
@@ -50,11 +64,19 @@ Ne pas envoyer les deux en même temps.
 {
   "data": {
     "id": "cmp_uuid",
+    "userId": "user_uuid",
+    "instanceId": "inst_uuid",
+    "name": "Newsletter Avril",
     "status": "scheduled",
     "templateId": "tmpl_uuid",
     "type": null,
     "body": null,
     "mediaUrl": null,
+    "schedule": "2026-04-15T09:00:00.000Z",
+    "repeat": "none",
+    "recipients": {
+      "type": "all"
+    },
     "stats": {
       "planned": 0,
       "queued": 0,
@@ -83,7 +105,9 @@ Ne pas envoyer les deux en même temps.
         "totalRecipients": 120,
         "coldRatio": 0.625
       }
-    }
+    },
+    "createdAt": "2026-04-10T09:00:00.000Z",
+    "updatedAt": "2026-04-10T09:00:00.000Z"
   }
 }
 ```

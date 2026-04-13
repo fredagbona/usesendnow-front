@@ -44,6 +44,27 @@ curl https://srv.msgflash.com/api/v1/instances \
 }
 ```
 
+## Comment obtenir le bon `instanceId`
+
+Pour tous les endpoints d'envoi MsgFlash, vous devez utiliser `instanceId`.
+
+Différence entre les champs :
+
+| Champ | Usage |
+|---|---|
+| `id` | Identifiant technique à envoyer comme `instanceId` dans l'API |
+| `name` | Nom lisible pour l'utilisateur, utile pour l'UI |
+| `waNumber` | Numéro WhatsApp connecté, utile pour affichage/contrôle |
+
+Flow recommandé :
+1. appeler `GET /api/v1/instances`
+2. choisir une instance avec `status = "connected"`
+3. récupérer `data[n].id`
+4. utiliser cette valeur comme `instanceId` dans :
+   - `POST /api/v1/messages/send`
+   - `POST /api/v1/messages/schedule`
+   - `POST /api/v1/campaigns`
+
 ## Erreurs courantes
 
 | HTTP | Code | Quand |
