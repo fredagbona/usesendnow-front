@@ -52,15 +52,26 @@ export interface ResetPasswordResponse {
 
 export type InstanceStatus = "connected" | "connecting" | "disconnected" | "suspended"
 
+export interface InstanceMeta {
+  instance?: {
+    instanceId?: string
+    instanceName?: string
+    status?: string
+    integration?: string
+    webhookWaBusiness?: string | null
+    accessTokenWaBusiness?: string
+  } | null
+  [key: string]: unknown
+}
+
 export interface Instance {
   id: string
-  instanceId: string
   userId: string
   name: string
   waNumber: string | null
   status: InstanceStatus
   webhook: string | null
-  meta: Record<string, unknown> | null
+  meta: InstanceMeta | null
   deletedAt: string | null
   createdAt: string
   updatedAt: string

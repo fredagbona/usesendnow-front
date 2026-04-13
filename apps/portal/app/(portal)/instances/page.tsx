@@ -169,21 +169,14 @@ export default function InstancesPage() {
               <h3 className="mb-1 text-base font-semibold text-text truncate">
                 {instance.name}
               </h3>
-              <p className="text-xs text-text-secondary font-mono mb-1">
-                {instance.waNumber ?? "Aucun numéro lié"}
-              </p>
+              {instance.waNumber && (
+                <p className="mb-1 font-mono text-xs text-text-secondary">
+                  {instance.waNumber}
+                </p>
+              )}
               {instance.status === "suspended" && (
                 <p className="text-xs text-error mb-3">
                   Suspendue suite à un changement de plan.
-                </p>
-              )}
-              {instance.status !== "suspended" && (
-                <p className="text-sm text-text-secondary">
-                  {instance.status === "connected"
-                    ? "Numéro actif et prêt à envoyer des messages."
-                    : instance.status === "connecting"
-                      ? "Finalisez la connexion WhatsApp depuis la page de détail."
-                      : "Scannez un QR code pour connecter ce numéro."}
                 </p>
               )}
               <div className={instance.status === "suspended" ? "mt-2" : "mt-4"}>

@@ -135,6 +135,8 @@ export default function InstanceDetailPage() {
   }
 
   const status = liveStatus ?? instance.status
+  const apiInstanceId = instance.meta?.instance?.instanceId ?? "Non disponible"
+  const linkedWaNumber = instance.waNumber ?? "Non encore disponible"
 
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6">
@@ -157,37 +159,6 @@ export default function InstanceDetailPage() {
         }
       />
 
-      <Card>
-        <h2 className="mb-5 text-sm font-semibold text-text">Détails API</h2>
-        <div className="space-y-4">
-          <ApiDetailRow
-            label="UUID"
-            value={instance.id}
-            copyLabel="Copier l’UUID"
-            copied={copiedField === "id"}
-            onCopy={() => handleCopyValue(instance.id, "id")}
-          />
-          <ApiDetailRow
-            label="Instance ID"
-            value={instance.instanceId}
-            copyLabel="Copier l’instanceId"
-            copied={copiedField === "instanceId"}
-            onCopy={() => handleCopyValue(instance.instanceId, "instanceId")}
-          />
-          <div className="rounded-2xl border border-border bg-bg-subtle p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-              Numéro WhatsApp lié
-            </p>
-            <p className="mt-1 break-all font-mono text-sm text-text">
-              {instance.waNumber ?? "Non encore disponible"}
-            </p>
-            <p className="mt-2 text-xs text-text-muted">
-              Le numéro WhatsApp lié n’est fiable qu’une fois l’instance connectée et synchronisée.
-            </p>
-          </div>
-        </div>
-      </Card>
-
       {/* Suspended banner */}
       {status === "suspended" && (
         <div className="flex items-start gap-3 p-4 bg-error-subtle border border-error/30 rounded-2xl">
@@ -201,73 +172,106 @@ export default function InstanceDetailPage() {
         </div>
       )}
 
-      {/* Connection card */}
-      <Card>
-        <h2 className="text-sm font-semibold text-text mb-5">Connexion WhatsApp</h2>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+        <Card>
+          <h2 className="mb-5 text-sm font-semibold text-text">Connexion WhatsApp</h2>
 
-        {status === "suspended" && (
-          <p className="text-sm text-text-secondary">
-            Reconnectez-vous à un plan supérieur pour réactiver cette instance.
-          </p>
-        )}
-
-        {status === "connected" && (
-          <div className="space-y-4">
-            <p className="text-sm text-text-body">
-              WhatsApp connecté{instance.waNumber ? ` : ${instance.waNumber}` : ""}.
+          {status === "suspended" && (
+            <p className="text-sm text-text-secondary">
+              Reconnectez-vous à un plan supérieur pour réactiver cette instance.
             </p>
-            <Button variant="secondary" loading={loggingOut} onClick={handleLogout}>
-              Déconnecter
-            </Button>
-          </div>
-        )}
+          )}
 
-        {status === "disconnected" && (
-          <div className="space-y-5">
-            <div className="space-y-3">
-              <p className="text-sm text-text-secondary">
-                Connectez-vous en scannant un QR code depuis votre téléphone.
+          {status === "connected" && (
+            <div className="space-y-4">
+              <p className="text-sm text-text-body">
+                WhatsApp connecté{instance.waNumber ? ` : ${instance.waNumber}` : ""}.
               </p>
-              <Button variant="primary" loading={connecting} onClick={handleConnectQR}>
-                Générer le QR Code
+              <Button variant="secondary" loading={loggingOut} onClick={handleLogout}>
+                Déconnecter
               </Button>
             </div>
-          </div>
-        )}
+          )}
 
-        {status === "connecting" && (
-          <div className="space-y-5">
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              <p className="text-sm text-text-body">En attente de connexion...</p>
-            </div>
-
-            {connectData?.qrCode ? (
+          {status === "disconnected" && (
+            <div className="space-y-5">
               <div className="space-y-3">
-                <p className="text-xs text-text-secondary">
-                  Ouvrez WhatsApp sur votre téléphone → Appareils connectés → Connecter un appareil, puis scannez ce QR code.
+                <p className="text-sm text-text-secondary">
+                  Connectez-vous en scannant un QR code depuis votre téléphone.
                 </p>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={connectData.qrCode}
-                  alt="QR Code"
-                  className="w-52 h-52 border border-border rounded-2xl"
-                />
-                <Button variant="ghost" size="sm" onClick={handleConnectQR}>
-                  Regénérer le QR
+                <Button variant="primary" loading={connecting} onClick={handleConnectQR}>
+                  Générer le QR Code
                 </Button>
               </div>
-            ) : (
-              <Button variant="ghost" size="sm" onClick={() => poll()}>
-                Actualiser le statut
-              </Button>
-            )}
+            </div>
+          )}
+
+          {status === "connecting" && (
+            <div className="space-y-5">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="text-sm text-text-body">En attente de connexion...</p>
+              </div>
+
+              {connectData?.qrCode ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-text-secondary">
+                    Ouvrez WhatsApp sur votre téléphone → Appareils connectés → Connecter un appareil, puis scannez ce QR code.
+                  </p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={connectData.qrCode}
+                    alt="QR Code"
+                    className="w-52 h-52 border border-border rounded-2xl"
+                  />
+                  <Button variant="ghost" size="sm" onClick={handleConnectQR}>
+                    Regénérer le QR
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={() => poll()}>
+                  Actualiser le statut
+                </Button>
+              )}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <h2 className="mb-5 text-sm font-semibold text-text">Détails API</h2>
+          <div className="space-y-4">
+            <ApiDetailRow
+              label="ID"
+              value={instance.id}
+              copyLabel="Copier l’ID"
+              copied={copiedField === "id"}
+              onCopy={() => handleCopyValue(instance.id, "id")}
+            />
+            <ApiDetailRow
+              label="instanceId"
+              value={apiInstanceId}
+              copyLabel="Copier l’instanceId"
+              copied={copiedField === "instanceId"}
+              onCopy={() => handleCopyValue(apiInstanceId, "instanceId")}
+              canCopy={apiInstanceId !== "Non disponible"}
+            />
+            <div className="rounded-2xl border border-border bg-bg-subtle p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                Numéro WhatsApp lié
+              </p>
+              <p className="mt-1 break-all font-mono text-sm text-text">
+                {linkedWaNumber}
+              </p>
+              <p className="mt-2 text-xs text-text-muted">
+                Le numéro WhatsApp lié n’est fiable qu’une fois l’instance connectée et synchronisée.
+              </p>
+            </div>
           </div>
-        )}
-      </Card>
+        </Card>
+      </div>
 
       {/* Health / Warmup card */}
       <InstanceHealthCard
@@ -320,12 +324,14 @@ function ApiDetailRow({
   copyLabel,
   copied,
   onCopy,
+  canCopy = true,
 }: {
   label: string
   value: string
   copyLabel: string
   copied: boolean
   onCopy: () => void
+  canCopy?: boolean
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-bg-subtle p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -337,7 +343,7 @@ function ApiDetailRow({
           {value}
         </p>
       </div>
-      <Button variant="secondary" size="sm" onClick={onCopy}>
+      <Button variant="secondary" size="sm" onClick={onCopy} disabled={!canCopy}>
         {copied ? (
           <>
             <Tick01Icon className="h-4 w-4" />
