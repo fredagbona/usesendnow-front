@@ -15,17 +15,42 @@ function getLocalizedPath(pathname: string, locale: "en" | "fr") {
 export function DocLocaleSwitch() {
   const pathname = usePathname()
   const isFrench = pathname.startsWith("/fr")
-  const target = isFrench ? getLocalizedPath(pathname, "en") : getLocalizedPath(pathname, "fr")
+  const hrefEn = getLocalizedPath(pathname, "en")
+  const hrefFr = getLocalizedPath(pathname, "fr")
 
   return (
-    <div className="mb-6 flex items-center gap-2">
-      <span className="text-sm text-gray-500">Language</span>
-      <Link
-        href={target}
-        className="inline-flex items-center rounded-full border border-gray-300 px-3 py-1 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-100"
+    <div className="not-prose mb-6 flex flex-wrap items-center gap-3">
+      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Language</span>
+      <div
+        className="inline-flex items-center gap-0.5 rounded-full border border-gray-300 bg-gray-50 p-0.5 dark:border-gray-600 dark:bg-gray-900"
+        role="group"
+        aria-label="Documentation language"
       >
-        {isFrench ? "English" : "Français"}
-      </Link>
+        <Link
+          href={hrefEn}
+          className={[
+            "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-colors",
+            !isFrench
+              ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+              : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100",
+          ].join(" ")}
+          aria-current={!isFrench ? "true" : undefined}
+        >
+          EN
+        </Link>
+        <Link
+          href={hrefFr}
+          className={[
+            "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-colors",
+            isFrench
+              ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+              : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100",
+          ].join(" ")}
+          aria-current={isFrench ? "true" : undefined}
+        >
+          FR
+        </Link>
+      </div>
     </div>
   )
 }

@@ -6,7 +6,6 @@ type LandingMessages = {
     pricing: string
     faq: string
     docs: string
-    login: string
     getStarted: string
     openMenu: string
     closeMenu: string
@@ -35,7 +34,6 @@ type LandingMessages = {
     title: string
     subtitle: string
     primaryCta: string
-    secondaryCta: string
     hook: string
     description: string
     statsBoutiques: string
@@ -146,7 +144,6 @@ const FR: LandingMessages = {
     pricing: "Tarifs",
     faq: "FAQ",
     docs: "Documentation",
-    login: "Connexion",
     getStarted: "Commencer",
     openMenu: "Ouvrir le menu",
     closeMenu: "Fermer le menu",
@@ -193,7 +190,6 @@ const FR: LandingMessages = {
     title: "WordPress x msgflash",
     subtitle: "Le plugin WordPress qui transforme WooCommerce en canal WhatsApp piloté par revenu.",
     primaryCta: "Télécharger le Plugin (Gratuit)",
-    secondaryCta: "Télécharger le guide",
     hook: "L'ancien marketing WooCommerce est mort. Récupérez 15% de votre CA via WhatsApp.",
     description: "Ne laissez plus vos paniers abandonnés au hasard des emails. Connectez msgflash à votre boutique en 4 minutes 27 secondes.",
     statsBoutiques: "Déjà 1 237 boutiques",
@@ -319,7 +315,6 @@ const EN: LandingMessages = {
     pricing: "Pricing",
     faq: "FAQ",
     docs: "Documentation",
-    login: "Login",
     getStarted: "Get started",
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -366,7 +361,6 @@ const EN: LandingMessages = {
     title: "WordPress x msgflash",
     subtitle: "The WordPress plugin that turns WooCommerce into a revenue-driven WhatsApp channel.",
     primaryCta: "Download the plugin (Free)",
-    secondaryCta: "Download the guide",
     hook: "The old WooCommerce marketing playbook is dead. Recover 15% of your revenue via WhatsApp.",
     description: "Stop leaving abandoned carts to email alone. Connect msgflash to your store in 4 minutes 27 seconds.",
     statsBoutiques: "Already 1,237 stores",

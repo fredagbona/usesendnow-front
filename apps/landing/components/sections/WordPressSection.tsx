@@ -37,12 +37,9 @@ export function WordPressSection({}: WordPressSectionProps) {
                 {messages.wordpress.description}
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8">
                 <Button href={landingBrand.wordpressUrl} showArrow>
                   {messages.wordpress.primaryCta}
-                </Button>
-                <Button href={`${landingBrand.appUrl}/signup`} variant="secondary">
-                  {messages.wordpress.secondaryCta}
                 </Button>
               </div>
             </div>

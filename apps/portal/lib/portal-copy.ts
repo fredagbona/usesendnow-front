@@ -93,6 +93,23 @@ export const portalCopy = {
       webhooksLoadError: "Impossible de charger les webhooks.",
     },
     auth: {
+      layoutMarketing: {
+        headlineLine1: "WhatsApp en production,",
+        headlineAccent: "sans friction.",
+        body: "Connectez vos numéros, automatisez vos messages et pilotez vos campagnes depuis une console conçue pour aller vite.",
+        features: [
+          {
+            title: "Sécurité entreprise",
+            description:
+              "Chiffrement, webhooks signés et contrôles d'accès pour vos flux critiques.",
+          },
+          {
+            title: "API pensée pour les développeurs",
+            description:
+              "Une intégration claire, rapide à brancher et stable à opérer en production.",
+          },
+        ],
+      },
       forgotPasswordTitle: "Mot de passe oublié ?",
       forgotPasswordDescription:
         "Saisissez l'adresse e-mail associée à votre compte. Si elle existe, nous vous enverrons un lien de réinitialisation.",
@@ -1060,6 +1077,23 @@ export const portalCopy = {
       webhooksLoadError: "Unable to load webhooks.",
     },
     auth: {
+      layoutMarketing: {
+        headlineLine1: "WhatsApp in production,",
+        headlineAccent: "without friction.",
+        body: "Connect your numbers, automate your messages, and run campaigns from a console built for speed.",
+        features: [
+          {
+            title: "Enterprise-grade security",
+            description:
+              "Encryption, signed webhooks, and access controls for your critical flows.",
+          },
+          {
+            title: "A developer-first API",
+            description:
+              "A clear integration that is quick to wire and stable to run in production.",
+          },
+        ],
+      },
       forgotPasswordTitle: "Forgot password?",
       forgotPasswordDescription:
         "Enter the email linked to your account. If it exists, we will send you a reset link.",

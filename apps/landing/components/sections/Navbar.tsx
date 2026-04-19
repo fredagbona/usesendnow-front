@@ -57,12 +57,6 @@ export function Navbar({}: NavbarProps) {
               </button>
             ))}
           </div>
-          <a
-            href={`${landingBrand.appUrl}/login`}
-            className="font-(family-name:--font-poppins) text-[11px] uppercase tracking-[0.08em] text-[#F0F0F0] transition-colors hover:text-[#FFD600]"
-          >
-            {messages.nav.login}
-          </a>
           <Button href={`${landingBrand.appUrl}/signup`} size="sm">
             {messages.nav.getStarted}
           </Button>
@@ -115,9 +109,6 @@ export function Navbar({}: NavbarProps) {
                     </button>
                   ))}
                 </div>
-                <a href={`${landingBrand.appUrl}/login`} className="font-(family-name:--font-poppins) text-sm text-[#F0F0F0]">
-                  {messages.nav.login}
-                </a>
                 <Button href={`${landingBrand.appUrl}/signup`} size="sm">
                   {messages.nav.getStarted}
                 </Button>
