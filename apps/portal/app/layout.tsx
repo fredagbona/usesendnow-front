@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google"
 import { Toaster } from "sonner"
 import { portalBrand } from "@/lib/brand"
 import ThemeProvider from "@/components/ui/ThemeProvider"
+import { PortalLocaleRoot } from "@/components/layout/PortalLocaleRoot"
 import { resolvePortalLocaleFromRequest } from "@/lib/resolve-portal-locale-from-request"
 import "./globals.css"
 
@@ -83,16 +84,18 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full bg-bg-subtle text-text antialiased font-body transition-colors duration-200">
         <ThemeProvider>
-          {children}
-          <Toaster
-            position="bottom-right"
-            gap={8}
-            visibleToasts={4}
-            closeButton
-            toastOptions={{
-              duration: 4000,
-            }}
-          />
+          <PortalLocaleRoot initialLocale={initialLocale}>
+            {children}
+            <Toaster
+              position="bottom-right"
+              gap={8}
+              visibleToasts={4}
+              closeButton
+              toastOptions={{
+                duration: 4000,
+              }}
+            />
+          </PortalLocaleRoot>
         </ThemeProvider>
       </body>
     </html>
