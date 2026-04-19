@@ -12,6 +12,9 @@
     "dark": "/images/logo.svg",
     "light": "/images/logo.svg"
   },
+  "icons": {
+    "library": "lucide"
+  },
   "navigation": {
     "languages": [
       {
@@ -27,7 +30,8 @@
               "authentication",
               "guides/dashboard-auth",
               "api-reference/introduction"
-            ]
+            ],
+            "icon": "rocket"
           },
           {
             "group": "Guides",
@@ -43,7 +47,8 @@
               "guides/instances",
               "guides/statuses",
               "guides/billing"
-            ]
+            ],
+            "icon": "book-open"
           },
           {
             "group": "API Reference · Instances",
@@ -52,7 +57,8 @@
               "api-reference/instances/get",
               "api-reference/instances/state",
               "api-reference/instances/health"
-            ]
+            ],
+            "icon": "server"
           },
           {
             "group": "API Reference · Messages",
@@ -61,7 +67,8 @@
               "api-reference/messages/schedule",
               "api-reference/messages/list",
               "api-reference/messages/get"
-            ]
+            ],
+            "icon": "message-square"
           },
           {
             "group": "API Reference · Campagnes",
@@ -71,7 +78,8 @@
               "api-reference/campaigns/stats",
               "api-reference/campaigns/pause",
               "api-reference/campaigns/resume"
-            ]
+            ],
+            "icon": "megaphone"
           },
           {
             "group": "API Reference · Templates",
@@ -82,7 +90,8 @@
               "api-reference/templates/update",
               "api-reference/templates/delete",
               "api-reference/templates/preview"
-            ]
+            ],
+            "icon": "layout-template"
           },
           {
             "group": "API Reference · Contacts",
@@ -93,7 +102,8 @@
               "api-reference/contacts/update",
               "api-reference/contacts/delete",
               "api-reference/contacts/bulk-delete"
-            ]
+            ],
+            "icon": "users"
           },
           {
             "group": "API Reference · Groupes",
@@ -107,7 +117,8 @@
               "api-reference/contact-groups/remove-members",
               "api-reference/contact-groups/list-members",
               "api-reference/contact-groups/contact-groups"
-            ]
+            ],
+            "icon": "users-round"
           },
           {
             "group": "API Reference · Number Lookups",
@@ -116,7 +127,8 @@
               "api-reference/number-lookups/list",
               "api-reference/number-lookups/get",
               "api-reference/number-lookups/import-contacts"
-            ]
+            ],
+            "icon": "phone"
           },
           {
             "group": "API Reference · Webhooks",
@@ -124,13 +136,15 @@
               "api-reference/webhooks/list",
               "api-reference/webhooks/create",
               "api-reference/webhooks/delete"
-            ]
+            ],
+            "icon": "webhook"
           },
           {
             "group": "API Reference · Statuts",
             "pages": [
               "api-reference/statuses/create"
-            ]
+            ],
+            "icon": "circle-dot"
           },
           {
             "group": "API Reference · Billing",
@@ -140,7 +154,8 @@
               "api-reference/billing/usage",
               "api-reference/billing/payments",
               "api-reference/billing/legacy-usage"
-            ]
+            ],
+            "icon": "credit-card"
           },
           {
             "group": "Resources",
@@ -149,7 +164,8 @@
               "resources/plans-and-quotas",
               "resources/error-codes",
               "resources/faq"
-            ]
+            ],
+            "icon": "library"
           }
         ]
       },
@@ -165,7 +181,8 @@
               "fr/authentication",
               "fr/guides/dashboard-auth",
               "fr/api-reference/introduction"
-            ]
+            ],
+            "icon": "rocket"
           },
           {
             "group": "Guides",
@@ -181,7 +198,8 @@
               "fr/guides/instances",
               "fr/guides/statuses",
               "fr/guides/billing"
-            ]
+            ],
+            "icon": "book-open"
           },
           {
             "group": "Référence API · Instances",
@@ -190,7 +208,8 @@
               "fr/api-reference/instances/get",
               "fr/api-reference/instances/state",
               "fr/api-reference/instances/health"
-            ]
+            ],
+            "icon": "server"
           },
           {
             "group": "Référence API · Messages",
@@ -199,7 +218,8 @@
               "fr/api-reference/messages/schedule",
               "fr/api-reference/messages/list",
               "fr/api-reference/messages/get"
-            ]
+            ],
+            "icon": "message-square"
           },
           {
             "group": "Référence API · Campagnes",
@@ -209,7 +229,8 @@
               "fr/api-reference/campaigns/stats",
               "fr/api-reference/campaigns/pause",
               "fr/api-reference/campaigns/resume"
-            ]
+            ],
+            "icon": "megaphone"
           },
           {
             "group": "Référence API · Modèles",
@@ -220,7 +241,8 @@
               "fr/api-reference/templates/update",
               "fr/api-reference/templates/delete",
               "fr/api-reference/templates/preview"
-            ]
+            ],
+            "icon": "layout-template"
           },
           {
             "group": "Référence API · Contacts",
@@ -231,7 +253,8 @@
               "fr/api-reference/contacts/update",
               "fr/api-reference/contacts/delete",
               "fr/api-reference/contacts/bulk-delete"
-            ]
+            ],
+            "icon": "users"
           },
           {
             "group": "Référence API · Groupes",
@@ -245,7 +268,8 @@
               "fr/api-reference/contact-groups/remove-members",
               "fr/api-reference/contact-groups/list-members",
               "fr/api-reference/contact-groups/contact-groups"
-            ]
+            ],
+            "icon": "users-round"
           },
           {
             "group": "Référence API · Number lookups",
@@ -254,7 +278,8 @@
               "fr/api-reference/number-lookups/list",
               "fr/api-reference/number-lookups/get",
               "fr/api-reference/number-lookups/import-contacts"
-            ]
+            ],
+            "icon": "phone"
           },
           {
             "group": "Référence API · Webhooks",
@@ -262,13 +287,15 @@
               "fr/api-reference/webhooks/list",
               "fr/api-reference/webhooks/create",
               "fr/api-reference/webhooks/delete"
-            ]
+            ],
+            "icon": "webhook"
           },
           {
             "group": "Référence API · Statuts",
             "pages": [
               "fr/api-reference/statuses/create"
-            ]
+            ],
+            "icon": "circle-dot"
           },
           {
             "group": "Référence API · Facturation",
@@ -278,7 +305,8 @@
               "fr/api-reference/billing/usage",
               "fr/api-reference/billing/payments",
               "fr/api-reference/billing/legacy-usage"
-            ]
+            ],
+            "icon": "credit-card"
           },
           {
             "group": "Ressources",
@@ -287,7 +315,8 @@
               "fr/resources/plans-and-quotas",
               "fr/resources/error-codes",
               "fr/resources/faq"
-            ]
+            ],
+            "icon": "library"
           }
         ]
       }
