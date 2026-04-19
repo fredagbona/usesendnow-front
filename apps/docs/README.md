@@ -4,13 +4,13 @@ Ce dossier contient le contenu de la documentation hébergée sur Mintlify.
 
 ## Structure
 ```
-mint.json              → configuration Mintlify
-introduction.mdx       → page d'accueil
-quickstart.mdx         → démarrage rapide
-authentication.mdx     → guide d'authentification
+docs.json              → configuration Mintlify (`navigation.languages` EN/FR, thème, menu contextuel)
+introduction.mdx      → accueil anglais · `fr/…` → contenu français (même arborescence de fichiers)
+quickstart.mdx
+authentication.mdx
 guides/                → guides thématiques
 resources/             → référence (plans, erreurs, types)
-api-reference/         → référence API (+ OpenAPI auto depuis /docs.json)
+api-reference/         → référence API
 images/                → logo, favicon
 ```
 
@@ -27,6 +27,8 @@ Domaine: docs.msgflash.com
 
 ## Ajouter une page
 
-1. Créer le fichier `.mdx` dans le bon dossier
-2. L'ajouter dans `mint.json` sous `navigation`
+1. Créer le `.mdx` (ex. `guides/ma-page.mdx`) et, si besoin, la traduction `fr/guides/ma-page.mdx`.
+2. Référencer le chemin **sans** préfixe `fr/` dans la langue `en`, et **avec** `fr/…` dans la langue `fr`, dans `docs.json` → `navigation.languages[].groups` (même libellé de groupe côté FR si tu ajoutes à un groupe existant).
 3. Push
+
+Le sélecteur de langue (EN / FR) est fourni par Mintlify dès que `navigation.languages` contient au moins deux entrées.

@@ -82,7 +82,7 @@ Regle absolue: toute surface frontend visible utilisateur doit afficher `MsgFlas
 - `apps/landing/**` (metadata + copy + brand constants)
 - `apps/portal/**` (metadata + copy + brand constants)
 - `apps/admin/**` (metadata + copy + brand constants)
-- `apps/docs/mint.json`
+- `apps/docs/docs.json`
 - `apps/docs/**/*.mdx` (pages de contenu et references de marque)
 - `specs/**/*.md` uniquement si le document est encore actif comme reference implementation
 
