@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "name": "MsgFlash",
-  "theme": "prism",
+  "theme": "mint",
   "colors": {
     "primary": "#FACC15",
     "light": "#FACC15",

@@ -4,7 +4,7 @@ Ce dossier contient le contenu de la documentation hébergée sur Mintlify.
 
 ## Structure
 ```
-docs.json              → configuration Mintlify (`navigation.languages` EN/FR, thème, menu contextuel)
+docs.json              → configuration Mintlify (`navigation.languages` EN/FR, thème, menu contextuel). Le champ `theme` doit être un thème `docs.json` Mintlify (ex. `mint`), pas l’ancien `prism` du `mint.json`.
 introduction.mdx      → accueil anglais · `fr/…` → contenu français (même arborescence de fichiers)
 quickstart.mdx
 authentication.mdx
