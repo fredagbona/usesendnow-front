@@ -8,6 +8,8 @@ import { fadeIn } from "@/lib/animations"
 import { useContacts } from "@/hooks/useContacts"
 import { useContactGroups } from "@/hooks/useContactGroups"
 import { useContactImports } from "@/hooks/useContactImports"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { portalCopy } from "@/lib/portal-copy"
 import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
 import { formatDate } from "@/lib/format"
@@ -53,6 +55,8 @@ function ContactModal({
   onSuccess: (c: Contact) => void
   onClose: () => void
 }) {
+  const { locale } = usePortalLocale()
+  const copy = portalCopy[locale]
   const [form, setForm] = useState<ContactFormState>({
     name: contact?.name ?? "",
     phone: contact?.phone ?? "",
@@ -74,19 +78,19 @@ function ContactModal({
       let result: Contact
       if (mode === "create") {
         result = await apiClient.contacts.create(payload)
-        toast.success("Contact ajouté")
+        toast.success(copy.contacts.contactAdded)
       } else {
         result = await apiClient.contacts.update(contact!.id, payload)
-        toast.success("Contact mis à jour")
+        toast.success(copy.contacts.contactUpdated)
       }
       onSuccess(result)
       onClose()
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "CONFLICT") {
-          setError("Un contact avec ce numéro existe déjà.")
+          setError(copy.contacts.conflict)
         } else {
-          setError("Impossible d'enregistrer le contact.")
+          setError(copy.contacts.importFailed)
         }
       }
     } finally {
@@ -98,18 +102,18 @@ function ContactModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={mode === "create" ? "Ajouter un contact" : "Modifier le contact"}
+      title={mode === "create" ? copy.contacts.addContact : copy.contacts.editContact}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="Nom"
+          label={copy.contacts.contactTableName}
           value={form.name}
           onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
           required
           autoFocus
         />
         <Input
-          label="Téléphone"
+          label={copy.contacts.phone}
           type="tel"
           value={form.phone}
           onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
@@ -117,11 +121,11 @@ function ContactModal({
           required
         />
         <Input
-          label="Tags (optionnel)"
+          label={copy.contacts.tags}
           value={form.tags}
           onChange={(e) => setForm((p) => ({ ...p, tags: e.target.value }))}
           placeholder="vip, newsletter"
-          hint="Séparés par des virgules"
+          hint={copy.contacts.tagsHint}
         />
         {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
         <div className="flex justify-end gap-2 pt-1">
@@ -129,7 +133,7 @@ function ContactModal({
             Annuler
           </Button>
           <Button type="submit" variant="primary" loading={loading}>
-            {mode === "create" ? "Ajouter le contact" : "Enregistrer"}
+            {mode === "create" ? copy.contacts.addContact : copy.contacts.saveContact}
           </Button>
         </div>
       </form>
@@ -150,6 +154,8 @@ function ImportModal({
   onSuccess: (result: ImportResult) => void
   onClose: () => void
 }) {
+  const { locale } = usePortalLocale()
+  const copy = portalCopy[locale]
   const [step, setStep] = useState<ImportStep>("upload")
   const [file, setFile] = useState<File | null>(null)
   const [groupId, setGroupId] = useState("")
@@ -174,11 +180,11 @@ function ImportModal({
 
   const handleFileChange = (f: File) => {
     if (!f.name.endsWith(".csv")) {
-      setError("Seuls les fichiers .csv sont acceptés.")
+      setError(copy.contacts.csvInvalid)
       return
     }
     if (f.size > 5 * 1024 * 1024) {
-      setError("Le fichier dépasse 5MB.")
+      setError(copy.contacts.fileTooLarge)
       return
     }
     setError(null)
@@ -204,13 +210,13 @@ function ImportModal({
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "CSV_INVALID_FORMAT") {
-          setError("Fichier CSV invalide. Vérifiez les en-têtes et l'encodage.")
+          setError(copy.contacts.csvInvalid)
         } else if (err.code === "CSV_TOO_LARGE") {
-          setError("Fichier trop grand. Max 5MB et 10 000 lignes.")
+          setError(copy.contacts.csvTooLarge)
         } else if (err.code === "NOT_FOUND") {
           setError("Le groupe sélectionné est introuvable.")
         } else {
-          setError("Impossible d'importer le fichier.")
+          setError(copy.contacts.importFailed)
         }
       }
     } finally {
@@ -229,7 +235,7 @@ function ImportModal({
   }
 
   return (
-    <Modal open onClose={onClose} title="Importer des contacts CSV">
+    <Modal open onClose={onClose} title={copy.contacts.importContacts}>
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-6">
         {(["upload", "preview", "result"] as ImportStep[]).map((s, i) => (
@@ -244,7 +250,7 @@ function ImportModal({
           </div>
         ))}
         <span className="text-xs text-text-secondary ml-2">
-          {step === "upload" ? "Choisir le fichier" : step === "preview" ? "Aperçu" : "Résultat"}
+          {step === "upload" ? copy.contacts.importChooseFile : step === "preview" ? copy.contacts.importPreview : copy.contacts.importResult}
         </span>
       </div>
 
@@ -344,9 +350,9 @@ function ImportModal({
           {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
 
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="secondary" onClick={() => setStep("upload")}>Retour</Button>
+            <Button variant="secondary" onClick={() => setStep("upload")}>{copy.contacts.importBack}</Button>
             <Button variant="primary" loading={importing} onClick={handleImport}>
-              Importer
+              {copy.contacts.importContactsButton}
             </Button>
           </div>
         </div>
@@ -455,6 +461,8 @@ type Tab = "contacts" | "imports"
 
 export default function ContactsPage() {
   const router = useRouter()
+  const { locale } = usePortalLocale()
+  const copy = portalCopy[locale]
   const { contacts, loading, addContact, updateContact, removeContact } = useContacts()
   const { groups } = useContactGroups()
   const { imports, loading: importsLoading } = useContactImports()
@@ -514,10 +522,10 @@ export default function ContactsPage() {
     try {
       await apiClient.contacts.delete(deleteTarget.id)
       removeContact(deleteTarget.id)
-      toast.success("Contact supprimé")
+      toast.success(copy.contacts.contactDeleted)
       setDeleteTarget(null)
     } catch {
-      toast.error("Impossible de supprimer le contact.")
+      toast.error(copy.contacts.importFailed)
     } finally {
       setDeleting(null)
     }
@@ -536,7 +544,7 @@ export default function ContactsPage() {
       toast.dismiss(toastId)
     } catch {
       toast.dismiss(toastId)
-      toast.error("Impossible d'exporter les contacts.")
+      toast.error(copy.contacts.importFailed)
     } finally {
       setExporting(false)
     }
@@ -595,8 +603,8 @@ export default function ContactsPage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
-        title="Contacts"
-        description={`${contacts.length} contact${contacts.length !== 1 ? "s" : ""}`}
+        title={copy.contacts.pageTitle}
+        description={contacts.length > 0 ? `${contacts.length} contact${contacts.length !== 1 ? "s" : ""}` : copy.contacts.pageDescription}
         action={
           <div className="flex items-center flex-wrap gap-2">
             <Button
@@ -620,7 +628,7 @@ export default function ContactsPage() {
               Import CSV
             </Button>
             <Button variant="primary" onClick={() => setCreateOpen(true)}>
-              Ajouter un contact
+              {copy.contacts.newContact}
             </Button>
           </div>
         }
@@ -629,7 +637,7 @@ export default function ContactsPage() {
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-bg-muted rounded-xl w-fit mb-5">
         {([
-          { value: "contacts", label: "Contacts" },
+          { value: "contacts", label: copy.contacts.pageTitle },
           { value: "imports",  label: "Imports" },
         ] as const).map(({ value, label }) => (
           <button
@@ -694,7 +702,7 @@ export default function ContactsPage() {
                             className="h-4 w-4 rounded border-border-strong accent-primary cursor-not-allowed"
                           />
                         </th>
-                        {["Nom", "Téléphone", "Tags", "Groupes", "Créé le", ""].map((h) => (
+                        {[copy.contacts.contactTableName, copy.contacts.contactTablePhone, copy.contacts.contactTableTags, copy.contacts.contactTableGroups, copy.contacts.contactTableCreatedAt, ""].map((h) => (
                           <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                         ))}
                       </tr>
@@ -717,9 +725,9 @@ export default function ContactsPage() {
             ) : filtered.length === 0 ? (
               <EmptyState
                 icon={<UserGroupIcon className="w-8 h-8" />}
-                title={search ? "Aucun contact trouvé." : "Aucun contact pour l'instant."}
-                description={search ? "" : "Ajoutez votre premier contact."}
-                ctaLabel={search ? undefined : "Ajouter un contact"}
+                title={search ? copy.contacts.noContactFound : copy.contacts.emptyTitle}
+                description={search ? "" : copy.contacts.emptyDescription}
+                ctaLabel={search ? undefined : copy.contacts.newContact}
                 onCta={search ? undefined : () => setCreateOpen(true)}
               />
             ) : (
@@ -737,7 +745,7 @@ export default function ContactsPage() {
                             className="h-4 w-4 rounded border-border-strong accent-primary cursor-pointer"
                           />
                         </th>
-                        {["Nom", "Téléphone", "Tags", "Groupes", "Créé le", ""].map((h) => (
+                        {[copy.contacts.contactTableName, copy.contacts.contactTablePhone, copy.contacts.contactTableTags, copy.contacts.contactTableGroups, copy.contacts.contactTableCreatedAt, ""].map((h) => (
                           <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                         ))}
                       </tr>
@@ -951,7 +959,7 @@ export default function ContactsPage() {
         />
       )}
 
-      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Supprimer le contact">
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={copy.contacts.deleteContact}>
         {deleteTarget && (
           <>
             <p className="text-sm text-text-body mb-6">

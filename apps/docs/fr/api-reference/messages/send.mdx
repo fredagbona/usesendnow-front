@@ -1,0 +1,183 @@
+---
+title: POST Envoyer un message
+description: Envoie un message immédiat, en mode libre ou via un template.
+---
+
+import { DocLocaleSwitch } from "../../../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
+## Endpoint
+
+```txt
+POST /api/v1/messages/send
+```
+
+## Important — comment obtenir `instanceId`
+
+`instanceId` est obligatoire pour envoyer un message.
+
+Ne pas utiliser à la place :
+- `name`
+- `waNumber`
+
+Pour obtenir le bon `instanceId` :
+1. appeler `GET /api/v1/instances`
+2. sélectionner l’instance voulue
+3. récupérer `data[n].id`
+4. envoyer cette valeur dans le champ `instanceId`
+
+Exemple :
+- `id` = identifiant technique requis par l’API
+- `name` = libellé lisible
+- `waNumber` = numéro connecté affiché à l’utilisateur
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | oui | Identifiant technique de l'instance MsgFlash, obtenu via `GET /api/v1/instances` |
+| `to` | string | oui | Numéro E.164 |
+| `type` | enum | oui si pas de `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact`, `buttons` |
+| `templateId` | UUID | oui si pas de `type` | Template à rendre |
+| `text` | string | selon type | Corps du message |
+| `mediaUrl` | string | selon type | URL publique du media |
+| `latitude` | number | si `location` | Latitude |
+| `longitude` | number | si `location` | Longitude |
+| `locationName` | string | non | Nom du lieu |
+| `locationAddress` | string | non | Adresse |
+| `contactId` | UUID | non | Contact partagé ou contexte template |
+| `variables` | object | non | Valeurs `custom.*` |
+| `title` | string | si `buttons` | Titre du message boutons |
+| `description` | string | si `buttons` | Description du message boutons |
+| `footer` | string | non | Pied de page du message boutons |
+| `buttons` | array | si `buttons` | Liste des boutons (max 2) |
+
+### Boutons
+
+Chaque bouton doit être structuré ainsi :
+
+```json
+{
+  "title": "reply", // reply | url | call | copy | pix
+  "displayText": "Texte du bouton",
+  "id": "button_id",
+  "url": "https://example.com", // pour type url
+  "phoneNumber": "+5511999999999", // pour type call
+  "copyCode": "dGV4dA==", // pour type copy
+  "currency": "BRL", // pour type pix
+  "name": "John Doe", // pour type pix
+  "keyType": "random", // pour type pix
+  "key": "0ea59ac5-f001-4f0e-9785-c7..." // pour type pix
+}
+```
+
+## Exemple de requête
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/messages/send \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "to": "+33612345678",
+    "type": "text",
+    "text": "Bonjour"
+  }'
+```
+
+## Messages avec boutons
+
+Les messages avec boutons nécessitent un compte WhatsApp Business. Ils permettent d'ajouter jusqu'à 2 boutons interactifs.
+
+### Types de boutons supportés
+
+| Type | Description | Champs requis |
+|---|---|---|
+| `reply` | Bouton de réponse rapide | `displayText`, `id` |
+| `copy` | Bouton pour copier du texte | `displayText`, `copyCode` |
+| `url` | Bouton ouvrant une URL | `displayText`, `url` |
+| `call` | Bouton pour appeler | `displayText`, `phoneNumber` |
+| `pix` | Bouton de paiement Pix (Brésil) | `displayText`, `currency`, `name`, `keyType`, `key` |
+
+### Exemple de message avec boutons
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/messages/send \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "to": "+33612345678",
+    "type": "buttons",
+    "title": "Choisissez une option",
+    "description": "Que souhaitez-vous faire ?",
+    "footer": "Répondez rapidement",
+    "buttons": [
+      {
+        "title": "reply",
+        "displayText": "Voir le menu",
+        "id": "menu_option"
+      },
+      {
+        "title": "url",
+        "displayText": "Visiter le site",
+        "url": "https://example.com"
+      }
+    ]
+  }'
+```
+
+## Réponse succès `201`
+
+```json
+{
+  "data": {
+    "id": "msg_uuid",
+    "instanceId": "inst_uuid",
+    "contactId": null,
+    "campaignId": null,
+    "type": "text",
+    "to": "+33612345678",
+    "body": "Bonjour",
+    "mediaUrl": null,
+    "status": "queued",
+    "warnings": [
+      "This instance is still in the warmup phase."
+    ],
+    "safety": {
+      "decision": "warn",
+      "riskLevel": "medium",
+      "state": "warming",
+      "score": 56,
+      "reasons": [
+        "This instance is still in the warmup phase."
+      ],
+      "recommendations": [
+        "Start with previously engaged contacts before scaling volume."
+      ]
+    },
+    "error": null,
+    "providerMessageId": null,
+    "createdAt": "2026-04-01T10:00:00.000Z",
+    "updatedAt": "2026-04-01T10:00:00.000Z"
+  }
+}
+```
+
+<Note>
+En V1, les warnings safety n'empêchent pas l'envoi. Ils servent uniquement de guidance.
+</Note>
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `400` | `VALIDATION_ERROR` | Body invalide |
+| `400` | `TEMPLATE_INVALID` | Template invalide |
+| `400` | `TEMPLATE_VARIABLES_MISSING` | Variables requises manquantes |
+| `400` | `TEMPLATE_CONTEXT_UNAVAILABLE` | Contact ou instance de contexte invalide |
+| `403` | `SUBSCRIPTION_INACTIVE` | Souscription non exploitable |
+| `403` | `UNSUPPORTED_FEATURE` | Fonctionnalité non supportée (boutons sans WhatsApp Business) |
+| `404` | `NOT_FOUND` | Instance, contact ou template introuvable |
+| `429` | `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | Quota d'envoi épuisé |

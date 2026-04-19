@@ -24,6 +24,7 @@ import {
   Download01Icon,
   UserAdd01Icon,
 } from "hugeicons-react"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 const PRESET_COLORS = ["#FFD600", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6", "#EC4899"]
 
@@ -38,6 +39,8 @@ function EditGroupModal({
   onSuccess: (g: ContactGroup) => void
   onClose: () => void
 }) {
+  const { copy } = usePortalLocale()
+  const gCopy = copy.contacts.groups
   const [name, setName] = useState(group.name)
   const [description, setDescription] = useState(group.description ?? "")
   const [color, setColor] = useState(group.color ?? PRESET_COLORS[0])
@@ -55,13 +58,13 @@ function EditGroupModal({
         color,
       })
       onSuccess(updated)
-      toast.success("Groupe mis à jour")
+      toast.success(gCopy.updated)
       onClose()
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "CONFLICT") {
-        setError(`Un groupe nommé "${name.trim()}" existe déjà.`)
+        setError(`${gCopy.nameConflictPrefix} "${name.trim()}" existe déjà.`)
       } else {
-        setError("Impossible de mettre à jour le groupe.")
+        setError(gCopy.updateFailed)
       }
     } finally {
       setLoading(false)
@@ -69,10 +72,10 @@ function EditGroupModal({
   }
 
   return (
-    <Modal open onClose={onClose} title="Modifier le groupe">
+    <Modal open onClose={onClose} title={gCopy.editModalTitle}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="Nom"
+          label={gCopy.name}
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -81,7 +84,7 @@ function EditGroupModal({
         />
         <div>
           <label className="block text-sm font-medium text-text-body mb-1.5">
-            Description (optionnel)
+            {gCopy.description}
           </label>
           <textarea
             value={description}
@@ -92,7 +95,7 @@ function EditGroupModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-text-body mb-2">Couleur</label>
+          <label className="block text-sm font-medium text-text-body mb-2">{gCopy.color}</label>
           <div className="flex items-center gap-2">
             {PRESET_COLORS.map((c) => (
               <button
@@ -116,8 +119,8 @@ function EditGroupModal({
         </div>
         {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
         <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="secondary" onClick={onClose}>Annuler</Button>
-          <Button type="submit" variant="primary" loading={loading}>Enregistrer</Button>
+          <Button type="button" variant="secondary" onClick={onClose}>{gCopy.cancel}</Button>
+          <Button type="submit" variant="primary" loading={loading}>{gCopy.save}</Button>
         </div>
       </form>
     </Modal>
@@ -137,6 +140,8 @@ function AddMembersModal({
   onSuccess: (count: number) => void
   onClose: () => void
 }) {
+  const { copy } = usePortalLocale()
+  const gCopy = copy.contacts.groups
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loadingContacts, setLoadingContacts] = useState(true)
   const [search, setSearch] = useState("")
@@ -184,19 +189,19 @@ function AddMembersModal({
   }
 
   return (
-    <Modal open onClose={onClose} title="Ajouter des contacts au groupe" maxWidth="max-w-lg">
+    <Modal open onClose={onClose} title={gCopy.addMembersTitle} maxWidth="max-w-lg">
       <div className="space-y-4">
         <Input
-          placeholder="Rechercher par nom ou numéro..."
+          placeholder={gCopy.searchContactsPlaceholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           autoFocus
         />
         <div className="max-h-64 overflow-y-auto border border-border rounded-xl divide-y divide-border">
           {loadingContacts ? (
-            <div className="p-4 text-sm text-text-secondary text-center">Chargement…</div>
+            <div className="p-4 text-sm text-text-secondary text-center">{gCopy.loading}</div>
           ) : filtered.length === 0 ? (
-            <div className="p-4 text-sm text-text-secondary text-center">Aucun contact disponible.</div>
+            <div className="p-4 text-sm text-text-secondary text-center">{gCopy.noContactsAvailable}</div>
           ) : (
             filtered.map((c) => (
               <label key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-subtle cursor-pointer">
@@ -216,9 +221,9 @@ function AddMembersModal({
         </div>
         {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
         <div className="flex justify-end gap-2 pt-1">
-          <Button variant="secondary" onClick={onClose}>Annuler</Button>
+          <Button variant="secondary" onClick={onClose}>{gCopy.cancel}</Button>
           <Button variant="primary" loading={adding} disabled={selected.size === 0} onClick={handleAdd}>
-            Ajouter {selected.size > 0 ? `(${selected.size})` : ""}
+            {gCopy.addContacts} {selected.size > 0 ? `(${selected.size})` : ""}
           </Button>
         </div>
       </div>
@@ -229,6 +234,8 @@ function AddMembersModal({
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ContactGroupDetailPage() {
+  const { copy } = usePortalLocale()
+  const gCopy = copy.contacts.groups
   const router = useRouter()
   const { groupId } = useParams<{ groupId: string }>()
 
@@ -255,7 +262,7 @@ export default function ContactGroupDetailPage() {
       setGroup(g)
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "NOT_FOUND") {
-        toast.error("Groupe introuvable.")
+        toast.error(gCopy.notFound)
         router.push("/contacts/groups")
       }
     } finally {
@@ -280,7 +287,7 @@ export default function ContactGroupDetailPage() {
       setHasMore(data.hasMore)
       setTotal(data.total)
     } catch {
-      toast.error("Impossible de charger les membres.")
+      toast.error(gCopy.saveFailed)
     } finally {
       setLoadingMembers(false)
     }
@@ -324,7 +331,7 @@ export default function ContactGroupDetailPage() {
       toast.success("Contact retiré du groupe")
       setRemoveTarget(null)
     } catch {
-      toast.error("Impossible de retirer le contact.")
+      toast.error(gCopy.removeMemberFailed)
     } finally {
       setRemoving(false)
     }
@@ -334,17 +341,17 @@ export default function ContactGroupDetailPage() {
     setDeletingGroup(true)
     try {
       await apiClient.contactGroups.delete(groupId)
-      toast.success("Groupe supprimé")
+      toast.success(gCopy.deleted)
       router.push("/contacts/groups")
     } catch {
-      toast.error("Impossible de supprimer le groupe.")
+      toast.error(gCopy.deleteFailed)
       setDeletingGroup(false)
     }
   }
 
   const handleExport = async () => {
     setExporting(true)
-    const toastId = toast.loading("Export en cours…")
+    const toastId = toast.loading(gCopy.exporting)
     try {
       const { blob, filename } = await apiClient.contacts.export(groupId)
       const a = document.createElement("a")
@@ -355,7 +362,7 @@ export default function ContactGroupDetailPage() {
       toast.dismiss(toastId)
     } catch {
       toast.dismiss(toastId)
-      toast.error("Impossible d'exporter le groupe.")
+      toast.error(gCopy.exportFailed)
     } finally {
       setExporting(false)
     }
@@ -383,7 +390,7 @@ export default function ContactGroupDetailPage() {
           <div className="flex items-center flex-wrap gap-2">
             <Button variant="ghost" size="sm" onClick={() => router.push("/contacts/groups")}>
               <ArrowLeft01Icon className="w-4 h-4" />
-              Retour
+              {gCopy.back}
             </Button>
             <div
               className="w-4 h-4 rounded-full shrink-0"
@@ -391,13 +398,13 @@ export default function ContactGroupDetailPage() {
             />
             <Button variant="secondary" loading={exporting} onClick={handleExport}>
               <Download01Icon className="w-4 h-4" />
-              Exporter
+              {gCopy.export}
             </Button>
             <Button variant="secondary" onClick={() => setEditOpen(true)}>
-              Modifier
+              {gCopy.edit}
             </Button>
             <Button variant="danger" onClick={() => setDeleteGroupOpen(true)}>
-              Supprimer
+              {gCopy.delete}
             </Button>
           </div>
         }
@@ -408,12 +415,12 @@ export default function ContactGroupDetailPage() {
         <Input
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Rechercher dans les membres..."
+          placeholder={gCopy.searchMembersPlaceholder}
           className="flex-1 min-w-0 sm:max-w-sm"
         />
         <Button variant="primary" onClick={() => setAddMembersOpen(true)}>
           <UserAdd01Icon className="w-4 h-4" />
-          Ajouter des contacts
+          {gCopy.addContacts}
         </Button>
       </div>
 
@@ -425,7 +432,7 @@ export default function ContactGroupDetailPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    {["Nom", "Téléphone", "Tags", "Ajouté le", ""].map((h) => (
+                    {[gCopy.table.name, gCopy.table.phone, gCopy.table.tags, gCopy.table.addedAt, ""].map((h) => (
                       <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                     ))}
                   </tr>
@@ -448,9 +455,9 @@ export default function ContactGroupDetailPage() {
         ) : members.length === 0 ? (
           <EmptyState
             icon={<UserMultiple02Icon className="w-8 h-8" />}
-            title="Aucun contact dans ce groupe."
-            description="Ajoutez des contacts pour commencer."
-            ctaLabel="Ajouter des contacts"
+            title={gCopy.noMembers}
+            description={gCopy.noMembersDescription}
+            ctaLabel={gCopy.addContacts}
             onCta={() => setAddMembersOpen(true)}
           />
         ) : (
@@ -460,7 +467,7 @@ export default function ContactGroupDetailPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    {["Nom", "Téléphone", "Tags", "Ajouté le", ""].map((h) => (
+                    {[gCopy.table.name, gCopy.table.phone, gCopy.table.tags, gCopy.table.addedAt, ""].map((h) => (
                       <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                     ))}
                   </tr>
@@ -480,7 +487,7 @@ export default function ContactGroupDetailPage() {
                       </td>
                       <td className="py-3 pr-4 text-sm text-text-muted whitespace-nowrap">{formatDate(member.addedAt)}</td>
                       <td className="py-3">
-                        <Button size="sm" variant="ghost" onClick={() => setRemoveTarget(member)}>Retirer</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setRemoveTarget(member)}>{gCopy.remove}</Button>
                       </td>
                     </tr>
                   ))}
@@ -505,7 +512,7 @@ export default function ContactGroupDetailPage() {
                     )}
                     <p className="text-xs text-text-muted mt-1">{formatDate(member.addedAt)}</p>
                   </div>
-                  <Button size="sm" variant="ghost" onClick={() => setRemoveTarget(member)}>Retirer</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setRemoveTarget(member)}>{gCopy.remove}</Button>
                 </div>
               ))}
             </div>
@@ -513,7 +520,7 @@ export default function ContactGroupDetailPage() {
             {hasMore && (
               <div className="mt-4 flex justify-center">
                 <Button variant="secondary" loading={loadingMore} onClick={handleLoadMore}>
-                  Charger plus
+                  {gCopy.loadMore}
                 </Button>
               </div>
             )}
@@ -532,7 +539,7 @@ export default function ContactGroupDetailPage() {
 
       {/* Delete group modal */}
       {deleteGroupOpen && (
-        <Modal open onClose={() => setDeleteGroupOpen(false)} title="Supprimer le groupe">
+        <Modal open onClose={() => setDeleteGroupOpen(false)} title={gCopy.deleteModalTitle}>
           <p className="text-sm text-text-body mb-2">
             Supprimer <strong className="text-text">{group.name}</strong> ?
           </p>
@@ -540,8 +547,8 @@ export default function ContactGroupDetailPage() {
             Les {group.contactCount} contact{group.contactCount !== 1 ? "s" : ""} dans ce groupe ne seront PAS supprimés — uniquement le groupe.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setDeleteGroupOpen(false)}>Annuler</Button>
-            <Button variant="danger" loading={deletingGroup} onClick={handleDeleteGroup}>Supprimer</Button>
+            <Button variant="secondary" onClick={() => setDeleteGroupOpen(false)}>{gCopy.cancel}</Button>
+            <Button variant="danger" loading={deletingGroup} onClick={handleDeleteGroup}>{gCopy.delete}</Button>
           </div>
         </Modal>
       )}
@@ -560,7 +567,7 @@ export default function ContactGroupDetailPage() {
       )}
 
       {/* Remove member confirmation */}
-      <Modal open={!!removeTarget} onClose={() => setRemoveTarget(null)} title="Retirer du groupe">
+      <Modal open={!!removeTarget} onClose={() => setRemoveTarget(null)} title={gCopy.removeModalTitle}>
         {removeTarget && (
           <>
             <p className="text-sm text-text-body mb-6">
@@ -569,8 +576,8 @@ export default function ContactGroupDetailPage() {
               Le contact ne sera pas supprimé.
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setRemoveTarget(null)}>Annuler</Button>
-              <Button variant="danger" loading={removing} onClick={handleRemoveMember}>Retirer</Button>
+              <Button variant="secondary" onClick={() => setRemoveTarget(null)}>{gCopy.cancel}</Button>
+              <Button variant="danger" loading={removing} onClick={handleRemoveMember}>{gCopy.remove}</Button>
             </div>
           </>
         )}

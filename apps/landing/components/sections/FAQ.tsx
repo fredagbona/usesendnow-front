@@ -3,42 +3,29 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowDown01Icon } from "hugeicons-react"
-
-const FAQ_ITEMS = [
-  {
-    question: "Comment démarrer avec la plateforme ?",
-    answer: "Créez votre compte, connectez un numéro WhatsApp, puis utilisez l’API ou les webhooks pour lancer vos premiers scénarios.",
-  },
-  {
-    question: "Puis-je utiliser WhatsApp personnel ?",
-    answer: "Oui, tant que le numéro est disponible pour la connexion QR. Vous pouvez aussi gérer plusieurs numéros selon votre plan.",
-  },
-  {
-    question: "Y a-t-il des webhooks ?",
-    answer: "Oui. Livraisons, réponses, changements d’état et événements clés sont exposés pour vos workflows backend.",
-  },
-]
+import { useLandingI18n } from "../../lib/landing-i18n"
 
 interface FAQProps {}
 
 export function FAQ({}: FAQProps) {
-  const [open, setOpen] = useState<string>(FAQ_ITEMS[0].question)
+  const { messages } = useLandingI18n()
+  const [open, setOpen] = useState<string>(messages.faq.items[0].question)
 
   return (
     <section id="faq" className="border-t border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 text-center">
           <h2 className="font-(family-name:--font-geist-sans) text-[1.9rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.5rem]">
-            Questions fréquentes
+            {messages.faq.title}
           </h2>
         </div>
 
         <div className="border border-white/8 bg-[#121212]">
-          {FAQ_ITEMS.map((item, index) => {
+          {messages.faq.items.map((item, index) => {
             const active = open === item.question
 
             return (
-              <div key={item.question} className={index === FAQ_ITEMS.length - 1 ? "" : "border-b border-white/8"}>
+              <div key={item.question} className={index === messages.faq.items.length - 1 ? "" : "border-b border-white/8"}>
                 <button
                   type="button"
                   onClick={() => setOpen(active ? "" : item.question)}

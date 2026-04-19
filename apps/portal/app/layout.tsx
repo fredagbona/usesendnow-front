@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google"
 import { Toaster } from "sonner"
 import { portalBrand } from "@/lib/brand"
 import ThemeProvider from "@/components/ui/ThemeProvider"
+import { resolvePortalLocaleFromRequest } from "@/lib/resolve-portal-locale-from-request"
 import "./globals.css"
 
 const displayFont = Space_Grotesk({
@@ -68,13 +69,15 @@ const themeBootstrapScript = `
   })();
 `
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const initialLocale = await resolvePortalLocaleFromRequest()
+
   return (
-    <html lang="fr" className={`${displayFont.variable} ${bodyFont.variable} h-full`} suppressHydrationWarning>
+    <html lang={initialLocale} className={`${displayFont.variable} ${bodyFont.variable} h-full`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>

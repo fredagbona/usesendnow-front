@@ -10,53 +10,26 @@ import {
   Notification03Icon,
 } from "hugeicons-react"
 import { fadeUp, staggerContainer } from "../../lib/animations"
-
-const FEATURE_CARDS = [
-  {
-    title: "Envoyer des messages",
-    description: "Un point unique pour vos messages textuels, médias et réponses simples.",
-    icon: BubbleChatIcon,
-  },
-  {
-    title: "Planifier des envois",
-    description: "Déclenchez vos campagnes et vos rappels depuis une API claire et rapide.",
-    icon: Calendar02Icon,
-  },
-  {
-    title: "Lancer des campagnes",
-    description: "Gérez vos listes de diffusion et suivez les performances en temps réel.",
-    icon: Megaphone01Icon,
-  },
-  {
-    title: "Recevoir des événements",
-    description: "Récupérez vos webhooks pour chaque livraison ou réponse utilisateur.",
-    icon: Notification03Icon,
-  },
-  {
-    title: "Connecter vos outils",
-    description: "Branchez votre backend, n8n, Zapier, Make ou vos workflows internes sans friction.",
-    icon: FlowConnectionIcon,
-  },
-]
-
-const PLATFORM_REASONS = [
-  { title: "API simple", text: "Une documentation claire et des endpoints directs, sans détour." },
-  { title: "Connexion rapide", text: "Scannez le QR Code et mettez votre intégration en ligne rapidement." },
-  { title: "Webhooks utiles", text: "Recevez les livraisons, réponses et erreurs dès qu'elles arrivent." },
-  { title: "Pensé pour les makers", text: "Compatible avec vos outils backend, no-code et automatisations." },
-  { title: "Tarification lisible", text: "Pas de licence cachée, pas de surcoût de plateforme surprise." },
-  { title: "Trajectoire solide", text: "Pour un bot simple, une campagne ou un orchestrateur plus complet." },
-]
+import { useLandingI18n } from "../../lib/landing-i18n"
 
 interface FeaturesGridProps {}
 
 export function FeaturesGrid({}: FeaturesGridProps) {
+  const { messages } = useLandingI18n()
+  const featureCards = [
+    { ...messages.features.cards[0], icon: BubbleChatIcon },
+    { ...messages.features.cards[1], icon: Calendar02Icon },
+    { ...messages.features.cards[2], icon: Megaphone01Icon },
+    { ...messages.features.cards[3], icon: Notification03Icon },
+    { ...messages.features.cards[4], icon: FlowConnectionIcon },
+  ]
+
   return (
     <section id="fonctionnalites" className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
           <h2 className="max-w-3xl font-(family-name:--font-geist-sans) text-[1.9rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.6rem]">
-            Construisez rapidement vos automatisations WhatsApp
+            {messages.features.title}
           </h2>
         </div>
 
@@ -67,7 +40,7 @@ export function FeaturesGrid({}: FeaturesGridProps) {
           viewport={{ once: true, amount: 0.2 }}
           className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
         >
-          {FEATURE_CARDS.map(({ title, description, icon: Icon }) => (
+          {featureCards.map(({ title, description, icon: Icon }) => (
             <motion.div
               key={title}
               variants={fadeUp}
@@ -93,12 +66,12 @@ export function FeaturesGrid({}: FeaturesGridProps) {
         <div className="mt-14 grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
           <div>
             <h3 className="max-w-xl font-(family-name:--font-geist-sans) text-[1.9rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.5rem]">
-              Pourquoi utiliser notre plateforme plutôt que bricoler ?
+              {messages.features.reasonsTitle}
             </h3>
           </div>
           <div className="border border-white/8 bg-[#171717] p-6">
             <div className="space-y-5">
-              {PLATFORM_REASONS.map((item) => (
+              {messages.features.reasons.map((item) => (
                 <div key={item.title} className="border-b border-white/8 pb-4 last:border-b-0 last:pb-0">
                   <div className="flex items-start gap-3">
                     <ArrowRight01Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#FFD600]" />

@@ -1,44 +1,48 @@
 ---
-title: Démarrage rapide
-description: Envoyez votre premier message WhatsApp via MsgFlash en quelques minutes.
+title: Quickstart
+description: Send your first WhatsApp message through MsgFlash in a few minutes.
 ---
 
-## Étape 1 — Créer votre compte
+import { DocLocaleSwitch } from "./components/DocLocaleSwitch"
 
-Créez votre compte sur [app.msgflash.com/signup](https://app.msgflash.com/signup).
+<DocLocaleSwitch />
 
-Le compte démarre sur le plan Free :
+## Step 1 — Create your account
+
+Create your account at [app.msgflash.com/signup](https://app.msgflash.com/signup).
+
+The account starts on the Free plan:
 - 1 instance
-- 20 envois mensuels
-- 1 clé API pour tester l'intégration
+- 20 outbound messages per month
+- 1 API key for testing
 
-Après inscription par e-mail :
-- votre compte n’est pas connecté automatiquement
-- vous devez d’abord vérifier votre adresse e-mail
-- puis revenir sur `/login`
-
----
-
-## Étape 2 — Connecter WhatsApp
-
-1. Ouvrez **Instances**
-2. Créez une instance
-3. Connectez-la via QR code
-4. Attendez le statut `connected`
+After email signup:
+- your account is not automatically logged in
+- you must first verify your email address
+- then return to `/login`
 
 ---
 
-## Étape 3 — Générer une clé API
+## Step 2 — Connect WhatsApp
 
-1. Ouvrez **API Keys**
-2. Créez une nouvelle clé
-3. Copiez-la immédiatement
+1. Open **Instances**
+2. Create an instance
+3. Connect it with the QR code
+4. Wait for the `connected` status
+
+---
+
+## Step 3 — Generate an API key
+
+1. Open **API Keys**
+2. Create a new key
+3. Copy it immediately
 
 <Note>
-Le plan Free autorise désormais 1 clé API de test. Les autres limites du plan Free restent inchangées.
+The Free plan now allows 1 test API key. The rest of the Free limits stay unchanged.
 </Note>
 
-Format :
+Format:
 
 ```txt
 msgf_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -46,7 +50,7 @@ msgf_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ---
 
-## Étape 4 — Envoyer votre premier message
+## Step 4 — Send your first message
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/messages/send \
@@ -56,11 +60,11 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     "instanceId": "YOUR_INSTANCE_ID",
     "to": "+33612345678",
     "type": "text",
-    "text": "Bonjour depuis MsgFlash !"
+    "text": "Hello from MsgFlash!"
   }'
 ```
 
-Réponse :
+Response:
 
 ```json
 {
@@ -69,7 +73,7 @@ Réponse :
     "instanceId": "YOUR_INSTANCE_ID",
     "type": "text",
     "to": "+33612345678",
-    "body": "Bonjour depuis MsgFlash !",
+    "body": "Hello from MsgFlash!",
     "status": "queued",
     "createdAt": "2026-04-01T10:00:00.000Z",
     "updatedAt": "2026-04-01T10:00:00.000Z"
@@ -79,14 +83,14 @@ Réponse :
 
 ---
 
-## Étape 5 — Vérifier le statut
+## Step 5 — Check the status
 
 ```bash
 curl https://srv.msgflash.com/api/v1/messages/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-Exemple une fois livré :
+Example once delivered:
 
 ```json
 {
@@ -100,19 +104,19 @@ Exemple une fois livré :
 
 ---
 
-## Prochaines étapes
+## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Envoyer avec un template" icon="text" href="/guides/templates">
-    Créez un template puis utilisez `templateId` et `variables` dans vos envois.
+  <Card title="Send with a template" icon="text" href="/guides/templates">
+    Create a template and then use `templateId` and `variables` in your sends.
   </Card>
-  <Card title="Planifier un message" icon="clock" href="/guides/schedule-message">
-    Programmez un message pour plus tard.
+  <Card title="Schedule a message" icon="clock" href="/guides/schedule-message">
+    Program a message for later.
   </Card>
-  <Card title="Lancer une campagne" icon="megaphone" href="/guides/campaigns">
-    Envoyez soit un template, soit un message direct à tous vos contacts ou à un segment ciblé.
+  <Card title="Launch a campaign" icon="megaphone" href="/guides/campaigns">
+    Send either a template or a direct message to all your contacts or a targeted segment.
   </Card>
-  <Card title="Gérer vos contacts" icon="users" href="/guides/contacts">
-    Préparez votre base de contacts avant vos campagnes.
+  <Card title="Manage contacts" icon="users" href="/guides/contacts">
+    Prepare your contact base before your campaigns.
   </Card>
 </CardGroup>

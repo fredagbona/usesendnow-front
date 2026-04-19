@@ -12,6 +12,7 @@ import Card from "@/components/ui/Card"
 import CodeSnippet from "@/components/ui/CodeSnippet"
 import { SkeletonCard } from "@/components/ui/Skeleton"
 import { ArrowLeft01Icon, AlertDiamondIcon } from "hugeicons-react"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 const STATUS_VARIANT: Record<string, "neutral" | "blue" | "success" | "purple" | "error"> = {
   queued: "neutral",
@@ -19,23 +20,6 @@ const STATUS_VARIANT: Record<string, "neutral" | "blue" | "success" | "purple" |
   delivered: "success",
   read: "purple",
   failed: "error",
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  queued: "En file",
-  sent: "Envoyé",
-  delivered: "Livré",
-  read: "Lu",
-  failed: "Échoué",
-}
-
-const TYPE_LABEL: Record<string, string> = {
-  text: "Texte",
-  image: "Image",
-  video: "Vidéo",
-  audio: "Audio",
-  voice_note: "Message vocal",
-  document: "Document",
 }
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -48,6 +32,15 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 }
 
 export default function MessageDetailPage() {
+  const { copy } = usePortalLocale()
+  const detailCopy = copy.messages.detail
+  const statusLabel: Record<string, string> = {
+    queued: copy.dashboard.status.queued,
+    sent: copy.dashboard.status.sent,
+    delivered: copy.dashboard.status.delivered,
+    read: copy.dashboard.status.read,
+    failed: copy.dashboard.status.failed,
+  }
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
   const { message, loading, error } = useMessage(id)
@@ -64,9 +57,9 @@ export default function MessageDetailPage() {
   if (error || !message) {
     return (
       <div className="text-center py-16">
-        <p className="text-sm text-text-secondary">Message introuvable.</p>
+        <p className="text-sm text-text-secondary">{detailCopy.notFound}</p>
         <Button variant="secondary" className="mt-4" onClick={() => router.push("/messages")}>
-          Retour aux messages
+          {detailCopy.backToMessages}
         </Button>
       </div>
     )
@@ -75,16 +68,16 @@ export default function MessageDetailPage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6">
       <PageHeader
-        title="Détails du message"
+        title={detailCopy.title}
         action={
           <div className="flex items-center gap-3">
-            {message.meta?.templateId && <Badge variant="warning">Template</Badge>}
+            {message.meta?.templateId && <Badge variant="warning">{detailCopy.template}</Badge>}
             <Badge variant={STATUS_VARIANT[message.status] ?? "neutral"}>
-              {STATUS_LABEL[message.status] ?? message.status}
+              {statusLabel[message.status] ?? message.status}
             </Badge>
             <Button variant="ghost" size="sm" onClick={() => router.push("/messages")}>
               <ArrowLeft01Icon className="w-4 h-4" />
-              Retour
+              {detailCopy.back}
             </Button>
           </div>
         }
@@ -95,7 +88,7 @@ export default function MessageDetailPage() {
           <AlertDiamondIcon className="w-5 h-5 text-error shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-error-hover">
-              {message.meta?.templateId ? "Template rendering failed" : "Échec d&apos;envoi"}
+              {message.meta?.templateId ? "Template rendering failed" : detailCopy.sendFailed}
             </p>
             <p className="text-sm text-text-body mt-0.5">{message.error}</p>
           </div>
@@ -103,26 +96,26 @@ export default function MessageDetailPage() {
       )}
 
       <Card>
-        <DetailRow label="Statut">
+        <DetailRow label={detailCopy.status}>
           <Badge variant={STATUS_VARIANT[message.status] ?? "neutral"}>
-            {STATUS_LABEL[message.status] ?? message.status}
+            {statusLabel[message.status] ?? message.status}
           </Badge>
         </DetailRow>
-        <DetailRow label="Type">
-          <Badge variant="neutral">{TYPE_LABEL[message.type] ?? message.type}</Badge>
+        <DetailRow label={detailCopy.type}>
+          <Badge variant="neutral">{detailCopy.types[message.type as keyof typeof detailCopy.types] ?? message.type}</Badge>
         </DetailRow>
-        <DetailRow label="Destinataire">
+        <DetailRow label={detailCopy.recipient}>
           <span className="font-mono">{message.to}</span>
         </DetailRow>
-        <DetailRow label="Instance">
+        <DetailRow label={detailCopy.instance}>
           <span className="font-mono text-xs">{message.instanceId}</span>
         </DetailRow>
         {message.providerMessageId && (
-          <DetailRow label="ID fournisseur">
+          <DetailRow label={detailCopy.providerId}>
             <CodeSnippet value={message.providerMessageId} />
           </DetailRow>
         )}
-        <DetailRow label="Contenu">
+        <DetailRow label={detailCopy.content}>
           {message.type === "text" && message.body ? (
             <span>{message.body}</span>
           ) : message.mediaUrl ? (
@@ -135,23 +128,23 @@ export default function MessageDetailPage() {
               {message.mediaUrl}
             </a>
           ) : (
-            <span className="text-text-muted">[{TYPE_LABEL[message.type] ?? message.type}]</span>
+            <span className="text-text-muted">[{detailCopy.types[message.type as keyof typeof detailCopy.types] ?? message.type}]</span>
           )}
         </DetailRow>
-        <DetailRow label="Créé le">{formatFullDate(message.createdAt)}</DetailRow>
-        <DetailRow label="Mis à jour le">{formatFullDate(message.updatedAt)}</DetailRow>
+        <DetailRow label={detailCopy.createdAt}>{formatFullDate(message.createdAt)}</DetailRow>
+        <DetailRow label={detailCopy.updatedAt}>{formatFullDate(message.updatedAt)}</DetailRow>
         {message.campaignId && (
-          <DetailRow label="Campagne">
+          <DetailRow label={detailCopy.campaign}>
             <button
               onClick={() => router.push(`/campaigns/${message.campaignId}`)}
               className="text-primary-ink hover:text-text hover:underline text-sm"
             >
-              Voir la campagne →
+              {detailCopy.viewCampaign}
             </button>
           </DetailRow>
         )}
         {message.contactId && (
-          <DetailRow label="Contact">
+          <DetailRow label={detailCopy.contact}>
             <span className="font-mono text-xs">{message.contactId}</span>
           </DetailRow>
         )}
@@ -159,11 +152,11 @@ export default function MessageDetailPage() {
 
       {message.meta?.templateId && (
         <Card>
-          <h2 className="mb-4 text-sm font-semibold text-text">Template Render</h2>
-          <DetailRow label="Template ID">
+          <h2 className="mb-4 text-sm font-semibold text-text">{detailCopy.templateRender}</h2>
+          <DetailRow label={detailCopy.templateId}>
             <span className="font-mono text-xs">{message.meta.templateId}</span>
           </DetailRow>
-          <DetailRow label="Used variables">
+          <DetailRow label={detailCopy.usedVariables}>
             {message.meta.usedVariables?.length
               ? (
                 <div className="flex flex-wrap gap-1.5">
@@ -172,10 +165,10 @@ export default function MessageDetailPage() {
                   ))}
                 </div>
               )
-              : <span className="text-text-muted">Aucune</span>}
+              : <span className="text-text-muted">{detailCopy.none}</span>}
           </DetailRow>
           {message.meta.missingVariables?.length ? (
-            <DetailRow label="Missing variables">
+            <DetailRow label={detailCopy.missingVariables}>
               <div className="flex flex-wrap gap-1.5">
                 {message.meta.missingVariables.map((variable) => (
                   <Badge key={variable} variant="warning">{variable}</Badge>
@@ -184,7 +177,7 @@ export default function MessageDetailPage() {
             </DetailRow>
           ) : null}
           {message.meta.code && (
-            <DetailRow label="Render code">
+            <DetailRow label={detailCopy.renderCode}>
               <CodeSnippet value={message.meta.code} />
             </DetailRow>
           )}

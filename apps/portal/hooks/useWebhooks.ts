@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Webhook } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useWebhooks() {
+  const { copy } = usePortalLocale()
   const [webhooks, setWebhooks] = useState<Webhook[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -16,13 +18,13 @@ export function useWebhooks() {
       const data = await apiClient.webhooks.list()
       setWebhooks(data)
     } catch {
-      setError("Impossible de charger les webhooks.")
+      setError(copy.hooks.webhooksLoadError)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchWebhooks() }, [])
+  useEffect(() => { fetchWebhooks() }, [copy.hooks.webhooksLoadError])
 
   const addWebhook = (webhook: Webhook) => {
     setWebhooks((prev) => [webhook, ...prev])

@@ -1,17 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Template } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useTemplates(initialPage = 1, limit = 20) {
+  const { copy } = usePortalLocale()
   const [templates, setTemplates] = useState<Template[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(initialPage)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchTemplates = async (p = page) => {
+  const fetchTemplates = useCallback(async (p: number) => {
     setLoading(true)
     setError(null)
     try {
@@ -19,15 +21,15 @@ export function useTemplates(initialPage = 1, limit = 20) {
       setTemplates(data.templates)
       setTotal(data.total)
     } catch {
-      setError("Impossible de charger les modèles.")
+      setError(copy.hooks.templatesLoadError)
     } finally {
       setLoading(false)
     }
-  }
+  }, [copy.hooks.templatesLoadError, limit])
 
   useEffect(() => {
-    fetchTemplates(page)
-  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
+    void fetchTemplates(page)
+  }, [fetchTemplates, page])
 
   const goToPage = (p: number) => setPage(p)
 

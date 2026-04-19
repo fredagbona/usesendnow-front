@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { apiClient } from "@usesendnow/api-client"
 import type { Instance } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useInstances() {
+  const { copy } = usePortalLocale()
   const [instances, setInstances] = useState<Instance[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -17,14 +19,15 @@ export function useInstances() {
       const data = await apiClient.instances.list()
       setInstances(data)
     } catch {
-      setError("Impossible de charger les instances.")
-      toast.error("Impossible de charger les instances.")
+      const message = copy.hooks.instancesLoadError
+      setError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchInstances() }, [])
+  useEffect(() => { fetchInstances() }, [copy.hooks.instancesLoadError])
 
   const createInstance = async (name: string) => {
     const instance = await apiClient.instances.create(name)
@@ -36,6 +39,7 @@ export function useInstances() {
 }
 
 export function useInstance(id: string) {
+  const { copy } = usePortalLocale()
   const [instance, setInstance] = useState<Instance | null>(null)
   const [liveStatus, setLiveStatus] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -52,13 +56,13 @@ export function useInstance(id: string) {
         setInstance(inst)
         setLiveStatus(state.status)
       } catch {
-        setError("Instance introuvable.")
+        setError(copy.hooks.instanceNotFound)
       } finally {
         setLoading(false)
       }
     }
     fetch()
-  }, [id])
+  }, [id, copy.hooks.instanceNotFound])
 
   const refreshState = async () => {
     try {

@@ -8,6 +8,7 @@ import { formatRelativeDate } from "@/lib/format"
 import { TYPE_LABEL } from "@/lib/messageComposer"
 import { useMessages } from "@/hooks/useMessages"
 import { useInstances } from "@/hooks/useInstances"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
 import Badge from "@/components/ui/Badge"
@@ -37,6 +38,45 @@ const STATUSES = ["queued", "sent", "delivered", "read", "failed"]
 
 export default function MessagesPage() {
   const router = useRouter()
+  const { locale } = usePortalLocale()
+  const copy = {
+    fr: {
+      title: "Messages",
+      description: "Tous les messages envoyés depuis vos instances",
+      action: "Envoyer un message",
+      allInstances: "Toutes les instances",
+      allStatuses: "Tous les statuts",
+      recipient: "Destinataire",
+      type: "Type",
+      preview: "Aperçu",
+      status: "Statut",
+      date: "Date",
+      emptyTitle: "Aucun message trouvé",
+      emptyWithFilter: "Aucun message ne correspond à vos filtres.",
+      emptyDefault: "Aucun message envoyé pour l’instant.",
+      template: "Template",
+      generatedFromTemplate: "Généré depuis un template",
+      loadMore: "Charger plus",
+    },
+    en: {
+      title: "Messages",
+      description: "All messages sent from your instances",
+      action: "Send a message",
+      allInstances: "All instances",
+      allStatuses: "All statuses",
+      recipient: "Recipient",
+      type: "Type",
+      preview: "Preview",
+      status: "Status",
+      date: "Date",
+      emptyTitle: "No messages found",
+      emptyWithFilter: "No messages match your filters.",
+      emptyDefault: "No messages sent yet.",
+      template: "Template",
+      generatedFromTemplate: "Generated from a template",
+      loadMore: "Load more",
+    },
+  }[locale]
   const [instanceFilter, setInstanceFilter] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const { messages, loading, loadingMore, hasMore, loadMore } = useMessages({
@@ -48,20 +88,20 @@ export default function MessagesPage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
-        title="Messages"
-        description="Tous les messages envoyés depuis vos instances"
-        action={<Button variant="primary" onClick={() => router.push("/messages/new")}>Envoyer un message</Button>}
+        title={copy.title}
+        description={copy.description}
+        action={<Button variant="primary" onClick={() => router.push("/messages/new")}>{copy.action}</Button>}
       />
 
       <div className="mb-6 flex flex-wrap gap-3">
         <Select value={instanceFilter} onChange={(event) => setInstanceFilter(event.target.value)} className="w-48">
-          <option value="">Toutes les instances</option>
+          <option value="">{copy.allInstances}</option>
           {instances.map((instance) => (
             <option key={instance.id} value={instance.id}>{instance.name}</option>
           ))}
         </Select>
         <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="w-44">
-          <option value="">Tous les statuts</option>
+          <option value="">{copy.allStatuses}</option>
           {STATUSES.map((status) => (
             <option key={status} value={status}>{STATUS_LABEL[status] ?? status}</option>
           ))}
@@ -75,7 +115,7 @@ export default function MessagesPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    {["Destinataire", "Type", "Aperçu", "Statut", "Date"].map((header) => (
+                    {[copy.recipient, copy.type, copy.preview, copy.status, copy.date].map((header) => (
                       <th key={header} className="pb-3 pr-4 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">{header}</th>
                     ))}
                   </tr>
@@ -97,9 +137,9 @@ export default function MessagesPage() {
         ) : messages.length === 0 ? (
           <EmptyState
             icon={<Message01Icon className="w-8 h-8" />}
-            title="Aucun message trouvé"
-            description={statusFilter || instanceFilter ? "Aucun message ne correspond à vos filtres." : "Aucun message envoyé pour l’instant."}
-            ctaLabel="Envoyer un message"
+            title={copy.emptyTitle}
+            description={statusFilter || instanceFilter ? copy.emptyWithFilter : copy.emptyDefault}
+            ctaLabel={copy.action}
             onCta={() => router.push("/messages/new")}
           />
         ) : (
@@ -108,7 +148,7 @@ export default function MessagesPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    {["Destinataire", "Type", "Aperçu", "Statut", "Date"].map((header) => (
+                    {[copy.recipient, copy.type, copy.preview, copy.status, copy.date].map((header) => (
                       <th key={header} className="pb-3 pr-4 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">{header}</th>
                     ))}
                   </tr>
@@ -124,14 +164,14 @@ export default function MessagesPage() {
                       <td className="py-3 pr-4">
                         <div className="flex flex-wrap gap-1.5">
                           <Badge variant="neutral">{TYPE_LABEL[message.type] ?? message.type}</Badge>
-                          {message.meta?.templateId && <Badge variant="warning">Template</Badge>}
+                          {message.meta?.templateId && <Badge variant="warning">{copy.template}</Badge>}
                         </div>
                       </td>
                       <td className="max-w-xs py-3 pr-4 text-sm text-text-secondary">
                         <div className="truncate">{message.body ? message.body.slice(0, 50) : "[média]"}</div>
-                        {message.meta?.templateId && (
-                          <div className="mt-1 text-xs text-text-muted">Généré depuis un template</div>
-                        )}
+                          {message.meta?.templateId && (
+                            <div className="mt-1 text-xs text-text-muted">{copy.generatedFromTemplate}</div>
+                          )}
                       </td>
                       <td className="py-3 pr-4">
                         <Badge variant={STATUS_VARIANT[message.status] ?? "neutral"}>{STATUS_LABEL[message.status] ?? message.status}</Badge>
@@ -154,7 +194,7 @@ export default function MessagesPage() {
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <Badge variant={STATUS_VARIANT[message.status] ?? "neutral"}>{STATUS_LABEL[message.status] ?? message.status}</Badge>
                       <Badge variant="neutral">{TYPE_LABEL[message.type] ?? message.type}</Badge>
-                      {message.meta?.templateId && <Badge variant="warning">Template</Badge>}
+                      {message.meta?.templateId && <Badge variant="warning">{copy.template}</Badge>}
                     </div>
                     <p className="truncate text-sm font-mono text-text">{message.to}</p>
                     {message.body && <p className="mt-0.5 truncate text-xs text-text-muted">{message.body.slice(0, 60)}</p>}
@@ -166,7 +206,7 @@ export default function MessagesPage() {
 
             {hasMore && (
               <div className="pt-4 text-center">
-                <Button variant="secondary" loading={loadingMore} onClick={loadMore}>Charger plus</Button>
+                <Button variant="secondary" loading={loadingMore} onClick={loadMore}>{copy.loadMore}</Button>
               </div>
             )}
           </>

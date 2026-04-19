@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { InstanceHealth } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useInstanceHealth(instanceId: string) {
+  const { copy } = usePortalLocale()
   const [health, setHealth] = useState<InstanceHealth | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -17,11 +19,11 @@ export function useInstanceHealth(instanceId: string) {
       const data = await apiClient.instances.getHealth(instanceId)
       setHealth(data)
     } catch {
-      setError("Impossible de charger les données de warmup.")
+      setError(copy.instances.health.loadError)
     } finally {
       setLoading(false)
     }
-  }, [instanceId])
+  }, [instanceId, copy.instances.health.loadError])
 
   useEffect(() => {
     fetchHealth()

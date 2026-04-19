@@ -4,8 +4,11 @@ import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { setToken } from "@/lib/auth"
 import AuthTransition from "@/components/shared/AuthTransition"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 function CallbackHandler() {
+  const { copy } = usePortalLocale()
+  const callbackCopy = copy.auth.callback
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -25,19 +28,21 @@ function CallbackHandler() {
 
   return (
     <AuthTransition
-      title="Connexion à msgflash"
-      description="Nous validons votre identité et ouvrons votre espace en toute sécurité."
+      title={callbackCopy.title}
+      description={callbackCopy.description}
     />
   )
 }
 
 export default function AuthCallbackPage() {
+  const { copy } = usePortalLocale()
+  const callbackCopy = copy.auth.callback
   return (
     <Suspense
       fallback={
         <AuthTransition
-          title="Connexion à msgflash"
-          description="Nous validons votre identité et ouvrons votre espace en toute sécurité."
+          title={callbackCopy.title}
+          description={callbackCopy.description}
         />
       }
     >

@@ -15,6 +15,7 @@ import {
   File02Icon,
 } from "hugeicons-react"
 import { parsePhoneCsv, generatePhoneCsvTemplate, csvBlob } from "@/lib/csvParser"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 interface LookupComposerProps {
   instances: Instance[]
@@ -31,6 +32,7 @@ export default function LookupComposer({
   onSubmit,
   submitting,
 }: LookupComposerProps) {
+  const { locale } = usePortalLocale()
   const [rawInput, setRawInput] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -83,16 +85,16 @@ export default function LookupComposer({
 
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="bg-bg border border-border rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(10,10,10,0.10)]">
-      <h3 className="text-base font-medium text-text mb-5">Vérifier des numéros</h3>
+      <h3 className="text-base font-medium text-text mb-5">{locale === "fr" ? "Vérifier des numéros" : "Check numbers"}</h3>
 
       <div className="space-y-4">
         <Select
-          label="Instance"
+          label={locale === "fr" ? "Instance" : "Instance"}
           value={selectedInstanceId}
           onChange={(e) => onInstanceChange(e.target.value)}
-          hint="Choisissez une instance connectée pour exécuter le lookup."
+          hint={locale === "fr" ? "Choisissez une instance connectée pour exécuter le lookup." : "Choose a connected instance to run the lookup."}
         >
-          <option value="">— Sélectionner une instance —</option>
+          <option value="">{locale === "fr" ? "— Sélectionner une instance —" : "— Select an instance —"}</option>
           {instances.map((inst) => (
             <option key={inst.id} value={inst.id}>
               {inst.name} ({inst.status})
@@ -101,7 +103,7 @@ export default function LookupComposer({
         </Select>
 
         <Textarea
-          label="Numéros de téléphone"
+          label={locale === "fr" ? "Numéros de téléphone" : "Phone numbers"}
           placeholder="+41791234567
 +81476222311
 +33612345000"
@@ -122,15 +124,15 @@ export default function LookupComposer({
           />
           <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
             <Upload01Icon className="w-4 h-4 mr-1.5" />
-            Importer un CSV
+            {locale === "fr" ? "Importer un CSV" : "Import CSV"}
           </Button>
           <Button variant="ghost" size="sm" onClick={handleDownloadTemplate}>
             <Download01Icon className="w-4 h-4 mr-1.5" />
-            Télécharger le template
+            {locale === "fr" ? "Télécharger le template" : "Download template"}
           </Button>
           <div className="flex items-center gap-1.5 text-xs text-text-muted ml-auto">
             <File02Icon className="w-3.5 h-3.5" />
-            <span>1 colonne : <code className="font-mono bg-bg px-1 rounded">phone</code></span>
+            <span>{locale === "fr" ? "1 colonne :" : "1 column:"} <code className="font-mono bg-bg px-1 rounded">phone</code></span>
           </div>
         </div>
 
@@ -138,7 +140,7 @@ export default function LookupComposer({
           <div className="flex items-start gap-2 p-3 bg-warning-subtle border border-warning/30 rounded-xl">
             <AlertCircleIcon className="w-4 h-4 text-warning shrink-0 mt-0.5" />
             <p className="text-sm text-warning-text">
-              Volume important détecté (≥ 1000 numéros). Le lookup s'exécutera en arrière-plan.
+              {locale === "fr" ? "Volume important détecté (≥ 1000 numéros). Le lookup s'exécutera en arrière-plan." : "Large batch detected (≥ 1000 numbers). The lookup will run in the background."}
             </p>
           </div>
         )}
@@ -152,7 +154,7 @@ export default function LookupComposer({
             onClick={handleSubmit}
           >
             <Search01Icon className="w-4 h-4 mr-1.5" />
-            Lancer le lookup
+            {locale === "fr" ? "Lancer le lookup" : "Run lookup"}
           </Button>
         </div>
       </div>

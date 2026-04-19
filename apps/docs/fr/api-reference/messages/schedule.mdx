@@ -1,0 +1,126 @@
+---
+title: POST Planifier un message
+description: Planifie un message futur, en mode libre ou via template.
+---
+
+import { DocLocaleSwitch } from "../../../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
+## Endpoint
+
+```txt
+POST /api/v1/messages/schedule
+```
+
+## Important — comment obtenir `instanceId`
+
+`instanceId` est l’identifiant technique requis pour planifier un message.
+
+Pour l’obtenir :
+1. appeler `GET /api/v1/instances`
+2. choisir l’instance souhaitée
+3. récupérer `data[n].id`
+4. utiliser cette valeur dans `instanceId`
+
+Ne pas envoyer :
+- `name`
+- `waNumber`
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `instanceId` | UUID | oui | Identifiant technique de l'instance MsgFlash, obtenu via `GET /api/v1/instances` |
+| `to` | string | oui | Numéro E.164 |
+| `scheduledAt` | ISO 8601 | oui | Date/heure d'envoi |
+| `type` | enum | oui si pas de `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact`, `buttons` |
+| `templateId` | UUID | oui si pas de `type` | Template à rendre |
+| `variables` | object | non | Valeurs `custom.*` |
+
+Les autres champs suivent les mêmes règles que `/messages/send`, y compris les champs spécifiques aux boutons (`title`, `description`, `footer`, `buttons`).
+
+## Exemple de requête
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "to": "+33612345678",
+    "type": "text",
+    "text": "Bonjour dans 30 minutes",
+    "scheduledAt": "2026-04-02T08:00:00.000Z"
+  }'
+```
+
+## Exemple avec boutons
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "INSTANCE_UUID",
+    "to": "+33612345678",
+    "type": "buttons",
+    "title": "Rappel programmé",
+    "description": "Votre rendez-vous est dans 30 minutes",
+    "scheduledAt": "2026-04-02T08:00:00.000Z",
+    "buttons": [
+      {
+        "type": "reply",
+        "displayText": "Confirmer",
+        "id": "confirm_appointment"
+      }
+    ]
+  }'
+```
+
+## Réponse succès `201`
+
+```json
+{
+  "data": {
+    "id": "msg_uuid",
+    "userId": "user_uuid",
+    "instanceId": "inst_uuid",
+    "contactId": null,
+    "campaignId": null,
+    "direction": "outbound",
+    "type": "text",
+    "from": null,
+    "to": "+33612345678",
+    "body": "Bonjour dans 30 minutes",
+    "mediaUrl": null,
+    "status": "queued",
+    "error": null,
+    "providerMessageId": null,
+    "warnings": [
+      "This instance is still in the warmup phase."
+    ],
+    "safety": {
+      "decision": "warn",
+      "riskLevel": "medium",
+      "state": "warming",
+      "score": 56
+    },
+    "createdAt": "2026-04-02T07:30:00.000Z",
+    "updatedAt": "2026-04-02T07:30:00.000Z"
+  }
+}
+```
+
+<Note>
+Les warnings safety sont informatifs. En V1, ils ne bloquent pas les messages planifiés.
+</Note>
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `400` | `VALIDATION_ERROR` | Body invalide |
+| `400` | `TEMPLATE_INVALID` | Template invalide |
+| `404` | `NOT_FOUND` | Instance, contact ou template introuvable |
+| `429` | `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | Quota déjà épuisé |

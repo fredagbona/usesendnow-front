@@ -11,6 +11,7 @@ import { useContacts } from "@/hooks/useContacts"
 import { useInstances } from "@/hooks/useInstances"
 import { useTemplates } from "@/hooks/useTemplates"
 import { useContactGroups } from "@/hooks/useContactGroups"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
 import { formatDate } from "@/lib/format"
 import type { Campaign, SubscriptionResponse, CreateCampaignPayload, MessageType, UploadedMedia, RepeatType, SafetyAssessment } from "@usesendnow/types"
@@ -30,6 +31,7 @@ import { Megaphone01Icon, ArrowLeft01Icon, InformationCircleIcon, AlertDiamondIc
 
 export default function NewCampaignPage() {
   const router = useRouter()
+  const { copy } = usePortalLocale()
   const { campaigns, prependCampaign } = useCampaigns()
   const { contacts } = useContacts()
   const { instances } = useInstances()
@@ -293,9 +295,9 @@ export default function NewCampaignPage() {
       const safetyData = (campaign as any)?.safety
       if (safetyData && safetyData.decision === "warn") {
         setSafetyHints(safetyData)
-        toast.success("Campagne créée avec recommandations de warmup")
+        toast.success(copy.campaigns.createdWarmup)
       } else {
-        toast.success("Campagne créée avec succès.")
+        toast.success(copy.campaigns.created)
       }
 
       router.push("/campaigns")
@@ -325,9 +327,9 @@ export default function NewCampaignPage() {
     return (
       <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6 max-w-4xl">
         <PageHeader
-          title="Nouvelle campagne"
-          description="Créez une campagne d'envoi groupé"
-          action={<Button variant="secondary" onClick={() => router.push("/campaigns")}>Retour aux campagnes</Button>}
+          title={copy.campaigns.title}
+          description={copy.campaigns.description}
+          action={<Button variant="secondary" onClick={() => router.push("/campaigns")}>{copy.campaigns.back}</Button>}
         />
         <PlanGateBanner message="Les campagnes ne sont pas disponibles sur le plan Gratuit. Passez au plan Starter pour y accéder." />
       </motion.div>
@@ -337,9 +339,9 @@ export default function NewCampaignPage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6 max-w-6xl">
       <PageHeader
-        title="Nouvelle campagne"
-        description="Configurez et planifiez l'envoi groupé à vos contacts."
-        action={<Button variant="secondary" onClick={() => router.push("/campaigns")}>Retour aux campagnes</Button>}
+        title={copy.campaigns.title}
+        description={copy.campaigns.description}
+        action={<Button variant="secondary" onClick={() => router.push("/campaigns")}>{copy.campaigns.back}</Button>}
       />
 
       <form onSubmit={handleCreate} className="space-y-6">
@@ -349,7 +351,7 @@ export default function NewCampaignPage() {
           <Card className="space-y-4">
             <div className="flex items-center gap-2 mb-1">
               <Megaphone01Icon className="w-5 h-5 text-text-secondary" />
-              <h3 className="text-base font-medium text-text">Informations générales</h3>
+              <h3 className="text-base font-medium text-text">{copy.campaigns.general}</h3>
             </div>
 
             <Input
@@ -387,7 +389,7 @@ export default function NewCampaignPage() {
           <Card className="space-y-4">
             <div className="flex items-center gap-2 mb-1">
               <Megaphone01Icon className="w-5 h-5 text-text-secondary" />
-              <h3 className="text-base font-medium text-text">Destinataires</h3>
+              <h3 className="text-base font-medium text-text">{copy.campaigns.recipients}</h3>
             </div>
 
             <Select
@@ -464,8 +466,8 @@ export default function NewCampaignPage() {
         <Card className="space-y-4">
           <div className="flex gap-1 p-1 bg-bg-muted rounded-xl w-fit">
             {([
-              { value: "template", label: "Template" },
-              { value: "direct", label: "Rédaction libre" },
+                { value: "template", label: copy.campaigns.contentTemplate },
+                { value: "direct", label: copy.campaigns.contentDirect },
             ] as const).map((tab) => (
               <button
                 key={tab.value}
@@ -593,7 +595,7 @@ export default function NewCampaignPage() {
           </div>
           <div className="flex gap-3">
             <Button type="button" variant="secondary" onClick={() => router.push("/campaigns")}>Annuler</Button>
-            <Button type="submit" variant="primary" loading={creating} disabled={!canCreateCampaign}>Créer la campagne</Button>
+            <Button type="submit" variant="primary" loading={creating} disabled={!canCreateCampaign}>{copy.campaigns.create}</Button>
           </div>
         </div>
       </form>

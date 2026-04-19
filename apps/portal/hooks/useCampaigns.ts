@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Campaign, CampaignStatus } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useCampaigns() {
+  const { copy } = usePortalLocale()
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -16,13 +18,13 @@ export function useCampaigns() {
       const data = await apiClient.campaigns.list()
       setCampaigns(data)
     } catch {
-      setError("Impossible de charger les campagnes.")
+      setError(copy.hooks.campaignsListLoadError)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchCampaigns() }, [])
+  useEffect(() => { fetchCampaigns() }, [copy.hooks.campaignsListLoadError])
 
   const updateCampaignStatus = useCallback((id: string, status: CampaignStatus) => {
     setCampaigns((prev) =>
@@ -50,6 +52,7 @@ export function useCampaigns() {
 }
 
 export function useCampaign(id: string) {
+  const { copy } = usePortalLocale()
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -61,13 +64,13 @@ export function useCampaign(id: string) {
         const data = await apiClient.campaigns.get(id)
         setCampaign(data)
       } catch {
-        setError("Campagne introuvable.")
+        setError(copy.hooks.campaignNotFound)
       } finally {
         setLoading(false)
       }
     }
     fetch()
-  }, [id])
+  }, [id, copy.hooks.campaignNotFound])
 
   const updateStatus = useCallback((status: CampaignStatus) => {
     setCampaign((prev) => prev ? { ...prev, status } : prev)

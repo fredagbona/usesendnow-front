@@ -13,10 +13,13 @@ import { EyeIcon, ViewOffIcon } from "hugeicons-react"
 import Alert from "@/components/ui/Alert"
 import BrandMark from "@/components/shared/BrandMark"
 import AuthTransition from "@/components/shared/AuthTransition"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 /* ─── Login form ──────────────────────────────────────────────────────────── */
 
 function LoginForm() {
+  const { copy } = usePortalLocale()
+  const loginCopy = copy.auth.login
   const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
@@ -30,10 +33,10 @@ function LoginForm() {
   useEffect(() => {
     if (getToken()) router.replace("/dashboard")
     if (searchParams.get("error") === "oauth_failed") {
-      toast.error("Connexion Google échouée. Réessayez.")
+      toast.error(loginCopy.oauthFailed)
     }
     if (searchParams.get("signup") === "success") {
-      toast.success("Compte créé avec succès. Connectez-vous pour continuer.")
+      toast.success(loginCopy.signupSuccess)
     }
     const resetEmail = searchParams.get("email")
     if (resetEmail) {
@@ -45,9 +48,9 @@ function LoginForm() {
       }
     }
     if (searchParams.get("reset") === "success") {
-      toast.success("Votre mot de passe a été mis à jour. Vous pouvez maintenant vous connecter.")
+      toast.success(loginCopy.resetSuccess)
     }
-  }, [router, searchParams])
+  }, [router, searchParams, loginCopy.oauthFailed, loginCopy.signupSuccess, loginCopy.resetSuccess])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,17 +64,17 @@ function LoginForm() {
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "UNAUTHORIZED") {
-          setError("Email ou mot de passe incorrect.")
+          setError(loginCopy.invalidCredentials)
         } else if (err.code === "EMAIL_NOT_VERIFIED") {
           setNeedsVerification(true)
-          setError("Veuillez vérifier votre adresse e-mail avant de vous connecter.")
+          setError(loginCopy.emailNotVerified)
         } else if (err.code === "VALIDATION_ERROR") {
-          setError("Vérifiez votre email et mot de passe.")
+          setError(loginCopy.validationError)
         } else {
-          setError("Erreur de connexion. Réessayez.")
+          setError(loginCopy.loginError)
         }
       } else {
-        setError("Erreur de connexion. Réessayez.")
+        setError(loginCopy.loginError)
       }
     } finally {
       setLoading(false)
@@ -83,9 +86,9 @@ function LoginForm() {
     setResendingVerification(true)
     try {
       await apiClient.auth.resendVerification(email)
-      toast.success("Si votre compte nécessite encore une vérification, un nouveau lien a été envoyé.")
+      toast.success(loginCopy.resendVerificationSuccess)
     } catch {
-      toast.error("Impossible de renvoyer le lien pour le moment.")
+      toast.error(loginCopy.resendVerificationFailed)
     } finally {
       setResendingVerification(false)
     }
@@ -99,8 +102,8 @@ function LoginForm() {
     <>
       {loading && (
         <AuthTransition
-          title="Connexion en cours"
-          description="Nous sécurisons votre session et préparons votre console msgflash."
+          title={loginCopy.loadingTitle}
+          description={loginCopy.loadingDescription}
         />
       )}
       <motion.div
@@ -117,8 +120,8 @@ function LoginForm() {
         </div>
 
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-text">Bon retour</h2>
-          <p className="text-sm text-text-secondary mt-1">Accédez à votre console de pilotage</p>
+          <h2 className="text-2xl font-bold text-text">{loginCopy.title}</h2>
+          <p className="text-sm text-text-secondary mt-1">{loginCopy.subtitle}</p>
         </div>
 
       {/* Google */}
@@ -133,19 +136,19 @@ function LoginForm() {
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
         </svg>
-        Continuer avec Google
+        {loginCopy.continueWithGoogle}
       </button>
 
       <div className="flex items-center gap-3 my-5">
         <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-text-muted uppercase tracking-widest">ou par email</span>
+        <span className="text-xs text-text-muted uppercase tracking-widest">{loginCopy.orEmail}</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">
-            Adresse email
+            {loginCopy.emailLabel}
           </label>
           <input
             type="email"
@@ -161,10 +164,10 @@ function LoginForm() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">
-              Mot de passe
+              {loginCopy.passwordLabel}
             </label>
         <Link href="/forgot-password" className="text-xs text-primary-ink font-medium hover:underline">
-              Mot de passe oublié ?
+              {loginCopy.forgotPassword}
             </Link>
           </div>
           <div className="relative">
@@ -197,7 +200,7 @@ function LoginForm() {
                 disabled={resendingVerification}
                 className="mt-1 inline-flex text-sm font-medium underline"
               >
-                {resendingVerification ? "Envoi..." : "Renvoyer l’e-mail de vérification"}
+                {resendingVerification ? copy.auth.sending : loginCopy.resendVerification}
               </button>
             )}
           </Alert>
@@ -214,16 +217,16 @@ function LoginForm() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              Connexion...
+              {loginCopy.submitting}
             </>
-          ) : "Se connecter"}
+          ) : loginCopy.submit}
         </button>
       </form>
 
         <p className="text-center text-sm text-text-secondary mt-6">
-          Nouveau sur la plateforme ?{" "}
+          {loginCopy.noAccount}{" "}
           <Link href="/signup" className="text-primary-ink font-semibold hover:underline">
-            S&apos;inscrire
+            {loginCopy.signupCta}
           </Link>
         </p>
       </motion.div>

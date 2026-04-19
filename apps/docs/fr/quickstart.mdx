@@ -1,0 +1,122 @@
+---
+title: Démarrage rapide
+description: Envoyez votre premier message WhatsApp via MsgFlash en quelques minutes.
+---
+
+import { DocLocaleSwitch } from "../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
+## Étape 1 — Créer votre compte
+
+Créez votre compte sur [app.msgflash.com/signup](https://app.msgflash.com/signup).
+
+Le compte démarre sur le plan Free :
+- 1 instance
+- 20 envois mensuels
+- 1 clé API pour tester l'intégration
+
+Après inscription par e-mail :
+- votre compte n’est pas connecté automatiquement
+- vous devez d’abord vérifier votre adresse e-mail
+- puis revenir sur `/login`
+
+---
+
+## Étape 2 — Connecter WhatsApp
+
+1. Ouvrez **Instances**
+2. Créez une instance
+3. Connectez-la via QR code
+4. Attendez le statut `connected`
+
+---
+
+## Étape 3 — Générer une clé API
+
+1. Ouvrez **API Keys**
+2. Créez une nouvelle clé
+3. Copiez-la immédiatement
+
+<Note>
+Le plan Free autorise désormais 1 clé API de test. Les autres limites du plan Free restent inchangées.
+</Note>
+
+Format :
+
+```txt
+msgf_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+---
+
+## Étape 4 — Envoyer votre premier message
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/messages/send \
+  -H "x-api-key: msgf_live_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceId": "YOUR_INSTANCE_ID",
+    "to": "+33612345678",
+    "type": "text",
+    "text": "Bonjour depuis MsgFlash !"
+  }'
+```
+
+Réponse :
+
+```json
+{
+  "data": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "instanceId": "YOUR_INSTANCE_ID",
+    "type": "text",
+    "to": "+33612345678",
+    "body": "Bonjour depuis MsgFlash !",
+    "status": "queued",
+    "createdAt": "2026-04-01T10:00:00.000Z",
+    "updatedAt": "2026-04-01T10:00:00.000Z"
+  }
+}
+```
+
+---
+
+## Étape 5 — Vérifier le statut
+
+```bash
+curl https://srv.msgflash.com/api/v1/messages/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+Exemple une fois livré :
+
+```json
+{
+  "data": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "status": "delivered",
+    "providerMessageId": "BAE5D1A2B3C4D5E6"
+  }
+}
+```
+
+---
+
+## Prochaines étapes
+
+<CardGroup cols={2}>
+  <Card title="Envoyer avec un template" icon="text" href="/fr/guides/templates">
+    Créez un template puis utilisez `templateId` et `variables` dans vos envois.
+  </Card>
+  <Card title="Planifier un message" icon="clock" href="/fr/guides/schedule-message">
+    Programmez un message pour plus tard.
+  </Card>
+  <Card title="Lancer une campagne" icon="megaphone" href="/fr/guides/campaigns">
+    Envoyez soit un template, soit un message direct à tous vos contacts ou à un segment ciblé.
+  </Card>
+  <Card title="Gérer vos contacts" icon="users" href="/fr/guides/contacts">
+    Préparez votre base de contacts avant vos campagnes.
+  </Card>
+</CardGroup>

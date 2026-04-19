@@ -3,6 +3,7 @@
 import Input from "@/components/ui/Input"
 import Select from "@/components/ui/Select"
 import type { Contact } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export type RecipientMode = "manual" | "contact"
 
@@ -25,13 +26,16 @@ export function RecipientSelector({
   onToChange,
   onContactChange,
 }: RecipientSelectorProps) {
+  const { copy } = usePortalLocale()
+  const recipientCopy = copy.messages.recipient
+
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium text-text-body">Destinataire</p>
+      <p className="text-sm font-medium text-text-body">{recipientCopy.title}</p>
       <div className="flex gap-1 rounded-xl bg-bg-muted p-1 w-fit">
         {([
-          { value: "manual", label: "Nouveau numéro" },
-          { value: "contact", label: "Contact enregistré" },
+          { value: "manual", label: recipientCopy.manual },
+          { value: "contact", label: recipientCopy.contact },
         ] as const).map((option) => (
           <button
             key={option.value}
@@ -50,15 +54,15 @@ export function RecipientSelector({
       </div>
 
       {recipientMode === "contact" ? (
-        <Select label="Choisir un contact" value={contactId} onChange={(event) => onContactChange(event.target.value)} required>
-          <option value="">Sélectionner un contact...</option>
+        <Select label={recipientCopy.chooseContact} value={contactId} onChange={(event) => onContactChange(event.target.value)} required>
+          <option value="">{recipientCopy.selectContact}</option>
           {contacts.map((contact) => (
             <option key={contact.id} value={contact.id}>{contact.name} · {contact.phone}</option>
           ))}
         </Select>
       ) : (
         <Input
-          label="Destinataire (numéro)"
+          label={recipientCopy.phoneLabel}
           type="tel"
           value={to}
           onChange={(event) => onToChange(event.target.value)}
@@ -68,7 +72,7 @@ export function RecipientSelector({
       )}
 
       {recipientMode === "contact" && contacts.length === 0 && (
-        <p className="text-xs text-warning">Aucun contact enregistré disponible. Ajoutez un contact ou utilisez un nouveau numéro.</p>
+        <p className="text-xs text-warning">{recipientCopy.noContact}</p>
       )}
     </div>
   )

@@ -1,31 +1,35 @@
 ---
 title: FAQ
-description: Questions fréquentes sur MsgFlash, les plans, les clés API et les webhooks.
+description: Common questions about MsgFlash, plans, API keys, and webhooks.
 ---
 
+import { DocLocaleSwitch } from "../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
 <AccordionGroup>
-  <Accordion title="MsgFlash utilise-t-il l'API officielle WhatsApp Business ?">
-    Non. MsgFlash s'appuie sur Evolution API v2 comme provider interne, pas sur l'API Cloud officielle Meta.
+  <Accordion title="Does MsgFlash use the official WhatsApp Business API?">
+    No. MsgFlash uses Evolution API v2 as its internal provider, not Meta's official Cloud API.
   </Accordion>
 
-  <Accordion title="Puis-je utiliser un numéro WhatsApp existant ?">
-    Oui. Vous connectez un numéro existant via QR code ou pairing code depuis le dashboard.
+  <Accordion title="Can I use an existing WhatsApp number?">
+    Yes. You connect an existing number through QR code or pairing code from the dashboard.
   </Accordion>
 
-  <Accordion title="Comment intégrer avec Make, n8n ou Zapier ?">
-    Utilisez un module HTTP standard vers `https://srv.msgflash.com/api/v1/*` avec le header `x-api-key: votre_cle_api`.
+  <Accordion title="How do I integrate with Make, n8n, or Zapier?">
+    Use a standard HTTP module against `https://srv.msgflash.com/api/v1/*` with the `x-api-key: your_api_key` header.
   </Accordion>
 
-  <Accordion title="Puis-je avoir plusieurs clés API ?">
-    Oui, selon votre plan.
+  <Accordion title="Can I have multiple API keys?">
+    Yes, depending on your plan.
     Free: 1, Starter: 3, Pro: 10, Plus: 10.
   </Accordion>
 
-  <Accordion title="Que faire si ma clé API est compromise ?">
-    Révoquez-la immédiatement dans le dashboard, puis créez-en une nouvelle et mettez vos intégrations à jour.
+  <Accordion title="What should I do if my API key is compromised?">
+    Revoke it immediately in the dashboard, create a new one, and update your integrations.
   </Accordion>
 
-  <Accordion title="Que se passe-t-il quand j'annule mon abonnement ?">
-    L'abonnement reste exploitable jusqu'à la fin de la période en cours, puis le compte revient sur le plan Free et ses limites.
+  <Accordion title="What happens when I cancel my subscription?">
+    The subscription remains usable until the end of the current billing period, then the account falls back to the Free plan and its limits.
   </Accordion>
 </AccordionGroup>

@@ -19,6 +19,7 @@ import Input from "@/components/ui/Input"
 import EmptyState from "@/components/ui/EmptyState"
 import { SkeletonCard } from "@/components/ui/Skeleton"
 import { SmartPhone01Icon, AlertDiamondIcon } from "hugeicons-react"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 const STATUS_VARIANT: Record<string, "success" | "yellow" | "neutral" | "error"> = {
   connected:    "success",
@@ -36,6 +37,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function InstancesPage() {
   const router = useRouter()
+  const { copy } = usePortalLocale()
   const { instances, loading, createInstance } = useInstances()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -108,7 +110,7 @@ export default function InstancesPage() {
               onClick={() => router.push("/billing")}
               className="text-primary-ink font-medium hover:text-text hover:underline"
             >
-              Mettre à niveau →
+              {copy.topnav.upgrade} →
             </button>
           </p>
         </div>

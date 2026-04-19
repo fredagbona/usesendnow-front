@@ -1,64 +1,68 @@
 ---
 title: Introduction
-description: MsgFlash est une API d'automatisation WhatsApp pour messages, campagnes, contacts, templates, webhooks et billing.
+description: MsgFlash is a WhatsApp automation API for messages, campaigns, contacts, templates, webhooks, and billing.
 ---
 
-## Qu'est-ce que MsgFlash ?
+import { DocLocaleSwitch } from "./components/DocLocaleSwitch"
 
-MsgFlash est une plateforme API-first qui permet de :
-- envoyer des messages WhatsApp
-- planifier des envois
-- lancer des campagnes
-- gérer des templates dynamiques
-- gérer un carnet d'adresses et des groupes
-- recevoir des événements par webhook
-- suivre votre plan, vos limites et votre consommation
+<DocLocaleSwitch />
+
+## What is MsgFlash?
+
+MsgFlash is an API-first platform that lets you:
+- send WhatsApp messages
+- schedule sends
+- launch campaigns
+- manage dynamic templates
+- manage contacts and contact groups
+- receive webhook events
+- track your plan, limits, and usage
 
 ---
 
 ## Architecture
 
-![Architecture MsgFlash](/images/Architecture.png)
+![MsgFlash architecture](/images/Architecture.png)
 
-Chaque instance représente un numéro WhatsApp connecté, géré depuis le dashboard.
+Each instance represents one connected WhatsApp number, managed from the dashboard.
 
 ---
 
-## Les deux surfaces
+## The two surfaces
 
 <CardGroup cols={2}>
   <Card title="Dashboard" icon="browser" href="https://app.msgflash.com">
-    L'interface pour connecter vos numéros, gérer vos abonnements, vos contacts, vos campagnes et vos clés API.
+    The interface for connecting your numbers, managing subscriptions, contacts, campaigns, and API keys.
   </Card>
-  <Card title="API publique" icon="code" href="/api-reference/introduction">
-    L'API REST sous `/api/v1/*`, authentifiée par `x-api-key`, pour vos intégrations serveur à serveur.
+  <Card title="Public API" icon="code" href="/api-reference/introduction">
+    The REST API under `/api/v1/*`, authenticated with `x-api-key`, for server-to-server integrations.
   </Card>
 </CardGroup>
 
 ---
 
-## Ce que vous pouvez faire via l'API publique
+## What you can do with the public API
 
 <CardGroup cols={2}>
   <Card title="Messages" icon="message" href="/guides/send-message">
-    Envoyer ou planifier des messages texte, media, localisation et contact, avec ou sans template.
+    Send or schedule text, media, location, and contact messages, with or without templates.
   </Card>
-  <Card title="Campagnes" icon="megaphone" href="/guides/campaigns">
-    Créer des campagnes planifiées avec template ou message direct, suivre leur progression et les pauser ou reprendre.
+  <Card title="Campaigns" icon="megaphone" href="/guides/campaigns">
+    Create scheduled campaigns with templates or direct messages, track progress, and pause or resume them.
   </Card>
   <Card title="Templates" icon="text" href="/guides/templates">
-    Créer des templates réutilisables avec variables `contact.*`, `user.*`, `instance.*` et `custom.*`.
+    Create reusable templates with `contact.*`, `user.*`, `instance.*`, and `custom.*` variables.
   </Card>
   <Card title="Contacts" icon="users" href="/guides/contacts">
-    Gérer vos contacts, vos groupes de contacts et les suppressions en lot.
+    Manage your contacts, contact groups, and bulk deletions.
   </Card>
   <Card title="Webhooks" icon="webhook" href="/guides/webhooks">
-    Enregistrer vos endpoints et recevoir les événements signés en temps réel.
+    Register your endpoints and receive signed events in real time.
   </Card>
   <Card title="Billing" icon="credit-card" href="/guides/billing">
-    Lire les plans, la souscription courante, l'usage et l'historique des paiements.
+    Read your plans, current subscription, usage, and payment history.
   </Card>
-  <Card title="Uploads média" icon="upload" href="/guides/media-uploads">
-    Préparer un média temporaire avant un envoi direct depuis la console.
+  <Card title="Media uploads" icon="upload" href="/guides/media-uploads">
+    Prepare a temporary media file before a direct send from the console.
   </Card>
 </CardGroup>

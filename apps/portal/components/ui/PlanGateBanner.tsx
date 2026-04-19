@@ -3,6 +3,7 @@
 import { InformationCircleIcon } from "hugeicons-react"
 import Button from "./Button"
 import { useRouter } from "next/navigation"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 interface PlanGateBannerProps {
   message: string
@@ -10,6 +11,7 @@ interface PlanGateBannerProps {
 
 export default function PlanGateBanner({ message }: PlanGateBannerProps) {
   const router = useRouter()
+  const { copy } = usePortalLocale()
   return (
     <div className="flex items-center gap-4 p-5 bg-primary-subtle border border-border-strong rounded-none shadow-[4px_4px_0px_0px_rgba(10,10,10,0.12)]">
       <div className="w-9 h-9 rounded-none bg-bg border border-border-strong flex items-center justify-center shrink-0">
@@ -17,7 +19,7 @@ export default function PlanGateBanner({ message }: PlanGateBannerProps) {
       </div>
       <p className="text-sm text-text flex-1">{message}</p>
       <Button variant="primary" size="sm" onClick={() => router.push("/billing")}>
-        Mettre à niveau
+        {copy.topnav.upgrade}
       </Button>
     </div>
   )

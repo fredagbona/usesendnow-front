@@ -6,18 +6,20 @@ import { Menu01Icon, Cancel01Icon } from "hugeicons-react"
 import { Button } from "../ui/Button"
 import { landingBrand } from "../../lib/brand"
 import { BrandMark } from "../shared/BrandMark"
-
-const NAV_LINKS = [
-  { label: "Fonctionnalités", href: "#fonctionnalites" },
-  { label: "Tarifs", href: "#tarifs" },
-  { label: "FAQ", href: "#faq" },
-  { label: "Documentation", href: landingBrand.docsUrl },
-]
+import { useLandingI18n } from "../../lib/landing-i18n"
 
 interface NavbarProps {}
 
 export function Navbar({}: NavbarProps) {
   const [open, setOpen] = useState(false)
+  const { locale, setLocale, messages } = useLandingI18n()
+
+  const navLinks = [
+    { label: messages.nav.features, href: "#fonctionnalites" },
+    { label: messages.nav.pricing, href: "#tarifs" },
+    { label: messages.nav.faq, href: "#faq" },
+    { label: messages.nav.docs, href: landingBrand.docsUrl },
+  ]
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/8 bg-[#0A0A0A]/95 backdrop-blur">
@@ -27,7 +29,7 @@ export function Navbar({}: NavbarProps) {
         </a>
 
         <nav className="hidden items-center gap-6 lg:flex">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
@@ -39,14 +41,30 @@ export function Navbar({}: NavbarProps) {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
+          <div className="inline-flex items-center gap-1 border border-white/10 bg-[#111111] p-1">
+            {(["fr", "en"] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setLocale(item)}
+                className={[
+                  "px-2.5 py-1 font-(family-name:--font-geist-sans) text-[10px] font-bold uppercase tracking-[0.12em] transition-colors",
+                  locale === item ? "bg-[#FFD600] text-[#0A0A0A]" : "text-[#B8B8B8] hover:text-[#F0F0F0]",
+                ].join(" ")}
+                aria-pressed={locale === item}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
           <a
             href={`${landingBrand.appUrl}/login`}
             className="font-(family-name:--font-poppins) text-[11px] uppercase tracking-[0.08em] text-[#F0F0F0] transition-colors hover:text-[#FFD600]"
           >
-            Connexion
+            {messages.nav.login}
           </a>
           <Button href={`${landingBrand.appUrl}/signup`} size="sm">
-            Commencer
+            {messages.nav.getStarted}
           </Button>
         </div>
 
@@ -54,7 +72,7 @@ export function Navbar({}: NavbarProps) {
           type="button"
           onClick={() => setOpen((current) => !current)}
           className="inline-flex h-10 w-10 items-center justify-center border border-white/10 bg-[#111111] text-[#F0F0F0] lg:hidden"
-          aria-label="Ouvrir le menu"
+          aria-label={messages.nav.openMenu}
         >
           {open ? <Cancel01Icon className="h-5 w-5" /> : <Menu01Icon className="h-5 w-5" />}
         </button>
@@ -70,7 +88,7 @@ export function Navbar({}: NavbarProps) {
             className="border-t border-white/8 bg-[#0A0A0A] px-4 py-4 sm:px-6 lg:hidden"
           >
             <div className="mx-auto flex max-w-6xl flex-col gap-4">
-              {NAV_LINKS.map((link) => (
+              {navLinks.map((link) => (
                 <a
                   key={link.label}
                   href={link.href}
@@ -81,14 +99,27 @@ export function Navbar({}: NavbarProps) {
                 </a>
               ))}
               <div className="flex flex-col gap-3 border-t border-white/8 pt-4">
-                <a
-                  href={`${landingBrand.appUrl}/login`}
-                  className="font-(family-name:--font-poppins) text-sm text-[#F0F0F0]"
-                >
-                  Connexion
+                <div className="inline-flex items-center gap-1 border border-white/10 bg-[#111111] p-1">
+                  {(["fr", "en"] as const).map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setLocale(item)}
+                      className={[
+                        "px-2.5 py-1 font-(family-name:--font-geist-sans) text-[10px] font-bold uppercase tracking-[0.12em] transition-colors",
+                        locale === item ? "bg-[#FFD600] text-[#0A0A0A]" : "text-[#B8B8B8] hover:text-[#F0F0F0]",
+                      ].join(" ")}
+                      aria-pressed={locale === item}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+                <a href={`${landingBrand.appUrl}/login`} className="font-(family-name:--font-poppins) text-sm text-[#F0F0F0]">
+                  {messages.nav.login}
                 </a>
                 <Button href={`${landingBrand.appUrl}/signup`} size="sm">
-                  Commencer
+                  {messages.nav.getStarted}
                 </Button>
               </div>
             </div>

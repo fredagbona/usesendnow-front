@@ -1,6 +1,6 @@
 # AGENTS.md — Portal App
 App: portal
-URL: app.usesendnow.com
+URL: app.msgflash.com
 
 Read the root AGENTS.md first. All global rules apply.
 This file adds portal-specific rules only.
@@ -9,7 +9,7 @@ This file adds portal-specific rules only.
 
 ## Purpose
 
-The portal is the human control plane of UseSendNow.
+The portal is the human control plane of MsgFlash.
 It is a technical console — not a marketing interface.
 Users come here to configure, connect, monitor and manage.
 Every UI decision must serve clarity and speed, not aesthetics.

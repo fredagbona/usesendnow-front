@@ -16,6 +16,7 @@ import PlanGateBanner from "@/components/ui/PlanGateBanner"
 import CodeSnippet from "@/components/ui/CodeSnippet"
 import Modal from "@/components/ui/Modal"
 import { WebhookIcon, AlertDiamondIcon } from "hugeicons-react"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 const WEBHOOK_EVENTS: WebhookEvent[] = [
   "message.sent",
@@ -24,14 +25,16 @@ const WEBHOOK_EVENTS: WebhookEvent[] = [
   "instance.connected",
 ]
 
-const EVENT_LABEL: Record<WebhookEvent, string> = {
-  "message.sent": "Message envoyé",
-  "message.delivered": "Message livré",
-  "message.failed": "Message échoué",
-  "instance.connected": "Instance connectée",
-}
+const eventLabel = (copy: ReturnType<typeof usePortalLocale>["copy"]) => ({
+  "message.sent": copy.webhooks.events.messageSent,
+  "message.delivered": copy.webhooks.events.messageDelivered,
+  "message.failed": copy.webhooks.events.messageFailed,
+  "instance.connected": copy.webhooks.events.instanceConnected,
+} satisfies Record<WebhookEvent, string>)
 
 export default function NewWebhookPage() {
+  const { copy } = usePortalLocale()
+  const webhookCopy = copy.webhooks
   const router = useRouter()
   const { addWebhook } = useWebhooks()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
@@ -78,14 +81,14 @@ export default function NewWebhookPage() {
       if (err instanceof ApiClientError) {
         if (err.code === "WEBHOOKS_NOT_AVAILABLE_ON_PLAN") {
           setPlanBlocked(true)
-          toast.error("Les webhooks ne sont pas disponibles sur votre plan.")
+          toast.error(webhookCopy.errors.planUnavailable)
         } else if (err.code === "MAX_WEBHOOK_ENDPOINTS_REACHED") {
-          toast.error("Limite d'endpoints webhook atteinte pour votre plan.")
+          toast.error(webhookCopy.errors.limitReached)
         } else {
-          toast.error("Impossible d'enregistrer l'endpoint.")
+          toast.error(webhookCopy.errors.saveFailed)
         }
       } else {
-        toast.error("Impossible d'enregistrer l'endpoint.")
+        toast.error(webhookCopy.errors.saveFailed)
       }
     } finally {
       setCreating(false)
@@ -96,11 +99,11 @@ export default function NewWebhookPage() {
     return (
       <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6 max-w-4xl">
         <PageHeader
-          title="Nouveau webhook"
-          description="Ajouter un endpoint webhook"
-          action={<Button variant="secondary" onClick={() => router.push("/webhooks")}>Retour aux webhooks</Button>}
+          title={webhookCopy.newTitle}
+          description={webhookCopy.newDescription}
+          action={<Button variant="secondary" onClick={() => router.push("/webhooks")}>{webhookCopy.back}</Button>}
         />
-        <PlanGateBanner message="Les webhooks ne sont pas disponibles sur le plan Gratuit. Passez au plan Starter pour y accéder." />
+        <PlanGateBanner message={webhookCopy.planBlocked} />
       </motion.div>
     )
   }
@@ -108,18 +111,18 @@ export default function NewWebhookPage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6 max-w-4xl">
       <PageHeader
-        title="Nouveau webhook"
-        description="Ajoutez un endpoint pour recevoir des notifications d'événements en temps réel."
-        action={<Button variant="secondary" onClick={() => router.push("/webhooks")}>Retour aux webhooks</Button>}
+        title={webhookCopy.newTitle}
+        description={webhookCopy.newDescription}
+        action={<Button variant="secondary" onClick={() => router.push("/webhooks")}>{webhookCopy.back}</Button>}
       />
 
       <form onSubmit={handleCreate} className="space-y-6">
         <Card className="space-y-5">
           <div>
-            <h3 className="text-sm font-semibold text-text mb-1">Endpoint URL</h3>
-            <p className="text-xs text-text-secondary mb-3">L'URL qui recevra les notifications POST.</p>
+            <h3 className="text-sm font-semibold text-text mb-1">{webhookCopy.endpointTitle}</h3>
+            <p className="text-xs text-text-secondary mb-3">{webhookCopy.endpointDescription}</p>
             <Input
-              label="URL du webhook"
+              label={webhookCopy.endpointLabel}
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
               placeholder="https://mon-api.com/webhooks/msgflash"
@@ -130,8 +133,8 @@ export default function NewWebhookPage() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-text mb-1">Événements</h3>
-            <p className="text-xs text-text-secondary mb-3">Sélectionnez les événements à recevoir.</p>
+            <h3 className="text-sm font-semibold text-text mb-1">{webhookCopy.eventsTitle}</h3>
+            <p className="text-xs text-text-secondary mb-3">{webhookCopy.eventsDescription}</p>
             <div className="space-y-2">
               {WEBHOOK_EVENTS.map((event) => (
                 <label key={event} className="flex items-center gap-3 p-3 bg-bg-subtle border border-border rounded-xl cursor-pointer hover:border-border-strong transition-colors">
@@ -141,7 +144,7 @@ export default function NewWebhookPage() {
                     onChange={() => toggleEvent(event)}
                     className="h-4 w-4 rounded border-border-strong accent-primary"
                   />
-                  <span className="text-sm text-text-body">{EVENT_LABEL[event]}</span>
+                  <span className="text-sm text-text-body">{eventLabel(copy)[event]}</span>
                   <code className="text-xs text-text-muted ml-auto font-mono">{event}</code>
                 </label>
               ))}
@@ -149,7 +152,7 @@ export default function NewWebhookPage() {
             {selectedEvents.length === 0 && (
               <p className="text-xs text-warning mt-2 flex items-center gap-1">
                 <AlertDiamondIcon className="w-3.5 h-3.5" />
-                Sélectionnez au moins un événement.
+                {webhookCopy.minEvent}
               </p>
             )}
           </div>
@@ -157,38 +160,38 @@ export default function NewWebhookPage() {
 
         <div className="flex items-center justify-between">
           <p className="text-xs text-text-muted">
-            La clé de signature HMAC-SHA256 sera affichée une seule fois après la création.
+            {webhookCopy.hmacNotice}
           </p>
           <div className="flex gap-3">
-            <Button type="button" variant="secondary" onClick={() => router.push("/webhooks")}>Annuler</Button>
+            <Button type="button" variant="secondary" onClick={() => router.push("/webhooks")}>{webhookCopy.cancel}</Button>
             <Button type="submit" variant="primary" loading={creating} disabled={!newUrl.trim() || selectedEvents.length === 0}>
-              Créer le webhook
+              {webhookCopy.create}
             </Button>
           </div>
         </div>
       </form>
 
       {/* Secret reveal modal */}
-      <Modal open={!!secretModal} onClose={() => setSecretModal(null)} title="Webhook créé">
+      <Modal open={!!secretModal} onClose={() => setSecretModal(null)} title={webhookCopy.createdTitle}>
         {secretModal && (
           <div className="space-y-4">
             <div className="flex items-start gap-2 p-3 bg-warning-subtle border border-warning/30 rounded-xl">
               <AlertDiamondIcon className="w-4 h-4 text-warning shrink-0 mt-0.5" />
               <p className="text-xs text-warning-text">
-                Copiez cette clé de signature. Elle ne sera plus jamais affichée.
+                {webhookCopy.secretWarning}
               </p>
             </div>
             <div>
-              <p className="text-xs font-medium text-text-secondary mb-1.5">Clé de signature HMAC-SHA256</p>
+              <p className="text-xs font-medium text-text-secondary mb-1.5">{webhookCopy.secretLabel}</p>
               <CodeSnippet value={secretModal.secret} />
             </div>
             <div>
-              <p className="text-xs font-medium text-text-secondary mb-1.5">Endpoint</p>
+              <p className="text-xs font-medium text-text-secondary mb-1.5">{webhookCopy.endpointLabelShort}</p>
               <CodeSnippet value={secretModal.url} />
             </div>
             <div className="flex justify-end gap-2 pt-1">
-              <Button variant="secondary" onClick={() => setSecretModal(null)}>Fermer</Button>
-              <Button variant="primary" onClick={() => router.push("/webhooks")}>Voir les webhooks</Button>
+              <Button variant="secondary" onClick={() => setSecretModal(null)}>{webhookCopy.close}</Button>
+              <Button variant="primary" onClick={() => router.push("/webhooks")}>{webhookCopy.viewWebhooks}</Button>
             </div>
           </div>
         )}

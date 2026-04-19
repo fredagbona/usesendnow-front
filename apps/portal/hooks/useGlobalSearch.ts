@@ -3,6 +3,9 @@
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Campaign, Contact, ContactGroup, Instance, Message } from "@usesendnow/types"
+import { portalCopy } from "@/lib/portal-copy"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import type { PortalLocale } from "@/lib/portal-locale"
 
 export type GlobalSearchCategory = "page" | "instance" | "message" | "campaign" | "contact" | "group"
 
@@ -22,19 +25,7 @@ interface SearchDataset {
   groups: ContactGroup[]
 }
 
-const PAGE_RESULTS: GlobalSearchResult[] = [
-  { id: "page-dashboard", category: "page", title: "Tableau de bord", description: "Vue d'ensemble du portal", href: "/dashboard" },
-  { id: "page-instances", category: "page", title: "Instances", description: "Gérer les connexions WhatsApp", href: "/instances" },
-  { id: "page-messages", category: "page", title: "Messages", description: "Envoyer et consulter les messages", href: "/messages" },
-  { id: "page-campaigns", category: "page", title: "Campagnes", description: "Piloter les envois en masse", href: "/campaigns" },
-  { id: "page-contacts", category: "page", title: "Contacts", description: "Carnet d'adresses et imports", href: "/contacts" },
-  { id: "page-contact-groups", category: "page", title: "Groupes de contacts", description: "Organiser les contacts par groupes", href: "/contacts/groups" },
-  { id: "page-templates", category: "page", title: "Modèles", description: "Bibliothèque de modèles de messages", href: "/templates" },
-  { id: "page-webhooks", category: "page", title: "Webhooks", description: "Recevoir les événements du portal", href: "/webhooks" },
-  { id: "page-api-keys", category: "page", title: "Clés API", description: "Gérer les accès à l'API publique", href: "/api-keys" },
-  { id: "page-billing", category: "page", title: "Facturation", description: "Abonnement, quotas et paiements", href: "/billing" },
-  { id: "page-profile", category: "page", title: "Profil", description: "Informations personnelles du compte", href: "/profile" },
-]
+type LocaleCopy = (typeof portalCopy)["fr"]
 
 function normalize(value: string) {
   return value
@@ -53,12 +44,28 @@ function truncate(value: string | null | undefined, length = 64) {
   return value.length > length ? `${value.slice(0, length - 1)}…` : value
 }
 
-function buildResults(query: string, dataset: SearchDataset | null): GlobalSearchResult[] {
-  const pageResults = PAGE_RESULTS.filter((item) =>
+function buildResults(
+  query: string,
+  dataset: SearchDataset | null,
+  copy: LocaleCopy,
+  locale: PortalLocale
+): GlobalSearchResult[] {
+  const gs = copy.globalSearch
+  const pageResults: GlobalSearchResult[] = (gs.staticPages ?? []).map((p) => ({
+    id: p.id,
+    category: "page" as const,
+    title: p.title,
+    description: p.description,
+    href: p.href,
+  }))
+
+  const filteredPageResults = pageResults.filter((item) =>
     includesQuery([item.title, item.description], query)
   )
 
-  if (!dataset) return pageResults
+  if (!dataset) return filteredPageResults
+
+  const localeTag = locale === "fr" ? "fr-FR" : "en-US"
 
   const instanceResults = dataset.instances
     .filter((instance) => includesQuery([instance.name, instance.waNumber, instance.status], query))
@@ -67,7 +74,7 @@ function buildResults(query: string, dataset: SearchDataset | null): GlobalSearc
       id: `instance-${instance.id}`,
       category: "instance",
       title: instance.name,
-      description: instance.waNumber ?? "Instance WhatsApp",
+      description: instance.waNumber ?? gs.fallbackInstanceDescription,
       href: `/instances/${instance.id}`,
     }))
 
@@ -78,7 +85,7 @@ function buildResults(query: string, dataset: SearchDataset | null): GlobalSearc
       id: `message-${message.id}`,
       category: "message",
       title: message.to,
-      description: truncate(message.body) || `Message ${message.type}`,
+      description: truncate(message.body) || gs.messagePreview.replace("{{type}}", message.type),
       href: `/messages/${message.id}`,
     }))
 
@@ -89,7 +96,7 @@ function buildResults(query: string, dataset: SearchDataset | null): GlobalSearc
       id: `campaign-${campaign.id}`,
       category: "campaign",
       title: campaign.name,
-      description: `Campagne ${campaign.status}`,
+      description: gs.campaignWithStatus.replace("{{status}}", campaign.status),
       href: `/campaigns/${campaign.id}`,
     }))
 
@@ -104,6 +111,10 @@ function buildResults(query: string, dataset: SearchDataset | null): GlobalSearc
       href: `/contacts?search=${encodeURIComponent(contact.phone)}`,
     }))
 
+  const groupSuffix =
+    copy.contacts.groups.detailsCountSuffix
+  const groupSuffixPlural = copy.contacts.groups.detailsCountSuffixPlural
+
   const groupResults = dataset.groups
     .filter((group) => includesQuery([group.name, group.description], query))
     .slice(0, 5)
@@ -111,12 +122,16 @@ function buildResults(query: string, dataset: SearchDataset | null): GlobalSearc
       id: `group-${group.id}`,
       category: "group",
       title: group.name,
-      description: group.description || `${group.contactCount.toLocaleString("fr-FR")} contact${group.contactCount !== 1 ? "s" : ""}`,
+      description:
+        group.description ||
+        `${group.contactCount.toLocaleString(localeTag)} ${
+          group.contactCount !== 1 ? groupSuffixPlural : groupSuffix
+        }`,
       href: `/contacts/groups/${group.id}`,
     }))
 
   return [
-    ...pageResults,
+    ...filteredPageResults,
     ...instanceResults,
     ...messageResults,
     ...campaignResults,
@@ -126,6 +141,7 @@ function buildResults(query: string, dataset: SearchDataset | null): GlobalSearc
 }
 
 export function useGlobalSearch(rawQuery: string) {
+  const { copy, locale } = usePortalLocale()
   const deferredQuery = useDeferredValue(rawQuery)
   const [dataset, setDataset] = useState<SearchDataset | null>(null)
   const [loading, setLoading] = useState(false)
@@ -161,7 +177,7 @@ export function useGlobalSearch(rawQuery: string) {
           groups: groupsResponse.groups,
         })
       } catch {
-        if (!cancelled) setError("Impossible de charger la recherche globale.")
+        if (!cancelled) setError(copy.hooks.globalSearchLoadError)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -172,7 +188,7 @@ export function useGlobalSearch(rawQuery: string) {
     return () => {
       cancelled = true
     }
-  }, [dataset, loading, query])
+  }, [copy.hooks.globalSearchLoadError, dataset, loading, query])
 
   useEffect(() => {
     if (!query) {
@@ -181,9 +197,9 @@ export function useGlobalSearch(rawQuery: string) {
     }
 
     startTransition(() => {
-      setResults(buildResults(query, dataset))
+      setResults(buildResults(query, dataset, copy, locale))
     })
-  }, [dataset, query])
+  }, [copy, dataset, locale, query])
 
   return { query, results, loading, error }
 }

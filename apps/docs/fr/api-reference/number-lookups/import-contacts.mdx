@@ -1,0 +1,35 @@
+---
+title: POST Importer les numéros trouvés comme contacts
+description: Crée ou met à jour des contacts MsgFlash à partir des numéros détectés sur WhatsApp.
+---
+
+import { DocLocaleSwitch } from "../../../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
+## Endpoint
+
+```txt
+POST /api/v1/number-lookups/{id}/import-contacts
+```
+
+## Paramètres
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---:|---|---|
+| `id` | UUID | oui | path | ID de la vérification terminée |
+| `groupId` | UUID | non | body | Groupe cible |
+| `tag` | string | non | body | Tag à appliquer aux contacts importés |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "requested": 730,
+    "created": 650,
+    "updated": 80,
+    "skipped": 0
+  }
+}
+```

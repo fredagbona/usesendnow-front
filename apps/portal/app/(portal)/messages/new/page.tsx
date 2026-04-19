@@ -8,6 +8,7 @@ import type { MessageType, SendMessagePayload, Template, UploadedMedia } from "@
 import { useContacts } from "@/hooks/useContacts"
 import { useInstances } from "@/hooks/useInstances"
 import { useTemplates } from "@/hooks/useTemplates"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { entriesToVariableMap, getCustomVariables, getCustomVariableKey, variableMapToEntries, type CustomVariableEntry } from "@/lib/templateEngine"
 import { ACCEPTED_MIME, ACCEPTED_LABELS, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, TYPE_LABEL, formatBytes } from "@/lib/messageComposer"
 import PageHeader from "@/components/layout/PageHeader"
@@ -27,6 +28,7 @@ type ComposeMode = "freeform" | "template"
 
 export default function NewMessagePage() {
   const router = useRouter()
+  const { copy } = usePortalLocale()
   const { instances } = useInstances()
   const { templates } = useTemplates()
   const { contacts } = useContacts()
@@ -42,7 +44,7 @@ export default function NewMessagePage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [mediaError, setMediaError] = useState<string | null>(null)
   const [mediaNotice, setMediaNotice] = useState<string | null>(null)
-  const [statusMessage, setStatusMessage] = useState("Prêt à composer un message.")
+  const [statusMessage, setStatusMessage] = useState(copy.messages.description)
   const [sendForm, setSendForm] = useState({
     instanceId: "",
     to: "",
@@ -135,7 +137,7 @@ export default function NewMessagePage() {
     releaseUploadedMedia()
     resetMediaState()
     setSendForm((prev) => ({ ...prev, type, mediaUrl: "", text: "" }))
-    setStatusMessage("Type de message mis à jour.")
+    setStatusMessage(copy.messages.typeUpdated)
   }
 
   const uploadMediaFile = async (file: File, nextType?: MessageType) => {
@@ -165,7 +167,7 @@ export default function NewMessagePage() {
     shouldCleanupMediaRef.current = true
     setUploading(true)
     setUploadProgress(0)
-    setStatusMessage("Upload du média en cours...")
+    setStatusMessage(copy.messages.uploadInProgress)
 
     try {
       const media = await apiClient.media.upload(file, setUploadProgress)
@@ -175,11 +177,11 @@ export default function NewMessagePage() {
         type: nextType ?? (media.suggestedMessageType === "voice_note" && prev.type === "audio" ? "voice_note" : prev.type),
         mediaUrl: media.url,
       }))
-      setStatusMessage("Média prêt. Vous pouvez relire puis envoyer.")
+      setStatusMessage(copy.messages.uploadQueued)
       if (media.suggestedMessageType === "voice_note" && targetType === "audio") {
         setMediaNotice("Le fichier ressemble à une note vocale. Le type a été prérempli en conséquence.")
       }
-      toast.success("Fichier uploadé avec succès.")
+      toast.success(copy.messages.uploadSuccess)
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "MEDIA_FILE_MISSING") {
@@ -228,7 +230,7 @@ export default function NewMessagePage() {
     if (!selectedTemplate) return
     setPreviewLoading(true)
     setPreviewError(null)
-    setStatusMessage("Génération de l’aperçu du template...")
+    setStatusMessage(copy.messages.templatePreviewLoading)
     try {
       const data = await apiClient.templates.preview(selectedTemplate.id, {
         instanceId: sendForm.instanceId || undefined,
@@ -239,12 +241,12 @@ export default function NewMessagePage() {
       if (!data.valid && data.missingVariables.length > 0) {
         setPreviewError(`Variables manquantes : ${data.missingVariables.join(", ")}`)
       }
-      setStatusMessage("Aperçu du template actualisé.")
+      setStatusMessage(copy.messages.templatePreview)
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "TEMPLATE_INVALID") {
         setPreviewError("Le template sélectionné est invalide.")
       } else {
-        setPreviewError("Impossible de générer l’aperçu du template.")
+        setPreviewError(copy.messages.templatePreviewError)
       }
       setStatusMessage("Impossible de générer l’aperçu.")
     } finally {
@@ -270,7 +272,7 @@ export default function NewMessagePage() {
     }
 
     setSending(true)
-    setStatusMessage(sendForm.scheduledAt ? "Programmation du message..." : "Envoi du message...")
+    setStatusMessage(sendForm.scheduledAt ? copy.messages.scheduling : copy.messages.sending)
 
     try {
       const payload: SendMessagePayload = composeMode === "template"
@@ -296,7 +298,7 @@ export default function NewMessagePage() {
 
       await apiClient.messages.send(payload)
       shouldCleanupMediaRef.current = false
-      toast.success(sendForm.scheduledAt ? "Message programmé avec succès." : "Message envoyé avec succès.")
+      toast.success(sendForm.scheduledAt ? copy.messages.scheduledSuccess : copy.messages.queuedSuccess)
       router.push("/messages")
       router.refresh()
     } catch (err) {
@@ -333,17 +335,17 @@ export default function NewMessagePage() {
     <div className="space-y-8">
       <PageHeader
         title="Nouveau message"
-        description="Envoyez immédiatement ou programmez un message avec suivi d’upload et statut d’action."
-        action={<Button variant="secondary" onClick={() => router.push("/messages")}>Retour aux messages</Button>}
+        description={copy.messages.description}
+        action={<Button variant="secondary" onClick={() => router.push("/messages")}>{copy.messages.sendBack}</Button>}
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_380px]">
         <form onSubmit={handleSend} className="space-y-6">
           <Card className="space-y-5">
             <div className="flex gap-1 rounded-xl bg-bg-muted p-1 w-fit">
-              {([
-                { value: "freeform", label: "Rédaction libre" },
-                { value: "template", label: "Utiliser un template" },
+                {([
+                { value: "freeform", label: copy.messages.draft },
+                { value: "template", label: copy.messages.template },
               ] as const).map((tab) => (
                 <button
                   key={tab.value}
@@ -369,8 +371,8 @@ export default function NewMessagePage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Select label="Instance" value={sendForm.instanceId} onChange={(event) => setSendForm((prev) => ({ ...prev, instanceId: event.target.value }))} required>
-                <option value="">Sélectionner une instance...</option>
+              <Select label={copy.messages.instance} value={sendForm.instanceId} onChange={(event) => setSendForm((prev) => ({ ...prev, instanceId: event.target.value }))} required>
+                <option value="">{copy.messages.selectInstance}</option>
                 {connectedInstances.map((instance) => (
                   <option key={instance.id} value={instance.id}>{instance.name}</option>
                 ))}
@@ -387,13 +389,13 @@ export default function NewMessagePage() {
               />
             </div>
 
-            {connectedInstances.length === 0 && <p className="text-xs text-warning">Aucune instance connectée disponible.</p>}
+            {connectedInstances.length === 0 && <p className="text-xs text-warning">{copy.messages.noInstance}</p>}
           </Card>
 
           {composeMode === "template" ? (
             <Card className="space-y-5">
               <Select label="Template" value={sendForm.templateId} onChange={(event) => handleTemplateChange(event.target.value)} required>
-                <option value="">Sélectionner un template...</option>
+                <option value="">{copy.messages.selectTemplate}</option>
                 {templates.map((template) => (
                   <option key={template.id} value={template.id}>{template.name}</option>
                 ))}
@@ -402,7 +404,7 @@ export default function NewMessagePage() {
               {selectedTemplate && (
                 <>
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-text-body">Variables du template</p>
+                    <p className="text-sm font-medium text-text-body">{copy.messages.variables}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedTemplate.variables.map((variable) => (
                         <span key={variable} className="rounded-full border border-border bg-bg-subtle px-3 py-1 text-xs text-text-secondary">

@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Payment } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function usePayments() {
+  const { copy } = usePortalLocale()
   const [payments, setPayments] = useState<Payment[]>([])
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -22,11 +24,11 @@ export function usePayments() {
       setTotalPages(data.totalPages)
       setPage(data.page)
     } catch {
-      setError("Impossible de charger l'historique des paiements.")
+      setError(copy.hooks.paymentsLoadError)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [copy.hooks.paymentsLoadError])
 
   useEffect(() => { fetchPayments(1) }, [fetchPayments])
 

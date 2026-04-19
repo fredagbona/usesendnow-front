@@ -7,6 +7,8 @@ import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
 import { useInstance } from "@/hooks/useInstances"
 import { useInstanceHealth } from "@/hooks/useInstanceHealth"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { portalCopy } from "@/lib/portal-copy"
 import InstanceHealthCard from "@/components/instances/InstanceHealthCard"
 import { apiClient } from "@usesendnow/api-client"
 import type { ConnectResponse } from "@usesendnow/types"
@@ -35,6 +37,8 @@ const STATUS_LABEL: Record<string, string> = {
 export default function InstanceDetailPage() {
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
+  const { locale } = usePortalLocale()
+  const copy = portalCopy[locale]
   const { instance, liveStatus, loading, error, refreshState, updateStatus } = useInstance(id)
   const { health, loading: healthLoading, error: healthError, refetch: healthRefetch } = useInstanceHealth(id)
   const [connectData, setConnectData] = useState<ConnectResponse | null>(null)
@@ -57,7 +61,7 @@ export default function InstanceDetailPage() {
       if (status === "connected" || status === "disconnected") {
         clearInterval(interval)
         if (status === "connected") {
-          toast.success("WhatsApp connecté !")
+          toast.success(locale === "fr" ? "WhatsApp connecté !" : "WhatsApp connected!")
           setConnectData(null)
         }
       }
@@ -72,7 +76,7 @@ export default function InstanceDetailPage() {
       setConnectData(data)
       updateStatus("connecting")
     } catch {
-      toast.error("Impossible d'initier la connexion. Réessayez.")
+      toast.error(locale === "fr" ? "Impossible d'initier la connexion. Réessayez." : "Unable to start the connection. Try again.")
     } finally {
       setConnecting(false)
     }
@@ -84,9 +88,9 @@ export default function InstanceDetailPage() {
       await apiClient.instances.logout(id)
       updateStatus("disconnected")
       setConnectData(null)
-      toast.success("WhatsApp déconnecté")
+      toast.success(locale === "fr" ? "WhatsApp déconnecté" : "WhatsApp disconnected")
     } catch {
-      toast.error("Impossible de déconnecter. Réessayez.")
+      toast.error(locale === "fr" ? "Impossible de déconnecter. Réessayez." : "Unable to disconnect. Try again.")
     } finally {
       setLoggingOut(false)
     }
@@ -96,10 +100,10 @@ export default function InstanceDetailPage() {
     setDeleting(true)
     try {
       await apiClient.instances.delete(id)
-      toast.success("Instance supprimée")
+      toast.success(locale === "fr" ? "Instance supprimée" : "Instance deleted")
       router.push("/instances")
     } catch {
-      toast.error("Impossible de supprimer l'instance.")
+      toast.error(locale === "fr" ? "Impossible de supprimer l'instance." : "Unable to delete the instance.")
       setDeleting(false)
     }
   }
@@ -110,7 +114,7 @@ export default function InstanceDetailPage() {
       setCopiedField(field)
       setTimeout(() => setCopiedField(null), 2000)
     } catch {
-      toast.error("Impossible de copier cette valeur.")
+      toast.error(locale === "fr" ? "Impossible de copier cette valeur." : "Unable to copy this value.")
     }
   }
 
@@ -126,9 +130,9 @@ export default function InstanceDetailPage() {
   if (error || !instance) {
     return (
       <div className="text-center py-16">
-        <p className="text-sm text-text-secondary">Instance introuvable.</p>
+        <p className="text-sm text-text-secondary">{locale === "fr" ? "Instance introuvable." : "Instance not found."}</p>
         <Button variant="secondary" className="mt-4" onClick={() => router.push("/instances")}>
-          Retour aux instances
+          {locale === "fr" ? "Retour aux instances" : "Back to instances"}
         </Button>
       </div>
     )
@@ -153,7 +157,7 @@ export default function InstanceDetailPage() {
             </Badge>
             <Button variant="ghost" size="sm" onClick={() => router.push("/instances")}>
               <ArrowLeft01Icon className="w-4 h-4" />
-              Retour
+              {copy.common.back}
             </Button>
           </div>
         }
@@ -164,7 +168,7 @@ export default function InstanceDetailPage() {
         <div className="flex items-start gap-3 p-4 bg-error-subtle border border-error/30 rounded-2xl">
           <AlertDiamondIcon className="w-5 h-5 text-error shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-error-hover">Instance suspendue</p>
+            <p className="text-sm font-semibold text-error-hover">{locale === "fr" ? "Instance suspendue" : "Instance suspended"}</p>
             <p className="text-sm text-error-hover/80 mt-0.5">
               Cette instance a été suspendue suite à un changement de plan. Passez à un plan supérieur pour la réactiver.
             </p>
@@ -174,21 +178,21 @@ export default function InstanceDetailPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
         <Card>
-          <h2 className="mb-5 text-sm font-semibold text-text">Connexion WhatsApp</h2>
+          <h2 className="mb-5 text-sm font-semibold text-text">{locale === "fr" ? "Connexion WhatsApp" : "WhatsApp connection"}</h2>
 
           {status === "suspended" && (
             <p className="text-sm text-text-secondary">
-              Reconnectez-vous à un plan supérieur pour réactiver cette instance.
+              {locale === "fr" ? "Reconnectez-vous à un plan supérieur pour réactiver cette instance." : "Upgrade your plan to reactivate this instance."}
             </p>
           )}
 
           {status === "connected" && (
             <div className="space-y-4">
               <p className="text-sm text-text-body">
-                WhatsApp connecté{instance.waNumber ? ` : ${instance.waNumber}` : ""}.
+                {locale === "fr" ? "WhatsApp connecté" : "WhatsApp connected"}{instance.waNumber ? ` : ${instance.waNumber}` : ""}.
               </p>
               <Button variant="secondary" loading={loggingOut} onClick={handleLogout}>
-                Déconnecter
+                {locale === "fr" ? "Déconnecter" : "Disconnect"}
               </Button>
             </div>
           )}
@@ -197,10 +201,10 @@ export default function InstanceDetailPage() {
             <div className="space-y-5">
               <div className="space-y-3">
                 <p className="text-sm text-text-secondary">
-                  Connectez-vous en scannant un QR code depuis votre téléphone.
+                  {locale === "fr" ? "Connectez-vous en scannant un QR code depuis votre téléphone." : "Connect by scanning the QR code from your phone."}
                 </p>
                 <Button variant="primary" loading={connecting} onClick={handleConnectQR}>
-                  Générer le QR Code
+                  {locale === "fr" ? "Générer le QR Code" : "Generate QR code"}
                 </Button>
               </div>
             </div>
@@ -219,7 +223,9 @@ export default function InstanceDetailPage() {
               {connectData?.qrCode ? (
                 <div className="space-y-3">
                   <p className="text-xs text-text-secondary">
-                    Ouvrez WhatsApp sur votre téléphone → Appareils connectés → Connecter un appareil, puis scannez ce QR code.
+                    {locale === "fr"
+                      ? "Ouvrez WhatsApp sur votre téléphone → Appareils connectés → Connecter un appareil, puis scannez ce QR code."
+                      : "Open WhatsApp on your phone → Linked devices → Link a device, then scan this QR code."}
                   </p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -228,12 +234,12 @@ export default function InstanceDetailPage() {
                     className="w-52 h-52 border border-border rounded-2xl"
                   />
                   <Button variant="ghost" size="sm" onClick={handleConnectQR}>
-                    Regénérer le QR
+                    {locale === "fr" ? "Regénérer le QR" : "Regenerate QR"}
                   </Button>
                 </div>
               ) : (
                 <Button variant="ghost" size="sm" onClick={() => poll()}>
-                  Actualiser le statut
+                  {locale === "fr" ? "Actualiser le statut" : "Refresh status"}
                 </Button>
               )}
             </div>
@@ -241,32 +247,34 @@ export default function InstanceDetailPage() {
         </Card>
 
         <Card>
-          <h2 className="mb-5 text-sm font-semibold text-text">Détails API</h2>
+          <h2 className="mb-5 text-sm font-semibold text-text">{locale === "fr" ? "Détails API" : "API details"}</h2>
           <div className="space-y-4">
             <ApiDetailRow
               label="ID"
               value={instance.id}
-              copyLabel="Copier l’ID"
+              copyLabel={locale === "fr" ? "Copier l’ID" : "Copy ID"}
               copied={copiedField === "id"}
               onCopy={() => handleCopyValue(instance.id, "id")}
             />
             <ApiDetailRow
               label="instanceId"
               value={apiInstanceId}
-              copyLabel="Copier l’instanceId"
+              copyLabel={locale === "fr" ? "Copier l’instanceId" : "Copy instanceId"}
               copied={copiedField === "instanceId"}
               onCopy={() => handleCopyValue(apiInstanceId, "instanceId")}
               canCopy={apiInstanceId !== "Non disponible"}
             />
             <div className="rounded-2xl border border-border bg-bg-subtle p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                Numéro WhatsApp lié
+                {locale === "fr" ? "Numéro WhatsApp lié" : "Linked WhatsApp number"}
               </p>
               <p className="mt-1 break-all font-mono text-sm text-text">
                 {linkedWaNumber}
               </p>
               <p className="mt-2 text-xs text-text-muted">
-                Le numéro WhatsApp lié n’est fiable qu’une fois l’instance connectée et synchronisée.
+                {locale === "fr"
+                  ? "Le numéro WhatsApp lié n’est fiable qu’une fois l’instance connectée et synchronisée."
+                  : "The linked WhatsApp number is only reliable once the instance is connected and synchronized."}
               </p>
             </div>
           </div>
@@ -285,13 +293,15 @@ export default function InstanceDetailPage() {
       <div className="border border-error/30 bg-error-subtle rounded-2xl p-6">
         <div className="flex items-center gap-2 mb-3">
           <AlertDiamondIcon className="w-5 h-5 text-error" />
-          <h2 className="text-sm font-semibold text-text">Zone de danger</h2>
+          <h2 className="text-sm font-semibold text-text">{locale === "fr" ? "Zone de danger" : "Danger zone"}</h2>
         </div>
         <p className="text-sm text-text-secondary mb-4">
-          La suppression de cette instance déconnectera WhatsApp et effacera toutes les données associées.
+          {locale === "fr"
+            ? "La suppression de cette instance déconnectera WhatsApp et effacera toutes les données associées."
+            : "Deleting this instance will disconnect WhatsApp and erase all associated data."}
         </p>
         <Button variant="danger" onClick={() => setDeleteModalOpen(true)}>
-          Supprimer cette instance
+          {locale === "fr" ? "Supprimer cette instance" : "Delete this instance"}
         </Button>
       </div>
 
@@ -299,18 +309,18 @@ export default function InstanceDetailPage() {
       <Modal
         open={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        title="Supprimer l'instance"
+        title={locale === "fr" ? "Supprimer l'instance" : "Delete instance"}
       >
         <p className="text-sm text-text-body mb-6">
-          Supprimer{" "}
+          {locale === "fr" ? "Supprimer" : "Delete"}{" "}
           <strong className="text-text">{instance.name}</strong> ? WhatsApp sera déconnecté et toutes les données associées seront effacées.
         </p>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setDeleteModalOpen(false)}>
-            Annuler
+            {copy.common.back}
           </Button>
           <Button variant="danger" loading={deleting} onClick={handleDelete}>
-            Supprimer
+            {locale === "fr" ? "Supprimer" : "Delete"}
           </Button>
         </div>
       </Modal>

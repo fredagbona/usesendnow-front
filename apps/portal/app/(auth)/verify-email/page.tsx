@@ -9,6 +9,7 @@ import { apiClient } from "@usesendnow/api-client"
 import BrandMark from "@/components/shared/BrandMark"
 import AuthTransition from "@/components/shared/AuthTransition"
 import Alert from "@/components/ui/Alert"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 const VERIFICATION_EMAIL_STORAGE_KEY = "msgflash-verification-email"
 
@@ -22,11 +23,14 @@ type VerificationState =
   | "error"
 
 function VerifyEmailContent() {
+  const { copy } = usePortalLocale()
+  const verifyCopy = copy.auth.verifyEmail
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
   const [state, setState] = useState<VerificationState>("loading")
   const [resending, setResending] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  const [noticeVariant, setNoticeVariant] = useState<"success" | "error">("success")
   const [storedEmail, setStoredEmail] = useState<string | null>(null)
 
   useEffect(() => {
@@ -78,9 +82,11 @@ function VerifyEmailContent() {
     setNotice(null)
     try {
       await apiClient.auth.resendVerification(storedEmail)
-      setNotice("Un nouveau lien de vérification a été envoyé.")
+      setNotice(verifyCopy.resendSuccess)
+      setNoticeVariant("success")
     } catch {
-      setNotice("Impossible de renvoyer le lien pour le moment.")
+      setNotice(verifyCopy.resendFailed)
+      setNoticeVariant("error")
     } finally {
       setResending(false)
     }
@@ -90,43 +96,43 @@ function VerifyEmailContent() {
     switch (state) {
       case "success":
         return {
-          title: "E-mail vérifié",
-          description: "Votre compte est maintenant activé. Vous pouvez vous connecter.",
+          title: verifyCopy.states.successTitle,
+          description: verifyCopy.states.successDescription,
         }
       case "already_verified":
         return {
-          title: "E-mail déjà vérifié",
-          description: "Votre compte est déjà activé. Vous pouvez vous connecter immédiatement.",
+          title: verifyCopy.states.alreadyVerifiedTitle,
+          description: verifyCopy.states.alreadyVerifiedDescription,
         }
       case "expired":
         return {
-          title: "Lien expiré",
-          description: "Ce lien de vérification a expiré. Demandez un nouveau lien pour continuer.",
+          title: verifyCopy.states.expiredTitle,
+          description: verifyCopy.states.expiredDescription,
         }
       case "used":
         return {
-          title: "Lien déjà utilisé",
-          description: "Ce lien a déjà servi. Si votre compte n’est pas activé, demandez un nouveau lien.",
+          title: verifyCopy.states.usedTitle,
+          description: verifyCopy.states.usedDescription,
         }
       case "invalid":
         return {
-          title: "Lien invalide",
-          description: "Ce lien de vérification n’est pas valide.",
+          title: verifyCopy.states.invalidTitle,
+          description: verifyCopy.states.invalidDescription,
         }
       default:
         return {
-          title: "Vérification impossible",
-          description: "Nous n’avons pas pu vérifier votre adresse e-mail pour le moment.",
+          title: verifyCopy.states.errorTitle,
+          description: verifyCopy.states.errorDescription,
         }
     }
-  }, [state])
+  }, [state, verifyCopy.states])
 
   if (state === "loading") {
     return (
       <>
         <AuthTransition
-          title="Vérification de votre e-mail"
-          description="Nous validons votre lien et activons votre compte."
+          title={verifyCopy.loadingTitle}
+          description={verifyCopy.loadingDescription}
         />
         <div className="w-full max-w-sm" />
       </>
@@ -151,7 +157,7 @@ function VerifyEmailContent() {
 
         {notice && (
           <Alert
-            variant={notice.includes("Impossible") ? "error" : "success"}
+            variant={noticeVariant}
             message={notice}
             onClose={() => setNotice(null)}
           />
@@ -165,7 +171,7 @@ function VerifyEmailContent() {
               disabled={resending}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-none border border-border-strong bg-bg text-sm font-medium text-text hover:bg-primary-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[3px_3px_0px_0px_rgba(10,10,10,0.12)]"
             >
-              {resending ? "Renvoi en cours..." : "Renvoyer l’e-mail de vérification"}
+              {resending ? verifyCopy.resending : verifyCopy.resend}
             </button>
           )}
 
@@ -173,7 +179,7 @@ function VerifyEmailContent() {
             href={storedEmail ? `/login?email=${encodeURIComponent(storedEmail)}` : "/login"}
             className="w-full inline-flex items-center justify-center px-4 py-3 rounded-none bg-primary text-black text-sm font-semibold uppercase tracking-wide hover:bg-primary-hover transition-colors border border-[#0A0A0A] shadow-[3px_3px_0px_0px_rgba(10,10,10,0.12)]"
           >
-            Aller à la connexion
+            {verifyCopy.goToLogin}
           </Link>
         </div>
       </div>
@@ -182,12 +188,14 @@ function VerifyEmailContent() {
 }
 
 export default function VerifyEmailPage() {
+  const { copy } = usePortalLocale()
+  const verifyCopy = copy.auth.verifyEmail
   return (
     <Suspense
       fallback={
         <AuthTransition
-          title="Vérification de votre e-mail"
-          description="Nous validons votre lien et activons votre compte."
+          title={verifyCopy.loadingTitle}
+          description={verifyCopy.loadingDescription}
         />
       }
     >

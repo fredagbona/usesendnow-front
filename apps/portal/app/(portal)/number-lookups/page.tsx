@@ -10,6 +10,7 @@ import LookupResultsTabs from "@/components/number-lookups/LookupResultsTabs"
 import LookupHistoryTable from "@/components/number-lookups/LookupHistoryTable"
 import LookupDetailModal from "@/components/number-lookups/LookupDetailModal"
 import ImportContactsPanel from "@/components/number-lookups/ImportContactsPanel"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { useNumberLookups } from "@/hooks/useNumberLookups"
 import { useInstances } from "@/hooks/useInstances"
 import { useContactGroups } from "@/hooks/useContactGroups"
@@ -18,6 +19,7 @@ import type { NumberLookup } from "@usesendnow/types"
 import { apiClient } from "@usesendnow/api-client"
 
 export default function NumberLookupsPage() {
+  const { copy } = usePortalLocale()
   const { instances, loading: instancesLoading } = useInstances()
   const { groups, loading: groupsLoading } = useContactGroups()
   const {
@@ -80,8 +82,8 @@ export default function NumberLookupsPage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-8 max-w-4xl">
       <PageHeader
-        title="Number Lookups"
-        description="Vérifiez si des numéros sont présents sur WhatsApp et importez-les comme contacts."
+        title={copy.numberLookups.pageTitle}
+        description={copy.numberLookups.pageDescription}
       />
 
       {/* Composer */}
@@ -129,7 +131,7 @@ export default function NumberLookupsPage() {
       {activeLookup && (activeLookup.status === "pending" || activeLookup.status === "processing") && (
         <div className="bg-bg border border-border rounded-2xl p-6 text-center">
           <p className="text-sm text-text-secondary">
-            Lookup en cours de traitement… Les résultats seront disponibles dans quelques instants.
+            {copy.numberLookups.processing}
           </p>
           {activeLookup.progress !== undefined && (
             <div className="mt-3 w-full bg-bg-muted rounded-full h-1.5">
@@ -144,7 +146,7 @@ export default function NumberLookupsPage() {
 
       {/* History */}
       <div>
-        <h2 className="text-sm font-medium text-text mb-4">Historique</h2>
+        <h2 className="text-sm font-medium text-text mb-4">{copy.numberLookups.history}</h2>
         <LookupHistoryTable
           lookups={lookups}
           onView={handleViewLookup}

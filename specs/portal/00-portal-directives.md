@@ -1,14 +1,14 @@
 
 # DIRECTIVES — Portal (Tableau de bord utilisateur)
 App: portal
-URL: app.usesendnow.com
+URL: app.msgflash.com
 Status: référence permanente — lire avant toute spec portal
 
 ---
 
 ## Ce qu'est le portal
 
-Le portal est le control plane humain de UseSendNow.
+Le portal est le control plane humain de MsgFlash.
 Ce n'est pas un outil marketing. C'est une console technique.
 L'utilisateur vient ici pour configurer, connecter, surveiller — pas pour naviguer.
 

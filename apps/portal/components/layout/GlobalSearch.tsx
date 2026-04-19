@@ -12,15 +12,7 @@ import {
   UserGroupIcon,
 } from "hugeicons-react"
 import { useGlobalSearch, type GlobalSearchCategory, type GlobalSearchResult } from "@/hooks/useGlobalSearch"
-
-const CATEGORY_LABEL: Record<GlobalSearchCategory, string> = {
-  page: "Page",
-  instance: "Instance",
-  message: "Message",
-  campaign: "Campagne",
-  contact: "Contact",
-  group: "Groupe",
-}
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 function ResultIcon({ category }: { category: GlobalSearchCategory }) {
   switch (category) {
@@ -40,6 +32,7 @@ function ResultIcon({ category }: { category: GlobalSearchCategory }) {
 
 export default function GlobalSearch() {
   const router = useRouter()
+  const { copy } = usePortalLocale()
   const wrapperRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState("")
@@ -115,6 +108,14 @@ export default function GlobalSearch() {
   }
 
   const shouldShowDropdown = open && (query.trim().length > 0 || loading || !!error)
+  const categoryLabel: Record<GlobalSearchCategory, string> = {
+    page: copy.globalSearch.categories.page,
+    instance: copy.globalSearch.categories.instance,
+    message: copy.globalSearch.categories.message,
+    campaign: copy.globalSearch.categories.campaign,
+    contact: copy.globalSearch.categories.contact,
+    group: copy.globalSearch.categories.group,
+  }
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -129,7 +130,7 @@ export default function GlobalSearch() {
           setOpen(true)
         }}
         onKeyDown={handleKeyDown}
-        placeholder="Recherche globale…"
+        placeholder={copy.globalSearch.placeholder}
         className="w-56 sm:w-72 lg:w-96 pl-8 pr-10 py-2 text-sm bg-bg-subtle border border-border rounded-none placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-border-strong transition-all duration-200"
       />
       <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center text-[10px] text-text-muted font-medium border border-border rounded-none px-1 py-0.5 bg-bg-muted select-none">
@@ -139,17 +140,15 @@ export default function GlobalSearch() {
       {shouldShowDropdown && (
         <div className="absolute left-0 top-full mt-2 w-full overflow-hidden rounded-2xl border border-border bg-bg shadow-[0_16px_40px_rgba(0,0,0,0.18)] z-50">
           <div className="border-b border-border px-4 py-3 text-xs text-text-muted">
-            {query.trim().length < 2
-              ? "Tapez au moins 2 caractères pour lancer la recherche globale."
-              : "Recherche dans les pages, instances, messages, campagnes, contacts et groupes."}
+            {query.trim().length < 2 ? copy.globalSearch.minChars : copy.globalSearch.scope}
           </div>
 
           {loading && query.trim().length >= 2 ? (
-            <div className="px-4 py-6 text-sm text-text-secondary">Recherche en cours…</div>
+            <div className="px-4 py-6 text-sm text-text-secondary">{copy.globalSearch.searching}</div>
           ) : error ? (
             <div className="px-4 py-6 text-sm text-error-hover">{error}</div>
           ) : visibleResults.length === 0 && query.trim().length >= 2 ? (
-            <div className="px-4 py-6 text-sm text-text-secondary">Aucun résultat.</div>
+            <div className="px-4 py-6 text-sm text-text-secondary">{copy.globalSearch.noResults}</div>
           ) : (
             <div className="max-h-96 overflow-y-auto">
               {visibleResults.map((item, index) => (
@@ -170,7 +169,7 @@ export default function GlobalSearch() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-text truncate">{item.title}</span>
                       <span className="rounded-full bg-bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-text-muted">
-                        {CATEGORY_LABEL[item.category]}
+                        {categoryLabel[item.category]}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-text-secondary truncate">{item.description}</p>

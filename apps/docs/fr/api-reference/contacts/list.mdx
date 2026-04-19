@@ -1,0 +1,32 @@
+---
+title: GET Lister les contacts
+description: Liste les contacts de votre compte.
+---
+
+import { DocLocaleSwitch } from "../../../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
+## Endpoint
+
+```txt
+GET /api/v1/contacts
+```
+
+## Réponse succès `200`
+
+```json
+{
+  "data": [
+    {
+      "id": "cnt_uuid",
+      "name": "Awa Doe",
+      "phone": "+33612345000",
+      "tags": ["vip"],
+      "meta": {},
+      "createdAt": "2026-04-01T10:00:00.000Z",
+      "updatedAt": "2026-04-01T10:00:00.000Z"
+    }
+  ]
+}
+```

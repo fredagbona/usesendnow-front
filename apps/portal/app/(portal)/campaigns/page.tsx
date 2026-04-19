@@ -11,6 +11,7 @@ import { useContacts } from "@/hooks/useContacts"
 import { useInstances } from "@/hooks/useInstances"
 import { useTemplates } from "@/hooks/useTemplates"
 import { useContactGroups } from "@/hooks/useContactGroups"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
 import { formatDate } from "@/lib/format"
@@ -72,6 +73,77 @@ function getCampaignTotal(campaign: Campaign) {
 
 export default function CampaignsPage() {
   const router = useRouter()
+  const { locale } = usePortalLocale()
+  const copy = {
+    fr: {
+      title: "Campagnes",
+      description: "Envois en masse WhatsApp",
+      create: "Nouvelle campagne",
+      emptyTitle: "Aucune campagne pour l'instant",
+      emptyDescription: "Créez votre première campagne.",
+      template: "Template",
+      pause: "Pause",
+      resume: "Reprendre",
+      cancel: "Annuler",
+      delete: "Supprimer",
+      cancelModal: "Annuler la campagne",
+      deleteModal: "Supprimer la campagne",
+      back: "Retour",
+      monthlyQuota: "Quota mensuel épuisé.",
+      instanceMissing: "Instance introuvable.",
+      invalidContent: "Choisissez un template ou un message direct valide avant de créer la campagne.",
+      createFailed: "Impossible de créer la campagne.",
+      pauseFailed: "Impossible de mettre en pause.",
+      resumeFailed: "Impossible de reprendre la campagne.",
+      cancelFailed: "Impossible d'annuler la campagne.",
+      deleteFailed: "Impossible de supprimer la campagne.",
+      scheduled: "Campagne planifiée",
+      paused: "Campagne mise en pause",
+      resumed: "Campagne reprise",
+      resumedWarmup: "Campagne reprise avec recommandations de warmup",
+      cancelled: "Campagne annulée",
+      deleted: "Campagne supprimée",
+      campaignRunning: "En cours",
+      campaignScheduled: "Planifié",
+      campaignPaused: "En pause",
+      campaignCompleted: "Terminé",
+      campaignFailed: "Échoué",
+    },
+    en: {
+      title: "Campaigns",
+      description: "WhatsApp bulk sends",
+      create: "New campaign",
+      emptyTitle: "No campaigns yet",
+      emptyDescription: "Create your first campaign.",
+      template: "Template",
+      pause: "Pause",
+      resume: "Resume",
+      cancel: "Cancel",
+      delete: "Delete",
+      cancelModal: "Cancel campaign",
+      deleteModal: "Delete campaign",
+      back: "Back",
+      monthlyQuota: "Monthly quota exhausted.",
+      instanceMissing: "Instance not found.",
+      invalidContent: "Choose a valid template or direct message before creating the campaign.",
+      createFailed: "Unable to create the campaign.",
+      pauseFailed: "Unable to pause the campaign.",
+      resumeFailed: "Unable to resume the campaign.",
+      cancelFailed: "Unable to cancel the campaign.",
+      deleteFailed: "Unable to delete the campaign.",
+      scheduled: "Campaign scheduled",
+      paused: "Campaign paused",
+      resumed: "Campaign resumed",
+      resumedWarmup: "Campaign resumed with warmup guidance",
+      cancelled: "Campaign cancelled",
+      deleted: "Campaign deleted",
+      campaignRunning: "Running",
+      campaignScheduled: "Scheduled",
+      campaignPaused: "Paused",
+      campaignCompleted: "Completed",
+      campaignFailed: "Failed",
+    },
+  }[locale]
   const { campaigns, loading, prependCampaign, updateCampaignStatus, removeCampaign } = useCampaigns()
   const { contacts } = useContacts()
   const { instances } = useInstances()
@@ -325,7 +397,7 @@ export default function CampaignsPage() {
       }
       const campaign = await apiClient.campaigns.create(payload)
       prependCampaign(campaign)
-      toast.success("Campagne planifiée")
+      toast.success(copy.scheduled)
       setCreateModalOpen(false)
       setCustomVariables([])
       releaseUploadedMedia()
@@ -351,13 +423,13 @@ export default function CampaignsPage() {
           setPlanBlocked(true)
           setCreateModalOpen(false)
         } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
-          toast.error("Quota mensuel épuisé.")
+          toast.error(copy.monthlyQuota)
         } else if (err.code === "NOT_FOUND") {
-          toast.error("Instance introuvable.")
+          toast.error(copy.instanceMissing)
         } else if (err.code === "VALIDATION_ERROR") {
-          toast.error("Choisissez un template ou un message direct valide avant de créer la campagne.")
+          toast.error(copy.invalidContent)
         } else {
-          toast.error("Impossible de créer la campagne.")
+          toast.error(copy.createFailed)
         }
       }
       } finally {
@@ -370,9 +442,9 @@ export default function CampaignsPage() {
     try {
       await apiClient.campaigns.pause(id)
       updateCampaignStatus(id, "paused")
-      toast.success("Campagne mise en pause")
+      toast.success(copy.paused)
     } catch {
-      toast.error("Impossible de mettre en pause.")
+      toast.error(copy.pauseFailed)
     } finally {
       setPausing(null)
     }
@@ -387,12 +459,12 @@ export default function CampaignsPage() {
       // Check for safety warnings
       const safetyData = (response as any)?.safety
       if (safetyData && safetyData.decision === "warn") {
-        toast.success("Campagne reprise avec recommandations de warmup")
+        toast.success(copy.resumedWarmup)
       } else {
-        toast.success("Campagne reprise")
+        toast.success(copy.resumed)
       }
     } catch {
-      toast.error("Impossible de reprendre la campagne.")
+      toast.error(copy.resumeFailed)
     } finally {
       setResuming(null)
     }
@@ -404,13 +476,13 @@ export default function CampaignsPage() {
     try {
       await apiClient.campaigns.cancel(cancelTarget.id)
       updateCampaignStatus(cancelTarget.id, "cancelled")
-      toast.success("Campagne annulée")
+      toast.success(copy.cancelled)
       setCancelTarget(null)
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "BAD_REQUEST") {
         toast.error("La campagne est déjà terminée ou annulée.")
       } else {
-        toast.error("Impossible d'annuler la campagne.")
+      toast.error(copy.cancelFailed)
       }
     } finally {
       setCancelling(null)
@@ -423,10 +495,10 @@ export default function CampaignsPage() {
     try {
       await apiClient.campaigns.delete(deleteTarget.id)
       removeCampaign(deleteTarget.id)
-      toast.success("Campagne supprimée")
+      toast.success(copy.deleted)
       setDeleteTarget(null)
     } catch {
-      toast.error("Impossible de supprimer la campagne.")
+      toast.error(copy.deleteFailed)
     } finally {
       setDeleting(null)
     }
@@ -435,12 +507,12 @@ export default function CampaignsPage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
-        title="Campagnes"
-        description="Envois en masse WhatsApp"
+        title={copy.title}
+        description={copy.description}
         action={
           !planBlocked && (
             <Button variant="primary" onClick={() => router.push("/campaigns/new")}>
-              Nouvelle campagne
+              {copy.create}
             </Button>
           )
         }
@@ -480,8 +552,8 @@ export default function CampaignsPage() {
           ) : campaigns.length === 0 ? (
             <EmptyState
               icon={<Megaphone01Icon className="w-8 h-8" />}
-              title="Aucune campagne pour l'instant"
-              description="Créez votre première campagne."
+              title={copy.emptyTitle}
+              description={copy.emptyDescription}
               ctaLabel="Nouvelle campagne"
               onCta={() => router.push("/campaigns/new")}
             />
@@ -508,7 +580,7 @@ export default function CampaignsPage() {
                             >
                               {camp.name}
                             </button>
-                            {camp.templateId && <Badge variant="warning">Template</Badge>}
+                            {camp.templateId && <Badge variant="warning">{copy.template}</Badge>}
                           </div>
                         </td>
                         <td className="py-3 pr-4">
@@ -551,7 +623,7 @@ export default function CampaignsPage() {
                         >
                           {camp.name}
                         </button>
-                        {camp.templateId && <Badge variant="warning">Template</Badge>}
+                        {camp.templateId && <Badge variant="warning">{copy.template}</Badge>}
                       </div>
                       <Badge variant={STATUS_VARIANT[camp.status] ?? "neutral"} pulse={camp.status === "running"}>
                         {STATUS_LABEL[camp.status] ?? camp.status}
@@ -582,33 +654,33 @@ export default function CampaignsPage() {
       {/* Create modal */}
 
       {/* Cancel confirmation */}
-      <Modal open={!!cancelTarget} onClose={() => setCancelTarget(null)} title="Annuler la campagne">
+      <Modal open={!!cancelTarget} onClose={() => setCancelTarget(null)} title={copy.cancelModal}>
         {cancelTarget && (
           <>
             <p className="text-sm text-text-body mb-2">
-              Annuler <strong className="text-text">{cancelTarget.name}</strong> ?
+              {copy.cancel} <strong className="text-text">{cancelTarget.name}</strong> ?
             </p>
             <p className="text-sm text-text-secondary mb-6">
               Les messages encore en file seront marqués comme annulés. Les messages déjà partis ou déjà en cours d&apos;envoi ne seront pas rappelés.
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setCancelTarget(null)}>Retour</Button>
-              <Button variant="danger" loading={!!cancelling} onClick={handleCancel}>Annuler la campagne</Button>
+              <Button variant="secondary" onClick={() => setCancelTarget(null)}>{copy.back}</Button>
+              <Button variant="danger" loading={!!cancelling} onClick={handleCancel}>{copy.cancelModal}</Button>
             </div>
           </>
         )}
       </Modal>
 
       {/* Delete confirmation */}
-      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Supprimer la campagne">
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={copy.deleteModal}>
         {deleteTarget && (
           <>
             <p className="text-sm text-text-body mb-6">
               Supprimer <strong className="text-text">{deleteTarget.name}</strong> ? Cette action est irréversible.
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Annuler</Button>
-              <Button variant="danger" loading={!!deleting} onClick={handleDelete}>Supprimer</Button>
+              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>{copy.back}</Button>
+              <Button variant="danger" loading={!!deleting} onClick={handleDelete}>{copy.delete}</Button>
             </div>
           </>
         )}

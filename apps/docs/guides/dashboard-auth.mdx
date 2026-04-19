@@ -1,40 +1,44 @@
 ---
-title: Authentification dashboard
-description: Flux de connexion, inscription, OAuth Google et vérification e-mail pour la console MsgFlash.
+title: Dashboard authentication
+description: Sign in, signup, Google OAuth, and email verification flows for the MsgFlash console.
 ---
 
-## Surface concernée
+import { DocLocaleSwitch } from "../components/DocLocaleSwitch"
 
-Cette page documente l’authentification de la console web :
+<DocLocaleSwitch />
+
+## Scope
+
+This page documents authentication for the web console:
 
 - [app.msgflash.com/login](https://app.msgflash.com/login)
 - [app.msgflash.com/signup](https://app.msgflash.com/signup)
 
-Elle ne concerne pas l’API publique `x-api-key`.
+It does not apply to the public API `x-api-key` flow.
 
 ---
 
-## Endpoints utilisés par la console
+## Endpoints used by the console
 
-| Méthode | Endpoint | Usage |
+| Method | Endpoint | Usage |
 |---|---|---|
-| `POST` | `/api/auth/signup` | Créer un compte |
-| `POST` | `/api/auth/login` | Ouvrir une session |
-| `GET` | `/api/auth/google` | Démarrer OAuth Google |
-| `POST` | `/api/auth/resend-verification` | Renvoyer le mail de vérification |
-| `GET` | `/api/auth/verify-email/validate?token=...` | Vérifier l’état d’un token |
-| `POST` | `/api/auth/verify-email` | Confirmer la vérification e-mail |
-| `POST` | `/api/auth/forgot-password` | Demander un lien de reset |
-| `GET` | `/api/auth/reset-password/validate?token=...` | Vérifier un lien de reset |
-| `POST` | `/api/auth/reset-password` | Définir un nouveau mot de passe |
+| `POST` | `/api/auth/signup` | Create an account |
+| `POST` | `/api/auth/login` | Open a session |
+| `GET` | `/api/auth/google` | Start Google OAuth |
+| `POST` | `/api/auth/resend-verification` | Resend the verification email |
+| `GET` | `/api/auth/verify-email/validate?token=...` | Check a verification token |
+| `POST` | `/api/auth/verify-email` | Confirm email verification |
+| `POST` | `/api/auth/forgot-password` | Request a reset link |
+| `GET` | `/api/auth/reset-password/validate?token=...` | Validate a reset token |
+| `POST` | `/api/auth/reset-password` | Set a new password |
 
 ---
 
-## Inscription par e-mail
+## Email signup
 
-`POST /api/auth/signup` ne connecte plus automatiquement l’utilisateur.
+`POST /api/auth/signup` no longer signs the user in automatically.
 
-Réponse attendue :
+Expected response:
 
 ```json
 {
@@ -46,26 +50,26 @@ Réponse attendue :
 }
 ```
 
-Comportement UX attendu :
-- compte créé
-- écran “Vérifiez votre e-mail”
-- possibilité de renvoyer le lien
-- retour vers la page de connexion
+Expected UX:
+- account created
+- “Check your email” screen
+- resend link available
+- return to the login page
 
 ---
 
-## Connexion par e-mail
+## Email login
 
-`POST /api/auth/login` renvoie toujours un JWT si la connexion réussit.
+`POST /api/auth/login` always returns a JWT if login succeeds.
 
-Cas métier important :
+Important business cases:
 
-| Code | Sens côté UI |
+| Code | UI meaning |
 |---|---|
-| `UNAUTHORIZED` | email ou mot de passe incorrect |
-| `EMAIL_NOT_VERIFIED` | afficher un message clair et proposer le renvoi du mail |
+| `UNAUTHORIZED` | wrong email or password |
+| `EMAIL_NOT_VERIFIED` | show a clear message and offer to resend the email |
 
-Exemple `EMAIL_NOT_VERIFIED` :
+Example `EMAIL_NOT_VERIFIED`:
 
 ```json
 {
@@ -78,62 +82,62 @@ Exemple `EMAIL_NOT_VERIFIED` :
 
 ---
 
-## OAuth Google
+## Google OAuth
 
-Flux :
-1. la console ouvre `GET /api/auth/google`
-2. le backend redirige vers Google
-3. Google revient sur `https://app.msgflash.com/auth/callback`
-4. le token JWT est lu depuis `?token=...`
-5. la console stocke le JWT puis redirige vers `/dashboard`
+Flow:
+1. the console opens `GET /api/auth/google`
+2. the backend redirects to Google
+3. Google returns to `https://app.msgflash.com/auth/callback`
+4. the JWT is read from `?token=...`
+5. the console stores the JWT and redirects to `/dashboard`
 
-Si la callback contient `?error=oauth_failed`, la console renvoie l’utilisateur vers `/login?error=oauth_failed`.
+If the callback contains `?error=oauth_failed`, the console sends the user back to `/login?error=oauth_failed`.
 
 ---
 
-## Vérification e-mail
+## Email verification
 
-Page concernée :
+Relevant page:
 
 ```txt
 /verify-email?token=...
 ```
 
-Flux recommandé :
-1. lire `token`
-2. appeler `GET /api/auth/verify-email/validate?token=...`
-3. si valide, appeler `POST /api/auth/verify-email`
-4. afficher le résultat sans connexion automatique
+Recommended flow:
+1. read the token
+2. call `GET /api/auth/verify-email/validate?token=...`
+3. if valid, call `POST /api/auth/verify-email`
+4. show the result without auto-login
 
-États à gérer :
+States to handle:
 - `valid`
 - `expired`
 - `used`
 - `invalid`
 - `already_verified`
 
-Le compte n’est pas auto-connecté après vérification. L’utilisateur revient ensuite sur `/login`.
+The account is not auto-logged-in after verification. The user returns to `/login`.
 
 ---
 
-## Mot de passe oublié
+## Forgot password
 
-Flux :
-1. formulaire `/forgot-password`
+Flow:
+1. `/forgot-password` form
 2. `POST /api/auth/forgot-password`
-3. réception d’un lien
-4. page `/reset-password?token=...`
-5. validation du token
+3. email with reset link
+4. `/reset-password?token=...`
+5. validate token
 6. `POST /api/auth/reset-password`
-7. retour vers `/login`
+7. return to `/login`
 
 ---
 
-## Notes UX importantes
+## Important UX notes
 
-- L’inscription classique n’ouvre pas de session automatiquement.
-- La vérification e-mail est obligatoire avant connexion.
-- Le bouton “Renvoyer l’e-mail de vérification” doit rester disponible sur :
-  - l’écran après inscription
-  - l’écran de login quand `EMAIL_NOT_VERIFIED` est reçu
-  - la page `/verify-email` quand le token est expiré ou invalide
+- Classic signup does not open a session automatically.
+- Email verification is mandatory before login.
+- The “Resend verification email” button should stay available on:
+  - the screen shown after signup
+  - the login screen when `EMAIL_NOT_VERIFIED` is returned
+  - the `/verify-email` page when the token is expired or invalid

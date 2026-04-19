@@ -1,4 +1,4 @@
-# CLAUDE.md — UseSendNow Frontend Monorepo
+# CLAUDE.md — MsgFlash Frontend Monorepo
 
 This file is for Claude Code (claude.dev CLI agent).
 Read AGENTS.md first — all rules there apply here.
@@ -8,7 +8,7 @@ This file adds Claude-specific context and instructions.
 
 ## What this project is
 
-UseSendNow is an API-first WhatsApp automation platform.
+MsgFlash is an API-first WhatsApp automation platform.
 This repository is the frontend monorepo containing 4 Next.js apps.
 The backend is a separate Node.js/TypeScript/Express API already fully built.
 
@@ -57,7 +57,7 @@ pnpm dev            # all apps simultaneously
 
 - Base URL comes from `NEXT_PUBLIC_API_URL` environment variable
 - Console routes use JWT (`Authorization: Bearer <token>`)
-- Public API routes use API key (`x-api-key: usn_live_<key>`)
+- Public API routes use API key (`x-api-key: msgf_live_<key>`)
 - All API calls go through `@usesendnow/api-client` — never raw fetch
 
 ---

@@ -81,7 +81,7 @@ Affiche :
 - Exemple de vérification (pseudo-code) :
   ```
   signature = HMAC-SHA256(secret, rawBody)
-  compare(signature, request.headers['x-usesendnow-signature'])
+  compare(signature, request.headers['x-msgflash-signature'])
   ```
 - Bouton "I've saved it" pour fermer
 
@@ -136,7 +136,7 @@ Response GET /api/webhooks:
     {
       "id": "wh_abc123",
       "userId": "user_xyz",
-      "url": "https://myapp.com/hooks/usesendnow",
+      "url": "https://myapp.com/hooks/msgflash",
       "secret": "a1b2c3d4e5f6...",
       "events": ["message.delivered", "message.failed"],
       "active": true,
@@ -150,7 +150,7 @@ Response GET /api/webhooks:
 Request POST /api/webhooks:
 ```json
 {
-  "url": "https://myapp.com/hooks/usesendnow",
+  "url": "https://myapp.com/hooks/msgflash",
   "events": ["message.sent", "message.delivered", "message.failed"]
 }
 ```
@@ -160,7 +160,7 @@ Response POST /api/webhooks (succès):
 {
   "data": {
     "id": "wh_new456",
-    "url": "https://myapp.com/hooks/usesendnow",
+    "url": "https://myapp.com/hooks/msgflash",
     "secret": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4",
     "events": ["message.sent", "message.delivered", "message.failed"],
     "active": true,

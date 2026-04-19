@@ -8,6 +8,8 @@ import { fadeIn } from "@/lib/animations"
 import { useTemplates } from "@/hooks/useTemplates"
 import { formatDate } from "@/lib/format"
 import { parseTemplateVariables } from "@/lib/templateEngine"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { portalCopy } from "@/lib/portal-copy"
 import type { Template, TemplateType } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
@@ -117,6 +119,8 @@ function TemplateEditModal({
 
 export default function TemplatesPage() {
   const router = useRouter()
+  const { locale } = usePortalLocale()
+  const copy = portalCopy[locale]
   const { templates, total, page, limit, loading, goToPage, addTemplate, updateTemplate, removeTemplate } = useTemplates()
   const [editTarget, setEditTarget] = useState<Template | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Template | null>(null)
@@ -127,24 +131,24 @@ export default function TemplatesPage() {
   const handleDelete = async () => {
     if (!deleteTarget) return
     setDeleting(deleteTarget.id)
-    try {
-      await api.templates.delete(deleteTarget.id)
-      removeTemplate(deleteTarget.id)
-      setDeleteTarget(null)
-      toast.success("Template supprimé")
-    } catch {
-      toast.error("Impossible de supprimer le template.")
-    } finally {
-      setDeleting(null)
-    }
+      try {
+        await api.templates.delete(deleteTarget.id)
+        removeTemplate(deleteTarget.id)
+        setDeleteTarget(null)
+      toast.success(copy.templates.templateDeleted)
+      } catch {
+      toast.error(copy.templates.templateDeleteFailed)
+      } finally {
+        setDeleting(null)
+      }
   }
 
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
-        title="Templates"
-        description={total > 0 ? `${total} template${total !== 1 ? "s" : ""}` : "Bibliothèque de messages réutilisables"}
-        action={<Button variant="primary" onClick={() => router.push("/templates/new")}>Nouveau template</Button>}
+        title={copy.templates.pageTitle}
+        description={total > 0 ? `${total} template${total !== 1 ? "s" : ""}` : copy.templates.pageDescription}
+        action={<Button variant="primary" onClick={() => router.push("/templates/new")}>{copy.templates.newTemplate}</Button>}
       />
 
       {loading ? (
@@ -154,9 +158,9 @@ export default function TemplatesPage() {
       ) : templates.length === 0 ? (
         <EmptyState
           icon={<File01Icon className="w-8 h-8" />}
-          title="Aucun template pour l’instant"
-          description="Créez votre premier template texte ou média."
-          ctaLabel="Nouveau template"
+          title={copy.templates.emptyTitle}
+          description={copy.templates.emptyDescription}
+          ctaLabel={copy.templates.newTemplate}
           onCta={() => router.push("/templates/new")}
         />
       ) : (
@@ -168,7 +172,7 @@ export default function TemplatesPage() {
                   <h3 className="text-sm font-semibold text-text truncate">{template.name}</h3>
                   <div className="flex gap-1.5">
                     <Badge variant="neutral">{TYPE_LABEL[template.type]}</Badge>
-                    {template.type !== "text" && <Badge variant="warning">Media</Badge>}
+                    {template.type !== "text" && <Badge variant="warning">{copy.templates.media}</Badge>}
                   </div>
                 </div>
 
@@ -186,13 +190,13 @@ export default function TemplatesPage() {
                   </div>
                 )}
 
-                <p className="mt-4 text-xs text-text-muted">Modifié le {formatDate(template.updatedAt)}</p>
+                <p className="mt-4 text-xs text-text-muted">{copy.templates.modifiedAt} {formatDate(template.updatedAt)}</p>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => setEditTarget(template)}>Modifier</Button>
-                  <Button size="sm" variant="ghost" onClick={() => router.push(`/templates/${template.id}`)}>Aperçu</Button>
+                  <Button size="sm" variant="secondary" onClick={() => setEditTarget(template)}>{copy.templates.edit}</Button>
+                  <Button size="sm" variant="ghost" onClick={() => router.push(`/templates/${template.id}`)}>{copy.templates.preview}</Button>
                   <Button size="sm" variant="danger" loading={deleting === template.id} onClick={() => setDeleteTarget(template)}>
-                    Supprimer
+                    {copy.templates.delete}
                   </Button>
                 </div>
               </Card>
@@ -204,10 +208,10 @@ export default function TemplatesPage() {
               <p className="text-sm text-text-secondary">Page {page} / {totalPages}</p>
               <div className="flex gap-2">
                 <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => goToPage(page - 1)}>
-                  Précédent
+                  {copy.templates.previous}
                 </Button>
                 <Button variant="secondary" size="sm" disabled={page >= totalPages} onClick={() => goToPage(page + 1)}>
-                  Suivant
+                  {copy.templates.next}
                 </Button>
               </div>
             </div>
@@ -226,15 +230,15 @@ export default function TemplatesPage() {
         />
       )}
 
-      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Supprimer le template">
+        <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={copy.templates.deleteTitle}>
         {deleteTarget && (
           <div>
             <p className="mb-6 text-sm text-text-body">
-              Supprimer <strong className="text-text">{deleteTarget.name}</strong> ?
+              {copy.templates.confirmDelete} <strong className="text-text">{deleteTarget.name}</strong> ?
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Annuler</Button>
-              <Button variant="danger" loading={!!deleting} onClick={handleDelete}>Supprimer</Button>
+              <Button variant="danger" loading={!!deleting} onClick={handleDelete}>{copy.templates.deleteConfirm}</Button>
             </div>
           </div>
         )}

@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { apiClient } from "@usesendnow/api-client"
 import type { ContactImport } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useContactImports() {
+  const { copy } = usePortalLocale()
   const [imports, setImports] = useState<ContactImport[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -18,11 +20,11 @@ export function useContactImports() {
       const data = await apiClient.contacts.listImports(20)
       setImports(data.imports)
     } catch {
-      setError("Impossible de charger les imports.")
+      setError(copy.hooks.contactImportsLoadError)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [copy.hooks.contactImportsLoadError])
 
   const pollImport = useCallback((importId: string) => {
     if (pollingRefs.current.has(importId)) return
@@ -34,9 +36,11 @@ export function useContactImports() {
           clearInterval(interval)
           pollingRefs.current.delete(importId)
           if (imp.status === "done") {
-            toast.success(`Import terminé — ${imp.importedCount} contacts importés`)
+            toast.success(
+              copy.hooks.contactImportDone.replace("{{count}}", String(imp.importedCount))
+            )
           } else {
-            toast.error("L'import a échoué.")
+            toast.error(copy.hooks.contactImportFailed)
           }
         }
       } catch {
@@ -45,7 +49,7 @@ export function useContactImports() {
       }
     }, 3000)
     pollingRefs.current.set(importId, interval)
-  }, [])
+  }, [copy.hooks.contactImportDone, copy.hooks.contactImportFailed])
 
   useEffect(() => {
     fetchImports()

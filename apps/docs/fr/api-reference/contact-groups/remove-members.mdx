@@ -1,0 +1,37 @@
+---
+title: DELETE Retirer des membres
+description: Retire plusieurs contacts d'un groupe.
+---
+
+import { DocLocaleSwitch } from "../../../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
+## Endpoint
+
+```txt
+DELETE /api/v1/contacts/groups/{groupId}/members
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `groupId` | UUID | oui | ID du groupe |
+
+## Body
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `contactIds` | UUID[] | oui | Contacts à retirer |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "removed": 1,
+    "notInGroup": 1
+  }
+}
+```

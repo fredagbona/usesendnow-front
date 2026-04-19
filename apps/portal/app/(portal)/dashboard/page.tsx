@@ -7,6 +7,7 @@ import { fadeIn } from "@/lib/animations"
 import { formatRelativeDate } from "@/lib/format"
 import { apiClient } from "@usesendnow/api-client"
 import type { SubscriptionResponse, Message, Campaign, Plan, PlanLimits } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import PageHeader from "@/components/layout/PageHeader"
 import Card from "@/components/ui/Card"
 import Badge from "@/components/ui/Badge"
@@ -30,14 +31,6 @@ const MESSAGE_STATUS_VARIANT: Record<string, "neutral" | "blue" | "success" | "p
   failed: "error",
 }
 
-const MESSAGE_STATUS_LABEL: Record<string, string> = {
-  queued: "En file",
-  sent: "Envoyé",
-  delivered: "Livré",
-  read: "Lu",
-  failed: "Échoué",
-}
-
 const CAMPAIGN_STATUS_VARIANT: Record<string, "neutral" | "yellow" | "blue" | "orange" | "success" | "error"> = {
   draft: "neutral",
   scheduled: "yellow",
@@ -47,17 +40,6 @@ const CAMPAIGN_STATUS_VARIANT: Record<string, "neutral" | "yellow" | "blue" | "o
   paused_plan: "orange",
   completed: "success",
   failed: "error",
-}
-
-const CAMPAIGN_STATUS_LABEL: Record<string, string> = {
-  draft: "Brouillon",
-  scheduled: "Planifié",
-  running: "En cours",
-  paused: "En pause",
-  paused_quota: "En pause (quota)",
-  paused_plan: "En pause (plan)",
-  completed: "Terminé",
-  failed: "Échoué",
 }
 
 function getFallbackPlan(code: string): Plan {
@@ -150,6 +132,8 @@ function StatTile({
 }
 
 export default function DashboardPage() {
+  const { locale, copy } = usePortalLocale()
+  const d = copy.dashboard
   const router = useRouter()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -192,8 +176,8 @@ export default function DashboardPage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-8">
       <PageHeader
-        title="Tableau de bord"
-        description="Vue d'ensemble de votre activité WhatsApp"
+        title={d.pageTitle}
+        description={d.pageDescription}
       />
 
       {/* No instance alert */}
@@ -201,12 +185,12 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3 p-4 bg-warning-subtle border border-warning/30 rounded-2xl">
           <AlertDiamondIcon className="w-5 h-5 text-warning shrink-0" />
           <p className="text-sm text-text flex-1">
-            Aucune instance WhatsApp connectée.{" "}
+            {d.noInstance}{" "}
             <button
               onClick={() => router.push("/instances")}
               className="text-primary-ink font-medium hover:underline"
             >
-              Connecter maintenant →
+              {d.connectNow}
             </button>
           </p>
         </div>
@@ -219,10 +203,10 @@ export default function DashboardPage() {
           iconBg="bg-primary-subtle"
           iconColor="text-primary"
           value={usage?.effectiveOutboundUsage ?? 0}
-          suffix={`/ ${limits.monthlyOutboundQuota.toLocaleString("fr-FR")}`}
-          label="Messages ce mois"
+          suffix={`/ ${limits.monthlyOutboundQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")}`}
+          label={d.messagesThisMonth}
           trend={usage ? {
-            label: (usage.effectiveOutboundUsage ?? 0) > 0 ? "Actif" : "Aucun envoi",
+            label: (usage.effectiveOutboundUsage ?? 0) > 0 ? d.active : d.noSends,
             positive: (usage.effectiveOutboundUsage ?? 0) > 0,
           } : undefined}
           loading={loading}
@@ -233,9 +217,9 @@ export default function DashboardPage() {
           iconColor="text-[#3B82F6]"
           value={usage?.activeInstancesCount ?? 0}
           suffix={`/ ${limits.maxInstances}`}
-          label="Instances actives"
+          label={d.activeInstances}
           trend={usage ? {
-            label: (usage.activeInstancesCount ?? 0) > 0 ? "En ligne" : "Hors ligne",
+            label: (usage.activeInstancesCount ?? 0) > 0 ? d.online : d.offline,
             positive: (usage.activeInstancesCount ?? 0) > 0,
           } : undefined}
           loading={loading}
@@ -245,8 +229,8 @@ export default function DashboardPage() {
           iconBg="bg-[#FFF7ED]"
           iconColor="text-[#F97316]"
           value={usage?.apiRequestsCount ?? 0}
-          label="Requêtes API ce mois"
-          trend={{ label: "Ce mois" }}
+          label={d.apiRequestsThisMonth}
+          trend={{ label: d.thisMonth }}
           loading={loading}
         />
         <StatTile
@@ -254,9 +238,9 @@ export default function DashboardPage() {
           iconBg="bg-[#FAF5FF]"
           iconColor="text-[#A855F7]"
           value={campaigns.filter((c) => c.status === "running").length}
-          label="Campagnes en cours"
+          label={d.campaignsRunning}
           trend={campaigns.length > 0 ? {
-            label: `${campaigns.length} total`,
+            label: `${campaigns.length} ${d.total}`,
             positive: campaigns.filter((c) => c.status === "running").length > 0,
           } : undefined}
           loading={loading}
@@ -270,30 +254,30 @@ export default function DashboardPage() {
         <Card>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-sm font-semibold text-text">
-              Utilisation — Plan {currentPlan.name}
+              {d.usagePlan} {currentPlan.name}
             </h2>
             {outboundPercent >= 90 && (
               <span className="text-xs text-error-hover font-semibold">
-                {outboundPercent >= 100 ? "Quota épuisé" : "Quota presque épuisé"}
+                {outboundPercent >= 100 ? d.quotaExhausted : d.quotaNear}
               </span>
             )}
           </div>
           <div className="space-y-4">
             <QuotaBar
-              label="Messages & Statuts"
+              label={d.messagesStatuses}
               used={usage.effectiveOutboundUsage ?? 0}
               total={limits.monthlyOutboundQuota}
             />
             <QuotaBar
-              label="Requêtes API"
+              label={d.apiRequests}
               used={usage.apiRequestsCount ?? 0}
               total={limits.monthlyApiRequestQuota}
             />
           </div>
           {subscription?.period && (
             <p className="text-xs text-text-muted mt-4">
-              Quota réinitialisé le{" "}
-              {new Date(subscription.period.end).toLocaleDateString("fr-FR", {
+              {d.quotaResetOn}{" "}
+              {new Date(subscription.period.end).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
                 day: "numeric",
                 month: "long",
                 year: "numeric",
@@ -308,12 +292,12 @@ export default function DashboardPage() {
         {/* Recent Messages */}
         <Card>
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-semibold text-text">Messages récents</h2>
+            <h2 className="text-sm font-semibold text-text">{d.recentMessages}</h2>
             <button
               onClick={() => router.push("/messages")}
               className="text-xs text-primary-ink hover:text-text hover:underline font-medium"
             >
-              Tout voir →
+              {d.seeAll}
             </button>
           </div>
           {loading ? (
@@ -327,12 +311,12 @@ export default function DashboardPage() {
               <div className="w-12 h-12 rounded-2xl bg-bg-subtle border border-border flex items-center justify-center mx-auto mb-3">
                 <Message01Icon className="w-6 h-6 text-text-muted" />
               </div>
-              <p className="text-sm text-text-secondary">Aucun message envoyé.</p>
+              <p className="text-sm text-text-secondary">{d.noMessages}</p>
               <button
                 onClick={() => router.push("/messages")}
                 className="text-sm text-primary-ink mt-1 hover:text-text hover:underline"
               >
-                Envoyer le premier message
+                {d.sendFirstMessage}
               </button>
             </div>
           ) : (
@@ -344,7 +328,7 @@ export default function DashboardPage() {
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-bg-subtle transition-colors text-left"
                 >
                   <Badge variant={MESSAGE_STATUS_VARIANT[msg.status] ?? "neutral"}>
-                    {MESSAGE_STATUS_LABEL[msg.status] ?? msg.status}
+                    {d.status[msg.status as keyof typeof d.status] ?? msg.status}
                   </Badge>
                   <span className="text-sm text-text-body flex-1 truncate font-mono">
                     {msg.to}
@@ -361,12 +345,12 @@ export default function DashboardPage() {
         {/* Recent Campaigns */}
         <Card>
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-semibold text-text">Campagnes récentes</h2>
+            <h2 className="text-sm font-semibold text-text">{d.recentCampaigns}</h2>
             <button
               onClick={() => router.push("/campaigns")}
               className="text-xs text-primary-ink hover:text-text hover:underline font-medium"
             >
-              Tout voir →
+              {d.seeAll}
             </button>
           </div>
           {loading ? (
@@ -380,12 +364,12 @@ export default function DashboardPage() {
               <div className="w-12 h-12 rounded-2xl bg-bg-subtle border border-border flex items-center justify-center mx-auto mb-3">
                 <Megaphone01Icon className="w-6 h-6 text-text-muted" />
               </div>
-              <p className="text-sm text-text-secondary">Aucune campagne pour l&apos;instant.</p>
+              <p className="text-sm text-text-secondary">{d.noCampaigns}</p>
               <button
                 onClick={() => router.push("/campaigns")}
                 className="text-sm text-primary-ink mt-1 hover:text-text hover:underline"
               >
-                Créer une campagne
+                {d.createCampaign}
               </button>
             </div>
           ) : (
@@ -400,7 +384,7 @@ export default function DashboardPage() {
                     variant={CAMPAIGN_STATUS_VARIANT[camp.status] ?? "neutral"}
                     pulse={camp.status === "running"}
                   >
-                    {CAMPAIGN_STATUS_LABEL[camp.status] ?? camp.status}
+                    {d.status[camp.status as keyof typeof d.status] ?? camp.status}
                   </Badge>
                   <span className="text-sm text-text-body flex-1 truncate">
                     {camp.name}
@@ -418,23 +402,23 @@ export default function DashboardPage() {
 
       {/* Quick actions */}
       <Card>
-        <h2 className="text-sm font-semibold text-text mb-4">Actions rapides</h2>
+        <h2 className="text-sm font-semibold text-text mb-4">{d.quickActions}</h2>
         <div className="flex flex-wrap gap-3">
           <Button variant="primary" onClick={() => router.push("/messages")}>
             <Message01Icon className="w-4 h-4" />
-            Envoyer un message
+            {d.sendMessage}
           </Button>
           <Button variant="secondary" onClick={() => router.push("/campaigns")}>
             <Megaphone01Icon className="w-4 h-4" />
-            Nouvelle campagne
+            {d.newCampaign}
           </Button>
           <Button variant="secondary" onClick={() => router.push("/instances")}>
             <SmartPhone01Icon className="w-4 h-4" />
-            Connecter WhatsApp
+            {d.connectWhatsapp}
           </Button>
           <Button variant="secondary" onClick={() => router.push("/api-keys")}>
             <Key01Icon className="w-4 h-4" />
-            Générer une clé API
+            {d.generateApiKey}
           </Button>
         </div>
       </Card>

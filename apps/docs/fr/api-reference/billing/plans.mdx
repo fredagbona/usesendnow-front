@@ -1,0 +1,41 @@
+---
+title: GET Lister les plans
+description: Retourne le catalogue des plans MsgFlash actifs.
+---
+
+import { DocLocaleSwitch } from "../../../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
+## Endpoint
+
+```txt
+GET /api/v1/billing/plans
+```
+
+## Réponse succès `200`
+
+```json
+{
+  "data": [
+    {
+      "code": "free",
+      "name": "Free",
+      "priceEur": 0,
+      "limits": {
+        "maxInstances": 1,
+        "maxApiKeys": 1,
+        "maxWebhookEndpoints": 0,
+        "monthlyOutboundQuota": 20,
+        "monthlyApiRequestQuota": 1000
+      },
+      "features": {
+        "campaigns": false,
+        "statuses": false,
+        "voiceNotes": true,
+        "webhooks": false
+      }
+    }
+  ]
+}
+```

@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
 import type { NumberLookup, CreateLookupResponse, Instance } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useNumberLookups() {
+  const { copy } = usePortalLocale()
   const [lookups, setLookups] = useState<NumberLookup[]>([])
   const [activeLookup, setActiveLookup] = useState<NumberLookup | null>(null)
   const [loading, setLoading] = useState(true)
@@ -34,9 +36,9 @@ export function useNumberLookups() {
           setPolling(false)
           await fetchLookups()
           if (data.status === "done") {
-            toast.success("Lookup completed")
+            toast.success(copy.toasts.lookupCompleted)
           } else {
-            toast.error("Lookup failed. Please try again.")
+            toast.error(copy.toasts.lookupFailed)
           }
         }
       } catch {
@@ -55,11 +57,11 @@ export function useNumberLookups() {
       )
       setLookups(sorted)
     } catch {
-      setError("Impossible de charger l'historique des lookups.")
+      setError(copy.hooks.numberLookupsHistoryLoadError)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [copy.hooks.numberLookupsHistoryLoadError])
 
   useEffect(() => { fetchLookups() }, [fetchLookups])
 
@@ -89,9 +91,9 @@ export function useNumberLookups() {
           updatedAt: now,
         }
         setActiveLookup(syncLookup)
-        toast.success("Lookup completed")
+        toast.success(copy.toasts.lookupCompleted)
       } else {
-        toast.info("Lookup started. Results will be available shortly.")
+        toast.info(copy.toasts.lookupStarted)
         startPolling(result.lookupId)
       }
 
@@ -100,13 +102,13 @@ export function useNumberLookups() {
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "VALIDATION_ERROR") {
-          toast.error("Données invalides. Vérifiez les numéros saisis.")
+          toast.error(copy.hooks.numberLookupInvalidNumbers)
         } else if (err.code === "NOT_FOUND") {
-          toast.error("Instance introuvable.")
+          toast.error(copy.hooks.numberLookupInstanceNotFound)
         } else if (err.code === "PROVIDER_ERROR" || err.code === "PROVIDER_TIMEOUT" || err.code === "PROVIDER_UNAVAILABLE") {
-          toast.error("Le service de vérification est temporairement indisponible. Réessayez plus tard.")
+          toast.error(copy.hooks.numberLookupProviderUnavailable)
         } else {
-          toast.error("Impossible d'exécuter le lookup. Réessayez.")
+          toast.error(copy.hooks.numberLookupExecuteFailed)
         }
       }
       return null
@@ -120,7 +122,7 @@ export function useNumberLookups() {
       const data = await apiClient.numberLookups.get(id)
       setActiveLookup(data)
     } catch {
-      toast.error("Impossible de charger les résultats du lookup.")
+      toast.error(copy.hooks.numberLookupViewFailed)
     }
   }
 
@@ -138,19 +140,19 @@ export function useNumberLookups() {
       }
       const result = await apiClient.numberLookups.importContacts(lookupId, payload)
       if (result.skipped > 0 && result.created === 0 && result.updated === 0) {
-        toast.info("Certains contacts ont été importés, d'autres ont été ignorés.")
+        toast.info(copy.toasts.partialImport)
       } else {
-        toast.success("Contacts importés avec succès")
+        toast.success(copy.toasts.contactsImported)
       }
       return true
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "LOOKUP_NOT_READY") {
-          toast.error("Le lookup n'est pas encore terminé.")
+          toast.error(copy.hooks.numberLookupNotReady)
         } else if (err.code === "CONTACT_GROUP_NOT_FOUND") {
-          toast.error("Le groupe cible est introuvable.")
+          toast.error(copy.hooks.numberLookupGroupNotFound)
         } else {
-          toast.error("Impossible d'importer les contacts. Réessayez.")
+          toast.error(copy.hooks.numberLookupImportFailed)
         }
       }
       return false

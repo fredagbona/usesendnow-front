@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { ApiKey, ApiKeyUsage } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useApiKeys() {
+  const { copy } = usePortalLocale()
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
   const [usage, setUsage] = useState<ApiKeyUsage[]>([])
   const [periodKey, setPeriodKey] = useState<string | null>(null)
@@ -25,13 +27,13 @@ export function useApiKeys() {
       setPeriodKey(usageData.periodKey)
       setTotalRequests(usageData.totalRequests)
     } catch {
-      setError("Impossible de charger les clés API.")
+      setError(copy.apiKeys.loadError)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchApiKeys() }, [])
+  useEffect(() => { fetchApiKeys() }, [copy.apiKeys.loadError])
 
   const addApiKey = (key: ApiKey) => {
     setApiKeys((prev) => [key, ...prev])

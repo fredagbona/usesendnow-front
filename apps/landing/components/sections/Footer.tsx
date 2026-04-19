@@ -1,37 +1,41 @@
+"use client"
+
 import { landingBrand } from "../../lib/brand"
 import { BrandMark } from "../shared/BrandMark"
-
-const FOOTER_COLUMNS = [
-  {
-    title: "Produit",
-    links: [
-      { label: "Automations", href: "#fonctionnalites" },
-      { label: "WordPress", href: landingBrand.wordpressUrl },
-      { label: "Tarifs", href: "#tarifs" },
-      { label: "API", href: landingBrand.docsUrl },
-    ],
-  },
-  {
-    title: "Ressources",
-    links: [
-      { label: "Documentation", href: landingBrand.docsUrl },
-      { label: "Webhook", href: `${landingBrand.docsUrl}/webhooks` },
-      { label: "Statut", href: landingBrand.appUrl },
-    ],
-  },
-  {
-    title: "Légal",
-    links: [
-      { label: "Confidentialité", href: "/politique-confidentialite" },
-      { label: "Conditions", href: "/conditions-utilisation" },
-      { label: "Contact", href: "/contact" },
-    ],
-  },
-]
+import { useLandingI18n } from "../../lib/landing-i18n"
 
 interface FooterProps {}
 
 export function Footer({}: FooterProps) {
+  const { messages } = useLandingI18n()
+  const footerColumns = [
+    {
+      title: messages.footer.product,
+      links: [
+        { label: messages.footer.links.automations, href: "#fonctionnalites" },
+        { label: messages.footer.links.wordpress, href: landingBrand.wordpressUrl },
+        { label: messages.footer.links.pricing, href: "#tarifs" },
+        { label: messages.footer.links.api, href: landingBrand.docsUrl },
+      ],
+    },
+    {
+      title: messages.footer.resources,
+      links: [
+        { label: messages.footer.links.docs, href: landingBrand.docsUrl },
+        { label: messages.footer.links.webhook, href: `${landingBrand.docsUrl}/webhooks` },
+        { label: messages.footer.links.status, href: landingBrand.appUrl },
+      ],
+    },
+    {
+      title: messages.footer.legal,
+      links: [
+        { label: messages.footer.links.privacy, href: "/politique-confidentialite" },
+        { label: messages.footer.links.terms, href: "/conditions-utilisation" },
+        { label: messages.footer.links.contact, href: "/contact" },
+      ],
+    },
+  ]
+
   return (
     <footer className="border-t border-white/8 bg-[#0A0A0A] px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
@@ -39,12 +43,12 @@ export function Footer({}: FooterProps) {
           <div className="space-y-3">
             <BrandMark textClassName="text-[#FFD600]" />
             <p className="max-w-xs font-(family-name:--font-poppins) text-sm leading-6 text-[#8E8E8E]">
-              Infrastructure WhatsApp pour vos produits, automatisations et scénarios à volume.
+              {messages.footer.description}
             </p>
           </div>
 
           <div className="grid gap-8 sm:grid-cols-3">
-            {FOOTER_COLUMNS.map((column) => (
+            {footerColumns.map((column) => (
               <div key={column.title}>
                 <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.1em] text-[#F0F0F0]">
                   {column.title}
@@ -66,14 +70,14 @@ export function Footer({}: FooterProps) {
         </div>
 
         <div className="mt-10 flex flex-col gap-2 border-t border-white/8 pt-6 font-(family-name:--font-poppins) text-xs text-[#717171] sm:flex-row sm:items-center sm:justify-between">
-          <span>© 2026 msgflash. Tous droits réservés.</span>
+          <span>© 2026 MsgFlash. Tous droits réservés.</span>
           <a
             href="https://www.website-24h.com/"
             target="_blank"
             rel="noopener noreferrer"
             className="transition-colors hover:text-[#F0F0F0]"
           >
-            Designed by Website24h
+            {messages.footer.designCredit}
           </a>
         </div>
       </div>

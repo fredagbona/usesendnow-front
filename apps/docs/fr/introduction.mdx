@@ -1,0 +1,68 @@
+---
+title: Introduction
+description: MsgFlash est une API d'automatisation WhatsApp pour messages, campagnes, contacts, templates, webhooks et billing.
+---
+
+import { DocLocaleSwitch } from "../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
+## Qu'est-ce que MsgFlash ?
+
+MsgFlash est une plateforme API-first qui permet de :
+- envoyer des messages WhatsApp
+- planifier des envois
+- lancer des campagnes
+- gérer des templates dynamiques
+- gérer un carnet d'adresses et des groupes
+- recevoir des événements par webhook
+- suivre votre plan, vos limites et votre consommation
+
+---
+
+## Architecture
+
+![Architecture MsgFlash](/images/Architecture.png)
+
+Chaque instance représente un numéro WhatsApp connecté, géré depuis le dashboard.
+
+---
+
+## Les deux surfaces
+
+<CardGroup cols={2}>
+  <Card title="Dashboard" icon="browser" href="https://app.msgflash.com">
+    L'interface pour connecter vos numéros, gérer vos abonnements, vos contacts, vos campagnes et vos clés API.
+  </Card>
+  <Card title="API publique" icon="code" href="/fr/api-reference/introduction">
+    L'API REST sous `/api/v1/*`, authentifiée par `x-api-key`, pour vos intégrations serveur à serveur.
+  </Card>
+</CardGroup>
+
+---
+
+## Ce que vous pouvez faire via l'API publique
+
+<CardGroup cols={2}>
+  <Card title="Messages" icon="message" href="/fr/guides/send-message">
+    Envoyer ou planifier des messages texte, media, localisation et contact, avec ou sans template.
+  </Card>
+  <Card title="Campagnes" icon="megaphone" href="/fr/guides/campaigns">
+    Créer des campagnes planifiées avec template ou message direct, suivre leur progression et les pauser ou reprendre.
+  </Card>
+  <Card title="Templates" icon="text" href="/fr/guides/templates">
+    Créer des templates réutilisables avec variables `contact.*`, `user.*`, `instance.*` et `custom.*`.
+  </Card>
+  <Card title="Contacts" icon="users" href="/fr/guides/contacts">
+    Gérer vos contacts, vos groupes de contacts et les suppressions en lot.
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/fr/guides/webhooks">
+    Enregistrer vos endpoints et recevoir les événements signés en temps réel.
+  </Card>
+  <Card title="Billing" icon="credit-card" href="/fr/guides/billing">
+    Lire les plans, la souscription courante, l'usage et l'historique des paiements.
+  </Card>
+  <Card title="Uploads média" icon="upload" href="/fr/guides/media-uploads">
+    Préparer un média temporaire avant un envoi direct depuis la console.
+  </Card>
+</CardGroup>

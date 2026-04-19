@@ -1,0 +1,60 @@
+---
+title: GET Récupérer un message
+description: Récupère le détail d'un message par son identifiant.
+---
+
+import { DocLocaleSwitch } from "../../../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
+## Endpoint
+
+```txt
+GET /api/v1/messages/{id}
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID du message |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "msg_uuid",
+    "userId": "user_uuid",
+    "instanceId": "inst_uuid",
+    "contactId": null,
+    "campaignId": null,
+    "direction": "outbound",
+    "type": "text",
+    "from": null,
+    "to": "+33612345678",
+    "body": "Bonjour",
+    "mediaUrl": null,
+    "status": "delivered",
+    "error": null,
+    "meta": {
+      "providerResult": {},
+      "workerSafety": {
+        "decision": "allow",
+        "riskLevel": "low",
+        "state": "stable",
+        "score": 72
+      }
+    },
+    "providerMessageId": "BAE5D1A2B3C4D5E6",
+    "createdAt": "2026-04-01T10:00:00.000Z",
+    "updatedAt": "2026-04-01T10:01:10.000Z"
+  }
+}
+```
+
+## Erreurs courantes
+
+| HTTP | Code | Quand |
+|---|---|---|
+| `404` | `NOT_FOUND` | Message introuvable |

@@ -17,6 +17,7 @@ import type { User } from "@usesendnow/types"
 import Avatar from "@/components/ui/Avatar"
 import { usePortalTheme } from "@/components/ui/ThemeProvider"
 import GlobalSearch from "@/components/layout/GlobalSearch"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 interface TopNavProps {
   user?: User | null
@@ -27,6 +28,7 @@ interface TopNavProps {
 export default function TopNav({ user, planName = "Gratuit", onMobileMenu }: TopNavProps) {
   const router = useRouter()
   const { theme, toggleTheme } = usePortalTheme()
+  const { locale, copy, toggleLocale } = usePortalLocale()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -74,6 +76,16 @@ export default function TopNav({ user, planName = "Gratuit", onMobileMenu }: Top
       </div>
 
       <GlobalSearch />
+
+      <button
+        type="button"
+        onClick={toggleLocale}
+        className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg px-3 py-2 text-xs font-medium text-text-secondary hover:bg-bg-subtle hover:text-text transition-colors cursor-pointer"
+        title={`${copy.topnav.language}: ${locale === "fr" ? copy.common.french : copy.common.english}`}
+      >
+        <span className="font-semibold uppercase tracking-wide">{locale.toUpperCase()}</span>
+        <span>{locale === "fr" ? copy.common.french : copy.common.english}</span>
+      </button>
 
       {/* Right spacer */}
       <div className="flex-1 flex items-center justify-end gap-3">
@@ -136,7 +148,7 @@ export default function TopNav({ user, planName = "Gratuit", onMobileMenu }: Top
                   className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-text-body hover:bg-bg-subtle hover:text-text transition-colors duration-150"
                 >
                   <UserIcon className="w-4 h-4 text-text-secondary" />
-                  Profil
+                  {copy.topnav.profile}
                 </Link>
                 <Link
                   href="/billing"
@@ -144,7 +156,7 @@ export default function TopNav({ user, planName = "Gratuit", onMobileMenu }: Top
                   className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-text-body hover:bg-bg-subtle hover:text-text transition-colors duration-150"
                 >
                   <Invoice01Icon className="w-4 h-4 text-text-secondary" />
-                  Facturation
+                  {copy.topnav.billing}
                 </Link>
               </div>
 
@@ -154,7 +166,7 @@ export default function TopNav({ user, planName = "Gratuit", onMobileMenu }: Top
                   className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-error-hover hover:bg-error-subtle transition-colors duration-150 cursor-pointer"
                 >
                   <Logout02Icon className="w-4 h-4" />
-                  Se déconnecter
+                  {copy.topnav.logout}
                 </button>
               </div>
             </div>

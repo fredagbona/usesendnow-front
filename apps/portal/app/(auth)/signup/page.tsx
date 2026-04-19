@@ -13,22 +13,22 @@ import { EyeIcon, ViewOffIcon, Tick01Icon, Cancel01Icon } from "hugeicons-react"
 import Alert from "@/components/ui/Alert"
 import BrandMark from "@/components/shared/BrandMark"
 import AuthTransition from "@/components/shared/AuthTransition"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 const VERIFICATION_EMAIL_STORAGE_KEY = "msgflash-verification-email"
 
 /* ─── Password rules ──────────────────────────────────────────────────────── */
 
-interface PasswordRule { label: string; test: (v: string) => boolean }
-
+interface PasswordRule { key: "min" | "upper" | "lower" | "number" | "special"; test: (v: string) => boolean }
 const PASSWORD_RULES: PasswordRule[] = [
-  { label: "8 caractères minimum", test: (v) => v.length >= 8 },
-  { label: "Une majuscule",         test: (v) => /[A-Z]/.test(v) },
-  { label: "Une minuscule",         test: (v) => /[a-z]/.test(v) },
-  { label: "Un chiffre",            test: (v) => /[0-9]/.test(v) },
-  { label: "Un caractère spécial",  test: (v) => /[^A-Za-z0-9]/.test(v) },
+  { key: "min", test: (v) => v.length >= 8 },
+  { key: "upper", test: (v) => /[A-Z]/.test(v) },
+  { key: "lower", test: (v) => /[a-z]/.test(v) },
+  { key: "number", test: (v) => /[0-9]/.test(v) },
+  { key: "special", test: (v) => /[^A-Za-z0-9]/.test(v) },
 ]
 
-function PasswordStrength({ password }: { password: string }) {
+function PasswordStrength({ password, labels }: { password: string; labels: Record<PasswordRule["key"], string> }) {
   if (!password) return null
   const passed = PASSWORD_RULES.filter((r) => r.test(password)).length
   const barColor = passed <= 2 ? "bg-error" : passed <= 3 ? "bg-warning" : passed === 4 ? "bg-warning" : "bg-primary"
@@ -43,12 +43,12 @@ function PasswordStrength({ password }: { password: string }) {
         {PASSWORD_RULES.map((rule) => {
           const ok = rule.test(password)
           return (
-            <li key={rule.label} className="flex items-center gap-1.5">
+            <li key={rule.key} className="flex items-center gap-1.5">
               {ok
                 ? <Tick01Icon className="w-3 h-3 text-primary shrink-0" />
                 : <Cancel01Icon className="w-3 h-3 text-text-muted shrink-0" />}
               <span className={["text-xs transition-colors", ok ? "text-primary font-medium" : "text-text-muted"].join(" ")}>
-                {rule.label}
+                {labels[rule.key]}
               </span>
             </li>
           )
@@ -61,6 +61,8 @@ function PasswordStrength({ password }: { password: string }) {
 /* ─── Signup form ─────────────────────────────────────────────────────────── */
 
 export default function SignupPage() {
+  const { copy } = usePortalLocale()
+  const signupCopy = copy.auth.signup
   const router = useRouter()
   const [form, setForm] = useState({ fullName: "", email: "", phone: "", password: "" })
   const [showPassword, setShowPassword] = useState(false)
@@ -68,6 +70,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [resendingVerification, setResendingVerification] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isConflictError, setIsConflictError] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState<string | null>(null)
 
   useEffect(() => {
@@ -84,6 +87,7 @@ export default function SignupPage() {
     e.preventDefault()
     if (!allRulesPassed || !termsAccepted) return
     setError(null)
+    setIsConflictError(false)
     setLoading(true)
     try {
       const response = await apiClient.auth.signup(form.fullName, form.email, form.phone, form.password)
@@ -93,11 +97,14 @@ export default function SignupPage() {
       setVerificationEmail(response.email)
     } catch (err) {
       if (err instanceof ApiClientError) {
-        if (err.code === "CONFLICT") setError("Un compte avec cet email existe déjà.")
-        else if (err.code === "VALIDATION_ERROR") setError("Vérifiez vos informations et réessayez.")
-        else setError("Erreur de connexion. Réessayez.")
+        if (err.code === "CONFLICT") {
+          setError(signupCopy.conflict)
+          setIsConflictError(true)
+        }
+        else if (err.code === "VALIDATION_ERROR") setError(signupCopy.validationError)
+        else setError(signupCopy.genericError)
       } else {
-        setError("Erreur de connexion. Réessayez.")
+        setError(signupCopy.genericError)
       }
     } finally {
       setLoading(false)
@@ -111,7 +118,7 @@ export default function SignupPage() {
     try {
       await apiClient.auth.resendVerification(verificationEmail)
     } catch {
-      setError("Impossible de renvoyer l’e-mail de vérification pour le moment.")
+      setError(signupCopy.resendVerificationFailed)
     } finally {
       setResendingVerification(false)
     }
@@ -128,8 +135,8 @@ export default function SignupPage() {
     <>
       {loading && (
         <AuthTransition
-          title="Création du compte"
-          description="Nous préparons votre espace msgflash et finalisons votre inscription."
+          title={signupCopy.loadingTitle}
+          description={signupCopy.loadingDescription}
         />
       )}
       <motion.div variants={fadeIn} initial={false} animate="visible" className="w-full max-w-sm">
@@ -142,16 +149,16 @@ export default function SignupPage() {
         {verificationEmail ? (
           <>
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-text">Vérifiez votre e-mail</h2>
+              <h2 className="text-2xl font-bold text-text">{signupCopy.verifyTitle}</h2>
               <p className="text-sm text-text-secondary mt-1">
-                Votre compte a bien été créé. Un lien de vérification a été envoyé à <span className="font-medium text-text">{verificationEmail}</span>.
+                {signupCopy.verifyDescriptionPrefix} <span className="font-medium text-text">{verificationEmail}</span>.
               </p>
             </div>
 
             <div className="space-y-4 rounded-none border border-border bg-bg p-5">
               <div className="space-y-2 text-sm text-text-secondary">
-                <p>Ouvrez votre boîte de réception puis cliquez sur le lien pour activer votre compte.</p>
-                <p>Vérifiez aussi votre dossier spam si vous ne voyez pas l’e-mail immédiatement.</p>
+                <p>{signupCopy.verifyStepOpenInbox}</p>
+                <p>{signupCopy.verifyStepSpam}</p>
               </div>
 
               {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
@@ -163,13 +170,13 @@ export default function SignupPage() {
                   disabled={resendingVerification}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-none border border-border-strong bg-bg text-sm font-medium text-text hover:bg-primary-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[3px_3px_0px_0px_rgba(10,10,10,0.12)]"
                 >
-                  {resendingVerification ? "Renvoi en cours..." : "Renvoyer l’e-mail de vérification"}
+                  {resendingVerification ? signupCopy.resending : signupCopy.resendVerification}
                 </button>
                 <Link
                   href={`/login?email=${encodeURIComponent(verificationEmail)}`}
                   className="w-full inline-flex items-center justify-center px-4 py-3 rounded-none bg-primary text-black text-sm font-semibold uppercase tracking-wide hover:bg-primary-hover transition-colors border border-[#0A0A0A] shadow-[3px_3px_0px_0px_rgba(10,10,10,0.12)]"
                 >
-                  Retour à la connexion
+                  {signupCopy.backToLogin}
                 </Link>
                 <a
                   href="https://mail.google.com/"
@@ -177,7 +184,7 @@ export default function SignupPage() {
                   rel="noreferrer"
                   className="inline-flex text-sm font-medium text-primary-ink hover:underline"
                 >
-                  Ouvrir Gmail
+                  {signupCopy.openGmail}
                 </a>
               </div>
             </div>
@@ -185,8 +192,8 @@ export default function SignupPage() {
         ) : (
           <>
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-text">Créer un compte</h2>
-          <p className="text-sm text-text-secondary mt-1">Commencez à expédier vos messages en production.</p>
+          <h2 className="text-2xl font-bold text-text">{signupCopy.title}</h2>
+          <p className="text-sm text-text-secondary mt-1">{signupCopy.subtitle}</p>
         </div>
 
       <button
@@ -200,56 +207,56 @@ export default function SignupPage() {
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
         </svg>
-        S&apos;inscrire avec Google
+        {signupCopy.continueWithGoogle}
       </button>
 
       <div className="flex items-center gap-3 my-5">
         <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-text-muted uppercase tracking-widest">ou par email</span>
+        <span className="text-xs text-text-muted uppercase tracking-widest">{signupCopy.orEmail}</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">Nom complet</label>
+          <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">{signupCopy.fullName}</label>
           <input type="text" value={form.fullName} onChange={handleChange("fullName")} placeholder="Jean Dupont" required minLength={2} autoComplete="name" className={inputClass} />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">Email professionnel</label>
+          <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">{signupCopy.workEmail}</label>
           <input type="email" value={form.email} onChange={handleChange("email")} placeholder="nom@entreprise.com" required autoComplete="email" className={inputClass} />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">Téléphone</label>
+          <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">{signupCopy.phone}</label>
           <input type="tel" value={form.phone} onChange={handleChange("phone")} placeholder="+33612345678" required autoComplete="tel" className={inputClass} />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">Mot de passe</label>
+          <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">{signupCopy.password}</label>
           <div className="relative">
             <input type={showPassword ? "text" : "password"} value={form.password} onChange={handleChange("password")} placeholder="••••••••" required autoComplete="new-password" className={inputClass + " pr-10"} />
             <button type="button" tabIndex={-1} onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors cursor-pointer">
               {showPassword ? <ViewOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
             </button>
           </div>
-          <PasswordStrength password={form.password} />
+          <PasswordStrength password={form.password} labels={signupCopy.passwordRules} />
         </div>
 
         <label className="flex items-start gap-2.5 cursor-pointer">
           <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-0.5 w-4 h-4 rounded-none border-border-strong accent-primary cursor-pointer" />
           <span className="text-xs text-text-secondary leading-snug">
-            J&apos;accepte les{" "}
-            <Link href={`${portalBrand.siteUrl}/conditions-utilisation`} className="text-primary-ink font-medium hover:underline" target="_blank" rel="noreferrer">Conditions d&apos;utilisation</Link>
-            {" "}et la{" "}
-            <Link href={`${portalBrand.siteUrl}/politique-confidentialite`} className="text-primary-ink font-medium hover:underline" target="_blank" rel="noreferrer">Politique de confidentialité</Link>
+            {signupCopy.termsPrefix}{" "}
+            <Link href={`${portalBrand.siteUrl}/conditions-utilisation`} className="text-primary-ink font-medium hover:underline" target="_blank" rel="noreferrer">{signupCopy.termsLink}</Link>
+            {" "}{signupCopy.termsAnd}{" "}
+            <Link href={`${portalBrand.siteUrl}/politique-confidentialite`} className="text-primary-ink font-medium hover:underline" target="_blank" rel="noreferrer">{signupCopy.privacyLink}</Link>
           </span>
         </label>
 
         {error && (
           <Alert variant="error" message={error} onClose={() => setError(null)}>
-            {error.includes("existe déjà") && (
-              <Link href="/login" className="underline font-medium mt-0.5 inline-block">Se connecter →</Link>
+            {isConflictError && (
+              <Link href="/login" className="underline font-medium mt-0.5 inline-block">{signupCopy.loginHint}</Link>
             )}
           </Alert>
         )}
@@ -265,15 +272,15 @@ export default function SignupPage() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              Création...
+              {signupCopy.submitting}
             </>
-          ) : "Créer mon compte"}
+          ) : signupCopy.submit}
         </button>
       </form>
 
         <p className="text-center text-sm text-text-secondary mt-5">
-          Déjà un compte ?{" "}
-          <Link href="/login" className="text-primary-ink font-semibold hover:underline">Se connecter</Link>
+          {signupCopy.hasAccount}{" "}
+          <Link href="/login" className="text-primary-ink font-semibold hover:underline">{signupCopy.loginCta}</Link>
         </p>
           </>
         )}

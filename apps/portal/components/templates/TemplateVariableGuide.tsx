@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import Badge from "@/components/ui/Badge"
 import { getAutomaticVariables, getCustomVariables } from "@/lib/templateEngine"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 const VARIABLE_EXAMPLES = [
   "{{contact.firstName}}",
@@ -42,6 +43,7 @@ export function TemplateVariableGuide({
   variables,
   title = "Variables supportées",
 }: TemplateVariableGuideProps) {
+  const { locale } = usePortalLocale()
   const automaticVariables = useMemo(() => getAutomaticVariables(variables), [variables])
   const customVariables = useMemo(() => getCustomVariables(variables), [variables])
 
@@ -50,10 +52,10 @@ export function TemplateVariableGuide({
       <div className="space-y-1">
         <p className="text-sm font-semibold text-text-body">{title}</p>
         <p className="text-xs text-text-secondary">
-          Format: <code className="rounded bg-bg px-1.5 py-0.5 font-mono text-text">{"{{namespace.variable}}"}</code>
+          {locale === "fr" ? "Format" : "Format"}: <code className="rounded bg-bg px-1.5 py-0.5 font-mono text-text">{"{{namespace.variable}}"}</code>
         </p>
         <p className="text-xs text-text-secondary">
-          Exemples{" "}
+          {locale === "fr" ? "Exemples" : "Examples"}{" "}
           {VARIABLE_EXAMPLES.map((example, index) => (
             <span key={example}>
               <code className="rounded bg-bg px-1.5 py-0.5 font-mono text-text">{example}</code>
@@ -64,29 +66,29 @@ export function TemplateVariableGuide({
       </div>
 
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-text-body">Détectées dans ce template</p>
+        <p className="text-sm font-semibold text-text-body">{locale === "fr" ? "Détectées dans ce template" : "Detected in this template"}</p>
         <div className="space-y-2">
           <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">Variables automatiques</p>
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">{locale === "fr" ? "Variables automatiques" : "Automatic variables"}</p>
             <VariableBadges
               variables={automaticVariables}
-              emptyLabel="Aucune variable contact.*, user.* ou instance.* détectée."
+              emptyLabel={locale === "fr" ? "Aucune variable contact.*, user.* ou instance.* détectée." : "No contact.*, user.* or instance.* variables detected."}
             />
           </div>
           <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">Variables à fournir lors de l’envoi</p>
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">{locale === "fr" ? "Variables à fournir lors de l’envoi" : "Variables to provide when sending"}</p>
             <VariableBadges
               variables={customVariables}
-              emptyLabel="Aucune variable custom.* détectée."
+              emptyLabel={locale === "fr" ? "Aucune variable custom.* détectée." : "No custom.* variables detected."}
             />
           </div>
         </div>
       </div>
 
       <div className="space-y-1 text-xs text-text-muted">
-        <p>Les variables contact.*, user.* et instance.* sont remplies automatiquement par le backend.</p>
-        <p>Les variables custom.* devront être renseignées plus tard lors du preview, de l’envoi d’un message ou de la création d’une campagne.</p>
-        <p>Le backend détecte et recalcule automatiquement les variables.</p>
+        <p>{locale === "fr" ? "Les variables contact.*, user.* et instance.* sont remplies automatiquement par le backend." : "contact.*, user.* and instance.* variables are filled automatically by the backend."}</p>
+        <p>{locale === "fr" ? "Les variables custom.* devront être renseignées plus tard lors du preview, de l’envoi d’un message ou de la création d’une campagne." : "custom.* variables must be provided later during preview, message sending, or campaign creation."}</p>
+        <p>{locale === "fr" ? "Le backend détecte et recalcule automatiquement les variables." : "The backend detects and recalculates variables automatically."}</p>
       </div>
     </div>
   )

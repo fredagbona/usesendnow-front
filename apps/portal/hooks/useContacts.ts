@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { toast } from "sonner"
 import { apiClient } from "@usesendnow/api-client"
 import type { Contact } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useContacts() {
+  const { copy } = usePortalLocale()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -17,13 +18,13 @@ export function useContacts() {
       const data = await apiClient.contacts.list()
       setContacts(data)
     } catch {
-      setError("Impossible de charger les contacts.")
+      setError(copy.hooks.contactsLoadError)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchContacts() }, [])
+  useEffect(() => { fetchContacts() }, [copy.hooks.contactsLoadError])
 
   const addContact = (contact: Contact) => {
     setContacts((prev) => [contact, ...prev])

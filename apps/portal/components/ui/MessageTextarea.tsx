@@ -2,6 +2,7 @@
 
 import { useRef } from "react"
 import { EmojiPicker } from "./EmojiPicker"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 interface MessageTextareaProps {
   value: string
@@ -17,13 +18,15 @@ interface MessageTextareaProps {
 export function MessageTextarea({
   value,
   onChange,
-  placeholder = "Rédigez votre message...",
+  placeholder,
   maxLength,
   disabled = false,
   rows = 4,
   label,
   error,
 }: MessageTextareaProps) {
+  const { copy } = usePortalLocale()
+  const resolvedPlaceholder = placeholder ?? copy.ui.messageTextarea.defaultPlaceholder
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   function insertEmojiAtCursor(emoji: string) {
@@ -59,7 +62,7 @@ export function MessageTextarea({
           ref={textareaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           disabled={disabled}
           rows={rows}
           className="w-full px-3 pt-3 pb-1 text-sm text-text placeholder:text-text-muted resize-none focus:outline-none bg-transparent"

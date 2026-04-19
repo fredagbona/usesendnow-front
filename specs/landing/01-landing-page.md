@@ -1,17 +1,17 @@
 # SPEC — Landing Page
 App: landing
 Status: ready
-URL: usesendnow.com
+URL: msgflash.com
 Language: French
 
 ---
 
 ## What this is
 
-The public marketing landing page for UseSendNow.
+The public marketing landing page for MsgFlash.
 Goal: convert visitors into signups or API trial users.
-Primary CTA: "Commencer gratuitement" → app.usesendnow.com/signup
-Secondary CTA: "Voir la documentation" → docs.usesendnow.com
+Primary CTA: "Commencer gratuitement" → app.msgflash.com/signup
+Secondary CTA: "Voir la documentation" → docs.msgflash.com
 
 ---
 
@@ -78,7 +78,7 @@ SVG arrows: minimal, black, 1.5px stroke
 ### 0. NAVBAR
 
 **Layout:** fixed top, full width, blur background
-**Left:** Logo — "UseSendNow" in Geist Bold + green dot accent
+**Left:** Logo — "MsgFlash" in Geist Bold + green dot accent
 **Center (desktop):** navigation links
 **Right:** two buttons
 
@@ -136,12 +136,12 @@ webhooks — via une API propre et documentée.
 **Hero visual below (Central Pill Diagram):**
 Large SVG/div illustration showing the flow:
 ```
-[Votre App] ──→ (( UseSendNow API )) ──→ [WhatsApp]
+[Votre App] ──→ (( MsgFlash API )) ──→ [WhatsApp]
                         ↑
                [Webhooks & Événements]
 ```
 - Central pill: rounded-full, bg-[#25D366], border-2 border-black
-- Text inside pill: "UseSendNow API" in Geist Bold black
+- Text inside pill: "MsgFlash API" in Geist Bold black
 - Side nodes: dark cards with white text
 - Arrows: minimal SVG, black stroke 1.5px
 - Framer Motion: nodes fade in sequentially on mount
@@ -182,7 +182,7 @@ Rien de superflu.
 
 **Section subheadline:**
 ```
-UseSendNow est une plateforme API-first. Chaque fonctionnalité
+MsgFlash est une plateforme API-first. Chaque fonctionnalité
 est accessible via API ou depuis votre tableau de bord.
 ```
 - Poppins, text-white/60, centered
@@ -237,10 +237,10 @@ Border-radius: 16px
 **Card 5 — Full width — API Keys & Sécurité**
 ```
 Titre: "Clés API. Contrôle total."
-Body: "Générez jusqu'à 10 clés selon votre plan. Format usn_live_xxxx.
+Body: "Générez jusqu'à 10 clés selon votre plan. Format msgf_live_xxxx.
 Révocation instantanée. Hash SHA-256 en base — la clé brute n'est jamais stockée."
 Visual: fake API key display:
-  usn_live_a3f9●●●●●●●●●●●●●●●●  [Copier] [Révoquer]
+  msgf_live_a3f9●●●●●●●●●●●●●●●●  [Copier] [Révoquer]
 Border-radius: 16px
 bg slightly lighter than page: #111418
 ```
@@ -301,14 +301,14 @@ Un seul endpoint, une documentation claire."
 
 **Code block below steps:**
 ```json
-POST https://api.usesendnow.com/api/v1/messages/send
-x-api-key: usn_live_xxxxxxxxxxxx
+POST https://api.msgflash.com/api/v1/messages/send
+x-api-key: msgf_live_xxxxxxxxxxxx
 
 {
   "instanceId": "inst_abc123",
   "to": "+41791234567",
   "type": "text",
-  "text": { "body": "Bonjour 👋 depuis UseSendNow !" }
+  "text": { "body": "Bonjour 👋 depuis MsgFlash !" }
 }
 ```
 Style: bg-black, rounded-xl, border border-white/10, font-mono text-sm
@@ -444,7 +444,7 @@ Chaque événement est signé HMAC-SHA256 pour que vous puissiez vérifier
 l'authenticité de la requête.
 
 Q: Quels outils no-code sont compatibles ?
-R: Tout outil supportant les requêtes HTTP fonctionne avec UseSendNow :
+R: Tout outil supportant les requêtes HTTP fonctionne avec MsgFlash :
 Make, n8n, Zapier, Bubble, et tout autre outil avec un module HTTP natif.
 ```
 
@@ -465,7 +465,7 @@ Prêt à connecter WhatsApp
 **Subheadline:**
 ```
 Rejoignez les makers et développeurs qui automatisent
-leurs communications avec UseSendNow.
+leurs communications avec MsgFlash.
 ```
 - Poppins, text-white/60, centered
 
@@ -487,7 +487,7 @@ leurs communications avec UseSendNow.
 
 **Column 1 — Brand**
 ```
-Logo: "UseSendNow" Geist Bold + green dot
+Logo: "MsgFlash" Geist Bold + green dot
 Tagline: "L'infrastructure WhatsApp pour vos produits."
 Poppins text-sm text-white/40
 ```
@@ -518,7 +518,7 @@ Politique de confidentialité
 
 **Bottom bar:**
 ```
-"© 2026 UseSendNow. Tous droits réservés."    |    "Fait avec ✦ en Afrique de l'Ouest"
+"© 2026 MsgFlash. Tous droits réservés."    |    "Fait avec ✦ en Afrique de l'Ouest"
 ```
 - Poppins text-xs text-white/30
 - Both on same row, space-between
@@ -557,7 +557,7 @@ Politique de confidentialité
 
 ## SEO
 
-**Title:** `UseSendNow — API WhatsApp pour makers et développeurs`
+**Title:** `MsgFlash — API WhatsApp pour makers et développeurs`
 **Description:** `Envoyez des messages, planifiez des campagnes et recevez des webhooks WhatsApp via une API propre. Commencez gratuitement.`
 **OG image:** dark card, green logo, tagline (to be designed separately)
 **Lang:** fr

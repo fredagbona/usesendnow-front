@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import type { LookupResultEntry } from "@usesendnow/types"
 import { Tick01Icon, Cancel01Icon, AlertCircleIcon } from "hugeicons-react"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 interface LookupResultsTabsProps {
   onWhatsApp: LookupResultEntry[]
@@ -12,18 +13,24 @@ interface LookupResultsTabsProps {
 
 type TabKey = "onWhatsApp" | "notOnWhatsApp" | "invalid"
 
-const TABS: { key: TabKey; label: string; countKey: string }[] = [
-  { key: "onWhatsApp", label: "Sur WhatsApp", countKey: "onWhatsApp" },
-  { key: "notOnWhatsApp", label: "Absents", countKey: "notOnWhatsApp" },
-  { key: "invalid", label: "Invalides", countKey: "invalid" },
-]
-
 export default function LookupResultsTabs({
   onWhatsApp,
   notOnWhatsApp,
   invalid,
 }: LookupResultsTabsProps) {
+  const { copy } = usePortalLocale()
+  const rt = copy.numberLookups.resultsTabs
   const [activeTab, setActiveTab] = useState<TabKey>("onWhatsApp")
+
+  const tabs = useMemo(
+    () =>
+      [
+        { key: "onWhatsApp" as const, label: rt.onWhatsApp },
+        { key: "notOnWhatsApp" as const, label: rt.notOnWhatsApp },
+        { key: "invalid" as const, label: rt.invalid },
+      ],
+    [rt.onWhatsApp, rt.notOnWhatsApp, rt.invalid]
+  )
 
   const data: Record<TabKey, LookupResultEntry[]> = {
     onWhatsApp,
@@ -47,9 +54,8 @@ export default function LookupResultsTabs({
 
   return (
     <div className="bg-bg border border-border rounded-2xl overflow-hidden shadow-[4px_4px_0px_0px_rgba(10,10,10,0.10)]">
-      {/* Tabs */}
       <div className="flex border-b border-border">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
@@ -66,11 +72,10 @@ export default function LookupResultsTabs({
         ))}
       </div>
 
-      {/* Content */}
       <div className="max-h-80 overflow-y-auto divide-y divide-border">
         {entries.length === 0 ? (
           <div className="py-10 text-center text-sm text-text-muted">
-            Aucun résultat dans cette catégorie.
+            {rt.emptyCategory}
           </div>
         ) : (
           entries.map((entry, idx) => (
@@ -82,12 +87,12 @@ export default function LookupResultsTabs({
                 </p>
                 {entry.normalized && entry.normalized !== entry.input && (
                   <p className="text-xs text-text-muted">
-                    Normalisé : {entry.normalized}
+                    {rt.normalized} {entry.normalized}
                   </p>
                 )}
                 {entry.reason && (
                   <p className="text-xs text-error-hover">
-                    Motif : {entry.reason}
+                    {rt.reasonPrefix} {entry.reason}
                   </p>
                 )}
               </div>

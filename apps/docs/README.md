@@ -1,4 +1,4 @@
-# UseSendNow — Documentation
+# MsgFlash — Documentation
 
 Ce dossier contient le contenu de la documentation hébergée sur Mintlify.
 
@@ -17,7 +17,7 @@ images/                → logo, favicon
 ## Déploiement
 
 Mintlify détecte ce dossier automatiquement depuis GitHub.
-Domaine: docs.usesendnow.com
+Domaine: docs.msgflash.com
 
 ## Modifier le contenu
 

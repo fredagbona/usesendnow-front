@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { ContactGroup } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useContactGroups() {
+  const { copy } = usePortalLocale()
   const [groups, setGroups] = useState<ContactGroup[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -18,13 +20,13 @@ export function useContactGroups() {
       setGroups(data.groups)
       setTotal(data.total)
     } catch {
-      setError("Impossible de charger les groupes.")
+      setError(copy.hooks.contactGroupsLoadError)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchGroups() }, [])
+  useEffect(() => { fetchGroups() }, [copy.hooks.contactGroupsLoadError])
 
   const addGroup = (group: ContactGroup) => {
     setGroups((prev) => [group, ...prev])

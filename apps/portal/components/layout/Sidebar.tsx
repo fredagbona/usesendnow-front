@@ -18,22 +18,7 @@ import {
 } from "hugeicons-react"
 import type { User } from "@usesendnow/types"
 import BrandMark from "@/components/shared/BrandMark"
-
-const NAV_ITEMS = [
-  { label: "Tableau de bord", href: "/dashboard",     icon: Home01Icon },
-  { label: "Instances",       href: "/instances",     icon: SmartPhone01Icon },
-  { label: "Messages",        href: "/messages",      icon: Message01Icon },
-  { label: "Campagnes",       href: "/campaigns",     icon: Megaphone01Icon },
-  { label: "Contacts",        href: "/contacts",      icon: UserGroupIcon },
-  { label: "Templates",       href: "/templates",     icon: File01Icon },
-  { label: "Webhooks",        href: "/webhooks",      icon: WebhookIcon },
-  { label: "Number Lookups",  href: "/number-lookups", icon: Search01Icon },
-] as const
-
-const BOTTOM_ITEMS = [
-  { label: "Clés API",   href: "/api-keys", icon: Key01Icon },
-  { label: "Abonnement", href: "/billing",  icon: CreditCardIcon },
-] as const
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 interface SidebarProps {
   outboundUsed?: number
@@ -52,6 +37,21 @@ export default function Sidebar({
   onToggle,
 }: SidebarProps) {
   const pathname = usePathname()
+  const { copy } = usePortalLocale()
+  const NAV_ITEMS = [
+    { label: copy.nav.dashboard, href: "/dashboard", icon: Home01Icon },
+    { label: copy.nav.instances, href: "/instances", icon: SmartPhone01Icon },
+    { label: copy.nav.messages, href: "/messages", icon: Message01Icon },
+    { label: copy.nav.campaigns, href: "/campaigns", icon: Megaphone01Icon },
+    { label: copy.nav.contacts, href: "/contacts", icon: UserGroupIcon },
+    { label: copy.nav.templates, href: "/templates", icon: File01Icon },
+    { label: copy.nav.webhooks, href: "/webhooks", icon: WebhookIcon },
+    { label: copy.nav.numberLookups, href: "/number-lookups", icon: Search01Icon },
+  ] as const
+  const BOTTOM_ITEMS = [
+    { label: copy.nav.apiKeys, href: "/api-keys", icon: Key01Icon },
+    { label: copy.nav.billing, href: "/billing", icon: CreditCardIcon },
+  ] as const
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/")
@@ -205,7 +205,7 @@ export default function Sidebar({
               href="/billing"
               className="text-xs font-semibold text-primary-ink hover:text-text transition-colors shrink-0"
             >
-              Mettre à niveau
+              {copy.topnav.upgrade}
             </Link>
           </div>
         )}
@@ -214,7 +214,7 @@ export default function Sidebar({
         {collapsed && (
           <Link
             href="/billing"
-            title={`Mettre à niveau — Plan ${planName}`}
+            title={`${copy.topnav.upgrade} — Plan ${planName}`}
             className="flex justify-center py-1.5"
           >
             <div className="w-2 h-2 rounded-full bg-primary" />
@@ -237,6 +237,22 @@ export function MobileDrawer({
   planName?: string
 }) {
   const pathname = usePathname()
+  const { copy } = usePortalLocale()
+  const NAV_ITEMS = [
+    { label: copy.nav.dashboard, href: "/dashboard", icon: Home01Icon },
+    { label: copy.nav.instances, href: "/instances", icon: SmartPhone01Icon },
+    { label: copy.nav.messages, href: "/messages", icon: Message01Icon },
+    { label: copy.nav.campaigns, href: "/campaigns", icon: Megaphone01Icon },
+    { label: copy.nav.contacts, href: "/contacts", icon: UserGroupIcon },
+    { label: copy.nav.templates, href: "/templates", icon: File01Icon },
+    { label: copy.nav.webhooks, href: "/webhooks", icon: WebhookIcon },
+    { label: copy.nav.numberLookups, href: "/number-lookups", icon: Search01Icon },
+  ] as const
+
+  const BOTTOM_ITEMS = [
+    { label: copy.nav.apiKeys, href: "/api-keys", icon: Key01Icon },
+    { label: copy.nav.billing, href: "/billing", icon: CreditCardIcon },
+  ] as const
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/")
 
@@ -253,7 +269,7 @@ export function MobileDrawer({
           <div className="space-y-1">
             <BrandMark textClassName="text-sm text-text" />
             <p className="pl-8 text-[10px] text-text-muted uppercase tracking-widest leading-tight">
-              Console
+              {copy.titles.portal}
             </p>
           </div>
           <button
@@ -336,7 +352,7 @@ export function MobileDrawer({
               onClick={onClose}
               className="text-sm font-semibold text-primary-ink hover:text-text transition-colors"
             >
-              Mettre à niveau
+              {copy.topnav.upgrade}
             </Link>
           </div>
         </div>

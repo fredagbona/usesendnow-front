@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { apiClient } from "@usesendnow/api-client"
 import type { Message } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 interface MessagesFilter {
   instanceId?: string
@@ -11,6 +12,7 @@ interface MessagesFilter {
 }
 
 export function useMessages(filters: MessagesFilter = {}) {
+  const { copy } = usePortalLocale()
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -31,11 +33,11 @@ export function useMessages(filters: MessagesFilter = {}) {
       setNextCursor(data.nextCursor)
       setHasMore(data.hasMore)
     } catch {
-      setError("Impossible de charger les messages.")
+      setError(copy.hooks.messagesListLoadError)
     } finally {
       setLoading(false)
     }
-  }, [filters.instanceId, filters.status])
+  }, [filters.instanceId, filters.status, copy.hooks.messagesListLoadError])
 
   useEffect(() => {
     fetchMessages()
@@ -55,7 +57,7 @@ export function useMessages(filters: MessagesFilter = {}) {
       setNextCursor(data.nextCursor)
       setHasMore(data.hasMore)
     } catch {
-      toast.error("Impossible de charger plus de messages.")
+      toast.error(copy.hooks.messagesLoadMoreError)
     } finally {
       setLoadingMore(false)
     }
@@ -78,6 +80,7 @@ export function useMessages(filters: MessagesFilter = {}) {
 }
 
 export function useMessage(id: string) {
+  const { copy } = usePortalLocale()
   const [message, setMessage] = useState<Message | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -89,13 +92,13 @@ export function useMessage(id: string) {
         const data = await apiClient.messages.get(id)
         setMessage(data)
       } catch {
-        setError("Message introuvable.")
+        setError(copy.hooks.messageNotFound)
       } finally {
         setLoading(false)
       }
     }
     fetch()
-  }, [id])
+  }, [id, copy.hooks.messageNotFound])
 
   return { message, loading, error }
 }

@@ -115,7 +115,7 @@ Afficher le `providerMessageId` dans le toast de manière discrète (optionnel).
 - Seules les instances avec `status: "connected"` peuvent publier des statuts.
 - Plan Free : `features.statuses = false` → PlanGateBanner.
 - La publication consomme le quota outbound (`effectiveOutboundUsage++`).
-- Un statut publié n'est pas stocké côté UseSendNow (pas de modèle Status en DB v1) — seul le `providerMessageId` est retourné.
+- Un statut publié n'est pas stocké côté MsgFlash (pas de modèle Status en DB v1) — seul le `providerMessageId` est retourné.
 
 ---
 

@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { SubscriptionResponse, Plan } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useBilling() {
+  const { copy } = usePortalLocale()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [plans, setPlans] = useState<Plan[]>([])
   const [loading, setLoading] = useState(true)
@@ -21,13 +23,13 @@ export function useBilling() {
       setSubscription(sub)
       setPlans(plansData)
     } catch {
-      setError("Impossible de charger les données de facturation.")
+      setError(`${copy.billing.loadErrorTitle}.`)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchBilling() }, [])
+  useEffect(() => { fetchBilling() }, [copy.billing.loadErrorTitle])
 
   return { subscription, plans, loading, error, refetch: fetchBilling, setSubscription }
 }

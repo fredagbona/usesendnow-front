@@ -1,4 +1,4 @@
-# AGENTS.md — UseSendNow Frontend Monorepo
+# AGENTS.md — MsgFlash Frontend Monorepo
 
 This file is the global reference for any AI coding agent working in this repository.
 Read this before writing any code. App-level AGENTS.md files add specifics on top of these rules.
@@ -7,9 +7,9 @@ Read this before writing any code. App-level AGENTS.md files add specifics on to
 
 ## Project Identity
 
-**Product:** UseSendNow — API-first WhatsApp automation platform
-**Frontend repo:** usesendnow-frontend (this repo)
-**Backend repo:** usesendnow-backend (separate repo, already built)
+**Product:** MsgFlash — API-first WhatsApp automation platform
+**Frontend repo:** usesendnow-frontend (this repo; Git name may differ from product brand)
+**Backend repo:** separate Node API (not in this repo)
 **Architecture:** Turborepo monorepo with 4 independent Next.js apps
 
 ---
@@ -18,10 +18,10 @@ Read this before writing any code. App-level AGENTS.md files add specifics on to
 
 | App | Path | URL | Purpose |
 |---|---|---|---|
-| landing | apps/landing | usesendnow.com | Marketing landing page |
-| portal | apps/portal | app.usesendnow.com | User dashboard / control plane |
-| docs | apps/docs | docs.usesendnow.com | API and product documentation |
-| admin | apps/admin | admin.usesendnow.com | Internal admin panel |
+| landing | apps/landing | msgflash.com | Marketing landing page |
+| portal | apps/portal | app.msgflash.com | User dashboard / control plane |
+| docs | apps/docs | docs.msgflash.com | API and product documentation |
+| admin | apps/admin | admin.msgflash.com | Internal admin panel |
 
 ---
 

@@ -18,6 +18,7 @@ import Alert from "@/components/ui/Alert"
 import { SkeletonCard, SkeletonTableRow } from "@/components/ui/Skeleton"
 import { ArrowLeft01Icon, AlertDiamondIcon, CreditCardIcon } from "hugeicons-react"
 import { TYPE_LABEL } from "@/lib/messageComposer"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 const STATUS_VARIANT: Record<string, "neutral" | "yellow" | "blue" | "orange" | "success" | "error" | "purple"> = {
   draft: "neutral",
@@ -138,6 +139,7 @@ function TimelineRow({ label, value }: { label: string; value: string | null | u
 
 export default function CampaignDetailPage() {
   const router = useRouter()
+  const { copy } = usePortalLocale()
   const { id } = useParams<{ id: string }>()
   const { campaign, loading: campaignLoading, error, updateStatus } = useCampaign(id)
   const [stats, setStats] = useState<CampaignDetailStats | null>(null)
@@ -373,7 +375,7 @@ export default function CampaignDetailPage() {
             </p>
           </div>
           <Button variant="primary" size="sm" onClick={() => router.push("/billing")} className="ml-auto shrink-0">
-            Mettre à niveau
+            {copy.topnav.upgrade}
           </Button>
         </div>
       )}

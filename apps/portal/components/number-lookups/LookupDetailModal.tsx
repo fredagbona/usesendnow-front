@@ -5,18 +5,12 @@ import Badge from "@/components/ui/Badge"
 import Button from "@/components/ui/Button"
 import Modal from "@/components/ui/Modal"
 import { Calendar01Icon, CheckmarkCircle01Icon, Cancel01Icon, AlertCircleIcon, Contact01Icon } from "hugeicons-react"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 interface LookupDetailModalProps {
   lookup: NumberLookup | null
   onClose: () => void
   onImport?: (lookupId: string) => void
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  done: "Terminé",
-  failed: "Échoué",
-  pending: "En attente",
-  processing: "En cours",
 }
 
 const STATUS_VARIANTS: Record<string, "success" | "error" | "warning" | "info" | "neutral"> = {
@@ -26,28 +20,37 @@ const STATUS_VARIANTS: Record<string, "success" | "error" | "warning" | "info" |
   processing: "warning",
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+function makeFormatLookupDate(locale: string) {
+  return (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
 }
 
 export default function LookupDetailModal({ lookup, onClose, onImport }: LookupDetailModalProps) {
+  const { locale, copy } = usePortalLocale()
+  const nl = copy.numberLookups
+  const d = nl.detail
+  const formatDate = makeFormatLookupDate(locale)
+
   if (!lookup) return null
 
   const result = lookup.result
-  const instanceName = lookup.instance?.name ?? "—"
-  const instanceStatus = lookup.instance?.status ?? "—"
+  const dash = nl.emDash
+  const instanceName = lookup.instance?.name ?? dash
+  const instanceStatus = lookup.instance?.status ?? dash
   const canImport = lookup.status === "done" && !lookup.importedAt
 
+  const statusLabels = d.status as Record<string, string>
+  const statusLabel = statusLabels[lookup.status] ?? lookup.status
+
   return (
-    <Modal open={!!lookup} onClose={onClose} title="Détails du lookup" maxWidth="max-w-2xl">
+    <Modal open={!!lookup} onClose={onClose} title={d.title} maxWidth="max-w-2xl">
       <div className="space-y-6">
-        {/* Header info */}
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -59,50 +62,47 @@ export default function LookupDetailModal({ lookup, onClose, onImport }: LookupD
             <p className="text-xs text-text-muted font-mono">{lookup.id}</p>
           </div>
           <Badge variant={STATUS_VARIANTS[lookup.status] ?? "neutral"}>
-            {STATUS_LABELS[lookup.status] ?? lookup.status}
+            {statusLabel}
           </Badge>
         </div>
 
-        {/* Instance info */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-bg-subtle border border-border rounded-lg p-3">
-            <p className="text-xs text-text-secondary mb-1">Instance</p>
+            <p className="text-xs text-text-secondary mb-1">{d.instance}</p>
             <p className="text-sm font-medium text-text">{instanceName}</p>
           </div>
           <div className="bg-bg-subtle border border-border rounded-lg p-3">
-            <p className="text-xs text-text-secondary mb-1">Statut instance</p>
+            <p className="text-xs text-text-secondary mb-1">{d.instanceStatus}</p>
             <p className="text-sm font-medium text-text capitalize">{instanceStatus}</p>
           </div>
         </div>
 
-        {/* Summary cards */}
         {lookup.status === "done" && result && (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-bg-subtle border border-border rounded-lg p-3 text-center">
-                <p className="text-xs text-text-secondary">Demandés</p>
+                <p className="text-xs text-text-secondary">{d.requested}</p>
                 <p className="text-xl font-bold text-text">{lookup.requestedCount}</p>
               </div>
               <div className="bg-primary-subtle border border-primary/30 rounded-lg p-3 text-center">
-                <p className="text-xs text-text-secondary">WhatsApp</p>
+                <p className="text-xs text-text-secondary">{d.onWhatsApp}</p>
                 <p className="text-xl font-bold text-primary">{lookup.onWhatsAppCount}</p>
               </div>
               <div className="bg-bg-subtle border border-border rounded-lg p-3 text-center">
-                <p className="text-xs text-text-secondary">Absents</p>
+                <p className="text-xs text-text-secondary">{d.absent}</p>
                 <p className="text-xl font-bold text-text-secondary">{lookup.notOnWhatsAppCount}</p>
               </div>
               <div className="bg-error-subtle border border-error/30 rounded-lg p-3 text-center">
-                <p className="text-xs text-text-secondary">Invalides</p>
+                <p className="text-xs text-text-secondary">{d.invalid}</p>
                 <p className="text-xl font-bold text-error">{lookup.invalidCount}</p>
               </div>
             </div>
 
-            {/* Invalid numbers */}
             {result.invalid.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-text mb-2 flex items-center gap-1.5">
                   <AlertCircleIcon className="w-4 h-4 text-error" />
-                  Numéros invalides
+                  {d.invalidNumbers}
                 </h4>
                 <div className="max-h-40 overflow-y-auto space-y-1.5">
                   {result.invalid.map((entry, idx) => (
@@ -120,12 +120,11 @@ export default function LookupDetailModal({ lookup, onClose, onImport }: LookupD
               </div>
             )}
 
-            {/* Not on WhatsApp */}
             {result.notOnWhatsApp.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-text mb-2 flex items-center gap-1.5">
                   <CheckmarkCircle01Icon className="w-4 h-4 text-text-muted" />
-                  Absents de WhatsApp
+                  {d.notOnWhatsApp}
                 </h4>
                 <div className="max-h-40 overflow-y-auto space-y-1.5">
                   {result.notOnWhatsApp.map((entry, idx) => (
@@ -133,7 +132,7 @@ export default function LookupDetailModal({ lookup, onClose, onImport }: LookupD
                       <div className="min-w-0">
                         <p className="text-sm font-mono text-text truncate">{entry.input}</p>
                         {entry.normalized && entry.normalized !== entry.input && (
-                          <p className="text-xs text-text-muted">Normalisé : {entry.normalized}</p>
+                          <p className="text-xs text-text-muted">{d.normalized} {entry.normalized}</p>
                         )}
                       </div>
                     </div>
@@ -142,12 +141,11 @@ export default function LookupDetailModal({ lookup, onClose, onImport }: LookupD
               </div>
             )}
 
-            {/* On WhatsApp */}
             {result.onWhatsApp.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-text mb-2 flex items-center gap-1.5">
                   <CheckmarkCircle01Icon className="w-4 h-4 text-primary" />
-                  Présents sur WhatsApp
+                  {d.onWhatsAppTitle}
                 </h4>
                 <div className="max-h-40 overflow-y-auto space-y-1.5">
                   {result.onWhatsApp.map((entry, idx) => (
@@ -156,7 +154,7 @@ export default function LookupDetailModal({ lookup, onClose, onImport }: LookupD
                       <div className="min-w-0">
                         <p className="text-sm font-mono text-text truncate">{entry.input}</p>
                         {entry.normalized && entry.normalized !== entry.input && (
-                          <p className="text-xs text-text-muted">Normalisé : {entry.normalized}</p>
+                          <p className="text-xs text-text-muted">{d.normalized} {entry.normalized}</p>
                         )}
                       </div>
                     </div>
@@ -167,7 +165,6 @@ export default function LookupDetailModal({ lookup, onClose, onImport }: LookupD
           </>
         )}
 
-        {/* Error */}
         {lookup.status === "failed" && lookup.error && (
           <div className="flex items-start gap-2 p-3 bg-error-subtle border border-error/30 rounded-xl">
             <AlertCircleIcon className="w-4 h-4 text-error shrink-0 mt-0.5" />
@@ -175,11 +172,10 @@ export default function LookupDetailModal({ lookup, onClose, onImport }: LookupD
           </div>
         )}
 
-        {/* Progress */}
         {lookup.progress !== undefined && lookup.status !== "done" && lookup.status !== "failed" && (
           <div>
             <div className="flex items-center justify-between text-sm mb-1">
-              <span className="text-text-secondary">Progression</span>
+              <span className="text-text-secondary">{d.progress}</span>
               <span className="text-text">{lookup.progress}%</span>
             </div>
             <div className="w-full bg-bg-muted rounded-full h-1.5">
@@ -191,28 +187,29 @@ export default function LookupDetailModal({ lookup, onClose, onImport }: LookupD
           </div>
         )}
 
-        {/* Completed info */}
         {lookup.completedAt && (
           <p className="text-xs text-text-muted text-center">
-            Terminé le {formatDate(lookup.completedAt)}
+            {d.completedOn.replace("{{date}}", formatDate(lookup.completedAt))}
           </p>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t border-border pt-4">
+        <div className="flex items-center justify-between border-t border-border pt-4">
           <div className="flex items-center gap-2">
             {canImport && onImport && (
               <Button variant="primary" size="sm" onClick={() => onImport(lookup.id)}>
                 <Contact01Icon className="w-4 h-4 mr-1.5" />
-                Importer {lookup.onWhatsAppCount} contact{lookup.onWhatsAppCount > 1 ? "s" : ""}
+                {lookup.onWhatsAppCount > 1
+                  ? d.importMany.replace("{{count}}", String(lookup.onWhatsAppCount))
+                  : d.importOne.replace("{{count}}", String(lookup.onWhatsAppCount))}
               </Button>
             )}
             {lookup.importedAt && (
-              <Badge variant="info">Contacts déjà importés</Badge>
+              <Badge variant="info">{d.alreadyImported}</Badge>
             )}
           </div>
           <Button variant="secondary" size="sm" onClick={onClose}>
             <Cancel01Icon className="w-4 h-4 mr-1.5" />
-            Fermer
+            {d.close}
           </Button>
         </div>
       </div>

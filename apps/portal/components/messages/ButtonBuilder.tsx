@@ -1,19 +1,13 @@
 "use client"
 
+import { useMemo } from "react"
 import type { MessageButton, ButtonType } from "@usesendnow/types"
 import Button from "@/components/ui/Button"
 import Input from "@/components/ui/Input"
 import Select from "@/components/ui/Select"
 import Alert from "@/components/ui/Alert"
-import { Add01Icon, Delete01Icon, AlertCircleIcon } from "hugeicons-react"
-
-const BUTTON_TYPES: { value: ButtonType; label: string }[] = [
-  { value: "reply", label: "Réponse" },
-  { value: "copy", label: "Copier" },
-  { value: "url", label: "Lien" },
-  { value: "call", label: "Appel" },
-  { value: "pix", label: "Pix" },
-]
+import { Add01Icon, Delete01Icon } from "hugeicons-react"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 interface ButtonBuilderProps {
   buttons: MessageButton[]
@@ -25,16 +19,29 @@ function generateId(): string {
 }
 
 export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps) {
+  const { copy } = usePortalLocale()
+  const b = copy.messages.buttonBuilder
+  const types = b.types
+
+  const buttonTypes = useMemo(
+    () =>
+      (["reply", "copy", "url", "call", "pix"] as const).map((value) => ({
+        value,
+        label: types[value],
+      })),
+    [types]
+  )
+
   const clearError = (idx: number) => {
     const updated = [...buttons]
-    delete (updated[idx] as any)._error
+    delete (updated[idx] as { _error?: string })._error
     onChange(updated)
   }
 
   const updateButton = (idx: number, updates: Partial<MessageButton>) => {
     const updated = [...buttons]
     updated[idx] = { ...updated[idx], ...updates }
-    delete (updated[idx] as any)._error
+    delete (updated[idx] as { _error?: string })._error
     onChange(updated)
   }
 
@@ -54,10 +61,12 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
     onChange([...buttons.slice(0, idx), base, ...buttons.slice(idx + 1)])
   }
 
+  const pix = b.pixKeyTypes
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-text">Boutons</p>
+        <p className="text-sm font-medium text-text">{b.title}</p>
         <Button
           variant="secondary"
           size="sm"
@@ -65,23 +74,23 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
           onClick={handleAdd}
         >
           <Add01Icon className="w-4 h-4 mr-1" />
-          Ajouter
+          {b.add}
         </Button>
       </div>
 
       {buttons.length === 0 && (
         <p className="text-sm text-text-muted">
-          Aucun bouton configuré. Ajoutez jusqu&apos;à 2 boutons interactifs.
+          {b.emptyHint}
         </p>
       )}
 
       {buttons.map((btn, idx) => {
-        const error = (btn as any)._error
+        const error = (btn as { _error?: string })._error
         return (
           <div key={idx} className="border border-border rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                Bouton {idx + 1}
+                {b.buttonN.replace("{{n}}", String(idx + 1))}
               </span>
               <button
                 type="button"
@@ -93,47 +102,47 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
             </div>
 
             <Select
-              label="Type de bouton"
+              label={b.typeLabel}
               value={btn.title}
               onChange={(e) => handleTypeChange(idx, e.target.value as ButtonType)}
             >
-              {BUTTON_TYPES.map((t) => (
+              {buttonTypes.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </Select>
 
             <Input
-              label="Texte affiché"
+              label={b.displayText}
               value={btn.displayText}
               onChange={(e) => updateButton(idx, { displayText: e.target.value })}
-              placeholder="ex. Visiter le site"
+              placeholder={b.displayPlaceholder}
               maxLength={50}
               hint={`${btn.displayText.length}/50`}
             />
 
             {btn.title === "reply" && (
               <Input
-                label="ID du bouton"
+                label={b.buttonId}
                 value={btn.id ?? ""}
                 onChange={(e) => updateButton(idx, { id: e.target.value })}
                 placeholder="opt1"
-                hint="Identifiant unique pour le callback"
+                hint={b.buttonIdHint}
               />
             )}
 
             {btn.title === "copy" && (
               <Input
-                label="Code à copier"
+                label={b.copyCode}
                 value={btn.copyCode ?? ""}
                 onChange={(e) => updateButton(idx, { copyCode: e.target.value })}
-                placeholder="ex. PROMO2024"
+                placeholder={b.copyPlaceholder}
                 required
               />
             )}
 
             {btn.title === "url" && (
               <Input
-                label="URL"
+                label={b.url}
                 value={btn.url ?? ""}
                 onChange={(e) => updateButton(idx, { url: e.target.value })}
                 placeholder="https://example.com"
@@ -143,7 +152,7 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
 
             {btn.title === "call" && (
               <Input
-                label="Numéro de téléphone"
+                label={b.phone}
                 value={btn.phoneNumber ?? ""}
                 onChange={(e) => updateButton(idx, { phoneNumber: e.target.value })}
                 placeholder="+33612345000"
@@ -154,36 +163,36 @@ export default function ButtonBuilder({ buttons, onChange }: ButtonBuilderProps)
             {btn.title === "pix" && (
               <div className="space-y-3">
                 <Input
-                  label="Devise"
+                  label={b.pixCurrency}
                   value={btn.currency ?? ""}
                   onChange={(e) => updateButton(idx, { currency: e.target.value })}
                   placeholder="BRL"
                   required
                 />
                 <Input
-                  label="Nom du destinataire"
+                  label={b.pixRecipientName}
                   value={btn.name ?? ""}
                   onChange={(e) => updateButton(idx, { name: e.target.value })}
-                  placeholder="Entreprise SARL"
+                  placeholder={b.pixCompanyPlaceholder}
                   required
                 />
                 <Select
-                  label="Type de clé Pix"
+                  label={b.pixKeyType}
                   value={btn.keyType ?? ""}
                   onChange={(e) => updateButton(idx, { keyType: e.target.value })}
                 >
-                  <option value="">Sélectionner...</option>
-                  <option value="cpf">CPF</option>
-                  <option value="cnpj">CNPJ</option>
-                  <option value="email">Email</option>
-                  <option value="phone">Téléphone</option>
-                  <option value="random">Aléatoire</option>
+                  <option value="">{b.pixKeyTypePlaceholder}</option>
+                  <option value="cpf">{pix.cpf}</option>
+                  <option value="cnpj">{pix.cnpj}</option>
+                  <option value="email">{pix.email}</option>
+                  <option value="phone">{pix.phone}</option>
+                  <option value="random">{pix.random}</option>
                 </Select>
                 <Input
-                  label="Clé Pix"
+                  label={b.pixKey}
                   value={btn.key ?? ""}
                   onChange={(e) => updateButton(idx, { key: e.target.value })}
-                  placeholder="ex. 123.456.789-00"
+                  placeholder={b.pixKeyPlaceholder}
                   required
                 />
               </div>

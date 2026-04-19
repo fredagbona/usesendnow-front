@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Button from "@/components/ui/Button"
 import Alert from "@/components/ui/Alert"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 type RecorderState = "idle" | "recording" | "review"
 
@@ -41,6 +42,8 @@ export function VoiceRecorderPanel({
   uploadError,
   uploadNotice,
 }: VoiceRecorderPanelProps) {
+  const { copy } = usePortalLocale()
+  const recorderCopy = copy.messages.voiceRecorder
   const [recorderState, setRecorderState] = useState<RecorderState>("idle")
   const [error, setError] = useState<string | null>(null)
   const [seconds, setSeconds] = useState(0)
@@ -107,12 +110,12 @@ export function VoiceRecorderPanel({
     setSeconds(0)
 
     if (!supportsMediaRecorder()) {
-      setError("L’enregistrement vocal n’est pas supporté sur ce navigateur.")
+      setError(recorderCopy.browserUnsupported)
       return
     }
 
     if (!mimeType) {
-      setError("Votre navigateur ne prend pas en charge un format audio compatible pour les notes vocales. Utilisez plutôt l’envoi de fichier audio.")
+      setError(recorderCopy.mimeUnsupported)
       return
     }
 
@@ -131,14 +134,14 @@ export function VoiceRecorderPanel({
       }
 
       recorder.onerror = () => {
-        setError("Connexion au micro perdue. Enregistrement annulé.")
+        setError(recorderCopy.micDisconnected)
         stopTracks()
         setRecorderState("idle")
       }
 
       recorder.onstop = () => {
         if (chunksRef.current.length === 0) {
-          setError("Nous n’entendons rien. Vérifiez le volume de votre micro.")
+          setError(recorderCopy.silenceDetected)
           stopTracks()
           setRecorderState("idle")
           return
@@ -157,7 +160,7 @@ export function VoiceRecorderPanel({
 
       stream.getAudioTracks().forEach((track) => {
         track.onended = () => {
-          setError("Connexion au micro perdue. Enregistrement annulé.")
+          setError(recorderCopy.micDisconnected)
           stopRecording()
           resetReview()
         }
@@ -172,16 +175,16 @@ export function VoiceRecorderPanel({
     } catch (err) {
       if (err instanceof DOMException) {
         if (err.name === "NotAllowedError") {
-          setError("Accès micro refusé. Veuillez autoriser le micro dans les paramètres de votre navigateur pour enregistrer.")
+          setError(recorderCopy.micDenied)
         } else if (err.name === "NotFoundError") {
-          setError("Aucun microphone détecté. Branchez un périphérique pour continuer.")
+          setError(recorderCopy.micNotFound)
         } else if (err.name === "NotReadableError") {
-          setError("Le microphone est déjà utilisé par une autre application.")
+          setError(recorderCopy.micBusy)
         } else {
-          setError("Impossible de démarrer l’enregistrement vocal.")
+          setError(recorderCopy.startFailed)
         }
       } else {
-        setError("Impossible de démarrer l’enregistrement vocal.")
+        setError(recorderCopy.startFailed)
       }
     }
   }
@@ -220,9 +223,9 @@ export function VoiceRecorderPanel({
     <div className="space-y-4 rounded-2xl border border-border bg-bg-subtle p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-text">Note vocale</p>
+          <p className="text-sm font-medium text-text">{recorderCopy.title}</p>
           <p className="mt-1 text-xs leading-5 text-text-secondary">
-            Enregistrez votre voix, réécoutez-la puis uploadez-la avant l’envoi final.
+            {recorderCopy.description}
           </p>
         </div>
         <div className="rounded-full border border-border bg-bg px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
@@ -237,9 +240,9 @@ export function VoiceRecorderPanel({
       {recorderState === "idle" && (
         <div className="flex flex-wrap items-center gap-3">
           <Button type="button" variant="primary" onClick={handleStartRecording}>
-            Démarrer l’enregistrement
+            {recorderCopy.startRecording}
           </Button>
-          <p className="text-xs text-text-secondary">Le micro ne sera demandé qu’au clic.</p>
+          <p className="text-xs text-text-secondary">{recorderCopy.micRequestedOnClick}</p>
         </div>
       )}
 
@@ -247,7 +250,7 @@ export function VoiceRecorderPanel({
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <span className="h-3 w-3 animate-pulse rounded-full bg-error" />
-            <p className="text-sm font-medium text-text">Enregistrement en cours...</p>
+            <p className="text-sm font-medium text-text">{recorderCopy.recording}</p>
           </div>
           <div className="flex items-end gap-1.5">
             {([
@@ -267,8 +270,8 @@ export function VoiceRecorderPanel({
             ))}
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button type="button" variant="secondary" onClick={handleCancelRecording}>Annuler</Button>
-            <Button type="button" variant="outlined" onClick={stopRecording}>Stop</Button>
+            <Button type="button" variant="secondary" onClick={handleCancelRecording}>{recorderCopy.cancel}</Button>
+            <Button type="button" variant="outlined" onClick={stopRecording}>{recorderCopy.stop}</Button>
           </div>
         </div>
       )}
@@ -277,11 +280,11 @@ export function VoiceRecorderPanel({
         <div className="space-y-4">
           <audio controls src={audioUrl} className="w-full" />
           <div className="flex flex-wrap gap-3">
-            <Button type="button" variant="secondary" onClick={resetReview}>Supprimer</Button>
-            <Button type="button" variant="outlined" onClick={handleStartRecording}>Réenregistrer</Button>
+            <Button type="button" variant="secondary" onClick={resetReview}>{recorderCopy.remove}</Button>
+            <Button type="button" variant="outlined" onClick={handleStartRecording}>{recorderCopy.rerecord}</Button>
             {!hasUploadedVoiceNote && (
               <Button type="button" variant="primary" onClick={handleUploadVoiceNote} loading={uploading}>
-                Uploader la note
+                {recorderCopy.uploadVoiceNote}
               </Button>
             )}
           </div>

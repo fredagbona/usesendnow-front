@@ -10,23 +10,30 @@ import Alert from "@/components/ui/Alert"
 import BrandMark from "@/components/shared/BrandMark"
 import AuthTransition from "@/components/shared/AuthTransition"
 import { EyeIcon, ViewOffIcon, Tick01Icon, Cancel01Icon } from "hugeicons-react"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 const RESET_EMAIL_STORAGE_KEY = "msgflash-reset-email"
 
 interface PasswordRule {
-  label: string
+  key: "min" | "upper" | "lower" | "number" | "special"
   test: (value: string) => boolean
 }
 
 const PASSWORD_RULES: PasswordRule[] = [
-  { label: "8 caractères minimum", test: (value) => value.length >= 8 },
-  { label: "Une majuscule", test: (value) => /[A-Z]/.test(value) },
-  { label: "Une minuscule", test: (value) => /[a-z]/.test(value) },
-  { label: "Un chiffre", test: (value) => /[0-9]/.test(value) },
-  { label: "Un caractère spécial", test: (value) => /[^A-Za-z0-9]/.test(value) },
+  { key: "min", test: (value) => value.length >= 8 },
+  { key: "upper", test: (value) => /[A-Z]/.test(value) },
+  { key: "lower", test: (value) => /[a-z]/.test(value) },
+  { key: "number", test: (value) => /[0-9]/.test(value) },
+  { key: "special", test: (value) => /[^A-Za-z0-9]/.test(value) },
 ]
 
-function PasswordStrength({ password }: { password: string }) {
+function PasswordStrength({
+  password,
+  labels,
+}: {
+  password: string
+  labels: Record<PasswordRule["key"], string>
+}) {
   if (!password) return null
   const passed = PASSWORD_RULES.filter((rule) => rule.test(password)).length
   const barColor = passed <= 2 ? "bg-error" : passed <= 3 ? "bg-warning" : passed === 4 ? "bg-warning" : "bg-primary"
@@ -42,10 +49,10 @@ function PasswordStrength({ password }: { password: string }) {
         {PASSWORD_RULES.map((rule) => {
           const ok = rule.test(password)
           return (
-            <li key={rule.label} className="flex items-center gap-1.5">
+            <li key={rule.key} className="flex items-center gap-1.5">
               {ok ? <Tick01Icon className="w-3 h-3 text-primary shrink-0" /> : <Cancel01Icon className="w-3 h-3 text-text-muted shrink-0" />}
               <span className={["text-xs transition-colors", ok ? "text-primary font-medium" : "text-text-muted"].join(" ")}>
-                {rule.label}
+                {labels[rule.key]}
               </span>
             </li>
           )
@@ -56,6 +63,9 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 function ResetPasswordInner() {
+  const { copy } = usePortalLocale()
+  const resetCopy = copy.auth.resetPassword
+  const ruleLabels = copy.auth.signup.passwordRules
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
@@ -73,13 +83,13 @@ function ResetPasswordInner() {
     if (!password) return null
     return PASSWORD_RULES.every((rule) => rule.test(password))
       ? null
-      : "Le mot de passe ne respecte pas les critères requis."
-  }, [password])
+      : resetCopy.ruleInvalid
+  }, [password, resetCopy.ruleInvalid])
 
   const confirmPasswordError = useMemo(() => {
     if (!confirmPassword) return null
-    return password === confirmPassword ? null : "Les mots de passe ne correspondent pas."
-  }, [password, confirmPassword])
+    return password === confirmPassword ? null : resetCopy.mismatch
+  }, [password, confirmPassword, resetCopy.mismatch])
 
   useEffect(() => {
     if (!token) {
@@ -120,17 +130,17 @@ function ResetPasswordInner() {
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "VALIDATION_ERROR") {
-          setError("Le mot de passe est invalide ou trop court.")
+          setError(resetCopy.invalidPassword)
         } else if (err.code === "BAD_REQUEST") {
           setTokenValid(false)
-          setError("Ce lien de réinitialisation est invalide ou a expiré.")
+          setError(resetCopy.invalidToken)
         } else if (err.code === "UNAUTHORIZED") {
-          setError("Impossible de réinitialiser le mot de passe pour ce compte.")
+          setError(resetCopy.unauthorized)
         } else {
-          setError("Impossible de réinitialiser le mot de passe. Réessayez.")
+          setError(resetCopy.genericError)
         }
       } else {
-        setError("Impossible de réinitialiser le mot de passe. Réessayez.")
+        setError(resetCopy.genericError)
       }
     } finally {
       setLoading(false)
@@ -141,8 +151,8 @@ function ResetPasswordInner() {
     return (
       <>
         <AuthTransition
-          title="Validation de votre lien de réinitialisation..."
-          description="Nous vérifions que votre lien est encore valide."
+          title={resetCopy.validatingTitle}
+          description={resetCopy.validatingDescription}
         />
         <div className="w-full max-w-sm" />
       </>
@@ -158,13 +168,13 @@ function ResetPasswordInner() {
           </div>
         </div>
         <div className="rounded-none border border-border bg-bg p-6">
-          <h2 className="text-2xl font-bold text-text">Ce lien de réinitialisation est invalide ou a expiré.</h2>
+          <h2 className="text-2xl font-bold text-text">{resetCopy.expiredTitle}</h2>
           <p className="mt-2 text-sm text-text-secondary">
-            Demandez un nouveau lien pour continuer.
+            {resetCopy.expiredDescription}
           </p>
           <div className="mt-6">
             <Link href="/forgot-password" className="inline-flex text-sm font-semibold text-primary-ink hover:underline">
-              Demander un nouveau lien
+              {resetCopy.requestNew}
             </Link>
           </div>
         </div>
@@ -176,8 +186,8 @@ function ResetPasswordInner() {
     <>
       {loading && (
         <AuthTransition
-          title="Mise à jour du mot de passe"
-          description="Nous appliquons votre nouveau mot de passe en toute sécurité."
+          title={resetCopy.updatingTitle}
+          description={resetCopy.updatingDescription}
         />
       )}
 
@@ -189,19 +199,19 @@ function ResetPasswordInner() {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-text">Définir un nouveau mot de passe</h2>
-          <p className="mt-1 text-sm text-text-secondary">Choisissez un nouveau mot de passe pour votre compte.</p>
+          <h2 className="text-2xl font-bold text-text">{resetCopy.title}</h2>
+          <p className="mt-1 text-sm text-text-secondary">{resetCopy.subtitle}</p>
         </div>
 
         {success ? (
           <div className="space-y-3 rounded-none border border-border bg-bg p-5">
-            <p className="text-sm font-medium text-text">Votre mot de passe a été mis à jour avec succès.</p>
-            <p className="text-sm text-text-secondary">Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
+            <p className="text-sm font-medium text-text">{resetCopy.successTitle}</p>
+            <p className="text-sm text-text-secondary">{resetCopy.successDescription}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">Nouveau mot de passe</label>
+              <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">{resetCopy.newPassword}</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -221,12 +231,12 @@ function ResetPasswordInner() {
                   {showPassword ? <ViewOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
                 </button>
               </div>
-              <PasswordStrength password={password} />
+              <PasswordStrength password={password} labels={ruleLabels} />
               {passwordError && <p className="text-xs text-error-hover">{passwordError}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">Confirmer le mot de passe</label>
+              <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">{resetCopy.confirmPassword}</label>
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
@@ -256,7 +266,7 @@ function ResetPasswordInner() {
               disabled={loading || !!passwordError || !!confirmPasswordError}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-primary text-black text-sm font-semibold uppercase tracking-[0.08em] hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-[#0A0A0A] shadow-[3px_3px_0px_0px_rgba(10,10,10,0.12)]"
             >
-              {loading ? "Mise à jour..." : "Réinitialiser le mot de passe"}
+              {loading ? resetCopy.submitting : resetCopy.submit}
             </button>
           </form>
         )}

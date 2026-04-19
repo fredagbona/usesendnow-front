@@ -149,13 +149,13 @@ This is fully handled by Dodo — no frontend work needed here.
 After payment, Dodo redirects to:
 
 ```
-https://app.usesendnow.com/billing?success=true
+https://app.msgflash.com/billing?success=true
 ```
 
 Or on cancellation:
 
 ```
-https://app.usesendnow.com/billing?cancelled=true
+https://app.msgflash.com/billing?cancelled=true
 ```
 
 ### Step 5 — Handle return on /billing page

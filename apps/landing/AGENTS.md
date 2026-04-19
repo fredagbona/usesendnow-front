@@ -1,6 +1,6 @@
 # AGENTS.md — Landing App
 App: landing
-URL: usesendnow.com
+URL: msgflash.com
 
 Read the root AGENTS.md first. All global rules apply.
 This file adds landing-specific rules only.
@@ -9,7 +9,7 @@ This file adds landing-specific rules only.
 
 ## Purpose
 
-This app is the public marketing landing page for UseSendNow.
+This app is the public marketing landing page for MsgFlash.
 It is a static/SSG Next.js app — no authentication, no API calls at runtime.
 Goal: convert visitors into signups. Every decision serves that goal.
 

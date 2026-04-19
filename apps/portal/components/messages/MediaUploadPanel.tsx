@@ -2,8 +2,9 @@
 
 import { Delete02Icon, Upload01Icon } from "hugeicons-react"
 import { formatFullDate } from "@/lib/format"
-import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, GLOBAL_MAX_FILE_SIZE, MEDIA_FIELD_LABEL, formatBytes } from "@/lib/messageComposer"
+import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, GLOBAL_MAX_FILE_SIZE, formatBytes } from "@/lib/messageComposer"
 import type { MessageType, UploadedMedia } from "@usesendnow/types"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 interface MediaUploadPanelProps {
   type: MessageType
@@ -30,20 +31,32 @@ export function MediaUploadPanel({
   onFileChange,
   onRemove,
 }: MediaUploadPanelProps) {
+  const { copy } = usePortalLocale()
+  const m = copy.messages.mediaUpload
   const maxSize = FILE_LIMITS[type] ?? GLOBAL_MAX_FILE_SIZE
+  const fieldLabel =
+    (m.mediaFieldLabel as Record<string, string>)[type] ?? type
+  const accepted = ACCEPTED_LABELS[type] ?? ""
+
+  const fileDetailsLine = uploadedMedia
+    ? m.fileDetails
+        .replace("{{size}}", formatBytes(uploadedMedia.sizeBytes))
+        .replace("{{mime}}", uploadedMedia.type)
+        .replace("{{date}}", formatFullDate(uploadedMedia.expiresAt))
+    : ""
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-text-body">{MEDIA_FIELD_LABEL[type]}</label>
+      <label className="block text-sm font-medium text-text-body">{fieldLabel}</label>
       <div className="rounded-2xl border border-dashed border-border-strong bg-bg-subtle p-5">
         {uploading ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-medium text-text">Upload en cours...</p>
+              <p className="text-sm font-medium text-text">{m.uploading}</p>
               <span className="text-sm font-semibold text-primary-ink">{uploadProgress}%</span>
             </div>
             <progress className="h-3 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-bg-muted [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary" max={100} value={uploadProgress} />
-            <p className="text-xs text-text-secondary">Le fichier est envoyé vers l’hébergement temporaire sécurisé.</p>
+            <p className="text-xs text-text-secondary">{m.uploadingHint}</p>
           </div>
         ) : uploadedMedia ? (
           <div className="space-y-4">
@@ -51,7 +64,7 @@ export function MediaUploadPanel({
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-text">{uploadedMedia.originalName}</p>
                 <p className="mt-1 text-xs text-text-muted">
-                  {formatBytes(uploadedMedia.sizeBytes)} · {uploadedMedia.type} · expire le {formatFullDate(uploadedMedia.expiresAt)}
+                  {fileDetailsLine}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -60,7 +73,7 @@ export function MediaUploadPanel({
                   onClick={() => fileInputRef.current?.click()}
                   className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg hover:text-text"
                 >
-                  Remplacer
+                  {m.replace}
                 </button>
                 <button
                   type="button"
@@ -73,10 +86,10 @@ export function MediaUploadPanel({
             </div>
 
             <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5 text-text-secondary">
-              <p>Le fichier est hébergé temporairement et supprimé automatiquement après expiration.</p>
-              <p className="mt-1">Le lien généré est public. N’uploadez pas de document sensible.</p>
+              <p>{m.tempHostNotice}</p>
+              <p className="mt-1">{m.publicLinkNotice}</p>
               {scheduledAt && (
-                <p className="mt-1">Si la date prévue dépasse l’expiration, l’envoi peut échouer.</p>
+                <p className="mt-1">{m.scheduleExpiryWarning}</p>
               )}
             </div>
           </div>
@@ -89,9 +102,9 @@ export function MediaUploadPanel({
             <div className="rounded-2xl border border-border bg-bg p-3 text-text-muted">
               <Upload01Icon className="h-6 w-6" />
             </div>
-            <span className="text-sm font-medium text-primary-ink">Choisir un fichier</span>
+            <span className="text-sm font-medium text-primary-ink">{m.chooseFile}</span>
             <span className="text-xs text-text-muted">
-              {ACCEPTED_LABELS[type]} · max {formatBytes(maxSize)}
+              {m.acceptedMax.replace("{{accepted}}", accepted).replace("{{size}}", formatBytes(maxSize))}
             </span>
           </button>
         )}

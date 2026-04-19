@@ -19,6 +19,7 @@ import Alert from "@/components/ui/Alert"
 import EmptyState from "@/components/ui/EmptyState"
 import { SkeletonCard } from "@/components/ui/Skeleton"
 import { UserMultiple02Icon, ArrowLeft01Icon } from "hugeicons-react"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 const PRESET_COLORS = ["#FFD600", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6", "#EC4899"]
 
@@ -35,6 +36,8 @@ function GroupModal({
   onSuccess: (g: ContactGroup) => void
   onClose: () => void
 }) {
+  const { copy } = usePortalLocale()
+  const gCopy = copy.contacts.groups
   const [name, setName] = useState(group?.name ?? "")
   const [description, setDescription] = useState(group?.description ?? "")
   const [color, setColor] = useState(group?.color ?? PRESET_COLORS[0])
@@ -49,7 +52,7 @@ function GroupModal({
       if (mode === "create") {
         const created = await apiClient.contactGroups.create({ name: name.trim(), description: description.trim() || undefined, color })
         onSuccess(created)
-        toast.success("Groupe créé")
+        toast.success(gCopy.created)
       } else {
         const updated = await apiClient.contactGroups.update(group!.id, {
           name: name.trim(),
@@ -57,17 +60,17 @@ function GroupModal({
           color,
         })
         onSuccess(updated)
-        toast.success("Groupe mis à jour")
+        toast.success(gCopy.updated)
       }
       onClose()
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "MAX_CONTACT_GROUPS_REACHED") {
-          setError("Limite de groupes atteinte. Mettez à niveau votre plan.")
+          setError(gCopy.maxReached)
         } else if (err.code === "CONFLICT") {
-          setError(`Un groupe nommé "${name.trim()}" existe déjà.`)
+          setError(`${gCopy.nameConflictPrefix} "${name.trim()}" existe déjà.`)
         } else {
-          setError("Impossible d'enregistrer le groupe.")
+          setError(gCopy.saveFailed)
         }
       }
     } finally {
@@ -79,11 +82,11 @@ function GroupModal({
     <Modal
       open
       onClose={onClose}
-      title={mode === "create" ? "Nouveau groupe" : "Modifier le groupe"}
+      title={mode === "create" ? gCopy.createModalTitle : gCopy.editModalTitle}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="Nom"
+          label={gCopy.name}
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -92,20 +95,20 @@ function GroupModal({
         />
         <div>
           <label className="block text-sm font-medium text-text-body mb-1.5">
-            Description (optionnel)
+            {gCopy.description}
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={255}
             rows={3}
-            placeholder="Description du groupe..."
+            placeholder={gCopy.descriptionPlaceholder}
             className="w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-text bg-bg placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all duration-150"
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-text-body mb-2">
-            Couleur
+            {gCopy.color}
           </label>
           <div className="flex items-center gap-2">
             {PRESET_COLORS.map((c) => (
@@ -125,15 +128,15 @@ function GroupModal({
               value={color}
               onChange={(e) => setColor(e.target.value)}
               className="w-7 h-7 rounded-full cursor-pointer border border-border overflow-hidden"
-              title="Couleur personnalisée"
+              title={gCopy.customColorTitle}
             />
           </div>
         </div>
         {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
         <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="secondary" onClick={onClose}>Annuler</Button>
+          <Button type="button" variant="secondary" onClick={onClose}>{gCopy.cancel}</Button>
           <Button type="submit" variant="primary" loading={loading}>
-            {mode === "create" ? "Créer le groupe" : "Enregistrer"}
+            {mode === "create" ? gCopy.newGroup : gCopy.save}
           </Button>
         </div>
       </form>
@@ -156,8 +159,10 @@ function DeleteGroupModal({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const { copy } = usePortalLocale()
+  const gCopy = copy.contacts.groups
   return (
-    <Modal open onClose={onCancel} title="Supprimer le groupe">
+    <Modal open onClose={onCancel} title={gCopy.deleteModalTitle}>
       <p className="text-sm text-text-body mb-2">
         Supprimer <strong className="text-text">{groupName}</strong> ?
       </p>
@@ -165,8 +170,8 @@ function DeleteGroupModal({
         Les {contactCount} contact{contactCount !== 1 ? "s" : ""} dans ce groupe ne seront PAS supprimés — uniquement le groupe.
       </p>
       <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onCancel}>Annuler</Button>
-        <Button variant="danger" loading={loading} onClick={onConfirm}>Supprimer</Button>
+        <Button variant="secondary" onClick={onCancel}>{gCopy.cancel}</Button>
+        <Button variant="danger" loading={loading} onClick={onConfirm}>{gCopy.delete}</Button>
       </div>
     </Modal>
   )
@@ -175,6 +180,8 @@ function DeleteGroupModal({
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ContactGroupsPage() {
+  const { copy } = usePortalLocale()
+  const gCopy = copy.contacts.groups
   const router = useRouter()
   const { groups, total, loading, addGroup, updateGroup, removeGroup } = useContactGroups()
   const [createOpen, setCreateOpen] = useState(false)
@@ -188,14 +195,14 @@ export default function ContactGroupsPage() {
     try {
       await apiClient.contactGroups.delete(deleteTarget.id)
       removeGroup(deleteTarget.id)
-      toast.success("Groupe supprimé")
+      toast.success(gCopy.deleted)
       setDeleteTarget(null)
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "NOT_FOUND") {
-        toast.error("Groupe introuvable.")
+        toast.error(gCopy.notFound)
         setDeleteTarget(null)
       } else {
-        toast.error("Impossible de supprimer le groupe.")
+        toast.error(gCopy.deleteFailed)
       }
     } finally {
       setDeleting(false)
@@ -205,16 +212,16 @@ export default function ContactGroupsPage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6">
       <PageHeader
-        title="Groupes de contacts"
-        description={`${total} groupe${total !== 1 ? "s" : ""}`}
+        title={gCopy.pageTitle}
+        description={`${total} ${total !== 1 ? gCopy.detailsCountSuffixPlural : gCopy.detailsCountSuffix}`}
         action={
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => router.push("/contacts")}>
               <ArrowLeft01Icon className="w-4 h-4" />
-              Retour
+              {gCopy.back}
             </Button>
             <Button variant="primary" onClick={() => setCreateOpen(true)}>
-              Nouveau groupe
+              {gCopy.newGroup}
             </Button>
           </div>
         }
@@ -227,9 +234,9 @@ export default function ContactGroupsPage() {
       ) : groups.length === 0 ? (
         <EmptyState
           icon={<UserMultiple02Icon className="w-8 h-8" />}
-          title="Aucun groupe pour l'instant."
-          description="Créez votre premier groupe pour organiser vos contacts."
-          ctaLabel="Nouveau groupe"
+          title={gCopy.emptyTitle}
+          description={gCopy.emptyDescription}
+          ctaLabel={gCopy.newGroup}
           onCta={() => setCreateOpen(true)}
         />
       ) : (
@@ -253,7 +260,7 @@ export default function ContactGroupsPage() {
                 <p className="text-xs text-text-secondary mb-2 line-clamp-2">{group.description}</p>
               )}
               <p className="text-xs text-text-muted mb-4">
-                {group.contactCount} contact{group.contactCount !== 1 ? "s" : ""}
+                {group.contactCount} {group.contactCount !== 1 ? gCopy.detailsCountSuffixPlural : gCopy.detailsCountSuffix}
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -261,13 +268,13 @@ export default function ContactGroupsPage() {
                   variant="primary"
                   onClick={() => router.push(`/contacts/groups/${group.id}`)}
                 >
-                  Voir
+                  {gCopy.view}
                 </Button>
                 <Button size="sm" variant="secondary" onClick={() => setEditTarget(group)}>
-                  Modifier
+                  {gCopy.edit}
                 </Button>
                 <Button size="sm" variant="danger" onClick={() => setDeleteTarget(group)}>
-                  Supprimer
+                  {gCopy.delete}
                 </Button>
               </div>
             </Card>

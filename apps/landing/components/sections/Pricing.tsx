@@ -6,100 +6,7 @@ import Image from "next/image"
 import { fadeUp, staggerContainer } from "../../lib/animations"
 import { Button } from "../ui/Button"
 import { landingBrand } from "../../lib/brand"
-
-const USE_CASES = [
-  {
-    title: "Relance clients",
-    text: "Débloquez vos paniers, vos rappels et vos confirmations directement sur WhatsApp.",
-    image: "/relance.png",
-    imageAlt: "Aperçu du cas d'usage de relance client sur WhatsApp",
-  },
-  {
-    title: "Notifications commande",
-    text: "Tenez vos clients au courant de chaque étape avec messages et réponses en temps réel.",
-    image: "/notifs.png",
-    imageAlt: "Aperçu du cas d'usage de notifications de commande sur WhatsApp",
-  },
-]
-
-const PLANS = [
-  {
-    name: "Gratuit",
-    price: "0€",
-    desc: "Pour tester l'infrastructure et brancher un premier numéro.",
-    cta: "Commencer",
-    featured: false,
-    features: [
-      "1 instance",
-      "20 messages / statuts par mois",
-      "1 000 requêtes API / mois",
-      "1 clé API",
-      "0 endpoint webhook",
-      "2 groupes de contacts",
-      "Campagnes : non",
-      "Statuts WhatsApp : non",
-      "Webhooks : non",
-      "Notes vocales : oui",
-    ],
-  },
-  {
-    name: "Starter",
-    price: "9€",
-    desc: "Pour lancer vos premiers automatismes en production.",
-    cta: "Commencer",
-    featured: false,
-    features: [
-      "2 instances",
-      "5 000 messages / statuts par mois",
-      "10 000 requêtes API / mois",
-      "3 clés API",
-      "3 endpoints webhook",
-      "10 groupes de contacts",
-      "Campagnes : oui",
-      "Statuts WhatsApp : non",
-      "Webhooks : oui",
-      "Notes vocales : oui",
-    ],
-  },
-  {
-    name: "Pro",
-    price: "29€",
-    desc: "Pour les équipes qui envoient plus, automatisent plus et monitorent mieux.",
-    cta: "S'abonner",
-    featured: true,
-    features: [
-      "5 instances",
-      "5 000 messages / statuts par mois",
-      "50 000 requêtes API / mois",
-      "10 clés API",
-      "10 endpoints webhook",
-      "50 groupes de contacts",
-      "Campagnes : oui",
-      "Statuts WhatsApp : oui",
-      "Webhooks : oui",
-      "Notes vocales : oui",
-    ],
-  },
-  {
-    name: "Plus",
-    price: "39€",
-    desc: "Pour les volumes élevés, les workflows avancés et les opérations multi-numéros.",
-    cta: "Contacter",
-    featured: false,
-    features: [
-      "20 instances",
-      "150 000 messages / statuts par mois",
-      "500 000 requêtes API / mois",
-      "10 clés API",
-      "50 endpoints webhook",
-      "Groupes de contacts illimités",
-      "Campagnes : oui",
-      "Statuts WhatsApp : oui",
-      "Webhooks : oui",
-      "Notes vocales : oui",
-    ],
-  },
-]
+import { useLandingI18n } from "../../lib/landing-i18n"
 
 const CODE_SAMPLE = `POST ${landingBrand.apiUrl}/messages/send
 {
@@ -112,17 +19,27 @@ const CODE_SAMPLE = `POST ${landingBrand.apiUrl}/messages/send
 interface PricingProps {}
 
 export function Pricing({}: PricingProps) {
+  const { messages } = useLandingI18n()
+  const useCases = messages.pricing.useCases.map((item, index) => ({
+    ...item,
+    image: index === 0 ? "/relance.png" : "/notifs.png",
+  }))
+  const plans = messages.pricing.plans.map((plan, index) => ({
+    ...plan,
+    featured: index === 2,
+  }))
+
   return (
     <section className="border-t border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
           <h2 className="font-(family-name:--font-geist-sans) text-[1.9rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.5rem]">
-            Cas d’usage concrets
+            {messages.pricing.useCasesTitle}
           </h2>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-2">
-          {USE_CASES.map((item, index) => (
+          {useCases.map((item, index) => (
             <div key={item.title} className="border border-white/8 bg-[#151515]">
               <div className="relative h-56 overflow-hidden border-b border-white/8 bg-[#0F0F0F] sm:h-64">
                 <Image
@@ -183,10 +100,10 @@ export function Pricing({}: PricingProps) {
         <div id="tarifs" className="mt-14">
           <div className="mb-8 flex flex-col gap-3 text-center">
             <h3 className="font-(family-name:--font-geist-sans) text-[1.9rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.5rem]">
-              Des plans simples pour démarrer et évoluer
+              {messages.pricing.title}
             </h3>
             <p className="font-(family-name:--font-poppins) text-sm text-[#9D9D9D]">
-              Choisissez le volume qui correspond à votre croissance.
+              {messages.pricing.subtitle}
             </p>
           </div>
 
@@ -197,7 +114,7 @@ export function Pricing({}: PricingProps) {
             viewport={{ once: true, amount: 0.2 }}
             className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
           >
-            {PLANS.map((plan) => (
+            {plans.map((plan) => (
               <motion.div
                 key={plan.name}
                 variants={fadeUp}

@@ -9,6 +9,7 @@ import { fadeIn } from "@/lib/animations"
 import { entriesToVariableMap, getAutomaticVariables, getCustomVariables, variableMapToEntries, type CustomVariableEntry } from "@/lib/templateEngine"
 import { useInstances } from "@/hooks/useInstances"
 import { useContacts } from "@/hooks/useContacts"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { formatDate } from "@/lib/format"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
@@ -33,6 +34,7 @@ const TYPE_LABEL: Record<Template["type"], string> = {
 export default function TemplateDetailPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
+  const { locale } = usePortalLocale()
   const { instances } = useInstances()
   const { contacts } = useContacts()
   const [template, setTemplate] = useState<Template | null>(null)
@@ -59,9 +61,9 @@ export default function TemplateDetailPage() {
       } catch (error) {
         if (!active) return
         if (error instanceof ApiClientError && error.code === "NOT_FOUND") {
-          setTemplateError("Template introuvable.")
+          setTemplateError(locale === "fr" ? "Template introuvable." : "Template not found.")
         } else {
-          setTemplateError("Impossible de charger le template.")
+          setTemplateError(locale === "fr" ? "Impossible de charger le template." : "Unable to load the template.")
         }
       } finally {
         if (active) {
@@ -100,10 +102,10 @@ export default function TemplateDetailPage() {
       setPreview(data)
     } catch (error) {
       if (error instanceof ApiClientError && error.code === "TEMPLATE_INVALID") {
-        setPreviewError("Ce template contient des placeholders invalides ou une configuration média incomplète.")
-      } else {
-        setPreviewError("Impossible de générer l’aperçu.")
-      }
+          setPreviewError(locale === "fr" ? "Ce template contient des placeholders invalides ou une configuration média incomplète." : "This template contains invalid placeholders or an incomplete media setup.")
+        } else {
+          setPreviewError(locale === "fr" ? "Impossible de générer l’aperçu." : "Unable to generate the preview.")
+        }
     } finally {
       setLoadingPreview(false)
     }
@@ -125,16 +127,16 @@ export default function TemplateDetailPage() {
     return (
       <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6">
         <PageHeader
-          title="Aperçu du template"
-          description="Détail du template"
+          title={locale === "fr" ? "Aperçu du template" : "Template preview"}
+          description={locale === "fr" ? "Détail du template" : "Template details"}
           action={
             <Button variant="ghost" onClick={() => router.push("/templates")}>
               <ArrowLeft01Icon className="h-4 w-4" />
-              Retour
+              {locale === "fr" ? "Retour" : "Back"}
             </Button>
           }
         />
-        <Alert variant="error" message={templateError ?? "Template introuvable."} />
+        <Alert variant="error" message={templateError ?? (locale === "fr" ? "Template introuvable." : "Template not found.")} />
       </motion.div>
     )
   }
@@ -148,10 +150,10 @@ export default function TemplateDetailPage() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => router.push("/templates")}>
               <ArrowLeft01Icon className="h-4 w-4" />
-              Retour
+              {locale === "fr" ? "Retour" : "Back"}
             </Button>
             <Button variant="primary" loading={loadingPreview} onClick={refreshPreview}>
-              Actualiser l’aperçu
+              {locale === "fr" ? "Actualiser l’aperçu" : "Refresh preview"}
             </Button>
           </div>
         }
@@ -162,12 +164,12 @@ export default function TemplateDetailPage() {
           <Card className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="neutral">{TYPE_LABEL[template.type]}</Badge>
-              {template.type !== "text" && <Badge variant="warning">Média</Badge>}
-              {template.mediaUrl && <Badge variant="blue">Media URL fournie</Badge>}
+              {template.type !== "text" && <Badge variant="warning">{locale === "fr" ? "Média" : "Media"}</Badge>}
+              {template.mediaUrl && <Badge variant="blue">{locale === "fr" ? "Media URL fournie" : "Media URL provided"}</Badge>}
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-text-body">Contenu du template</p>
+              <p className="text-sm font-semibold text-text-body">{locale === "fr" ? "Contenu du template" : "Template content"}</p>
               <div className="rounded-xl border border-border bg-bg-subtle p-4 text-sm leading-7 text-text">
                 <HighlightedTemplateBody body={template.body} />
               </div>
@@ -187,20 +189,20 @@ export default function TemplateDetailPage() {
             <div className="flex items-center gap-2">
               <File01Icon className="h-5 w-5 text-primary-ink" />
               <div>
-                <p className="text-sm font-semibold text-text-body">Rendu backend</p>
-                <p className="text-xs text-text-muted">Prévisualisez le rendu réel du template avec un contact, une instance et des variables custom.</p>
+                <p className="text-sm font-semibold text-text-body">{locale === "fr" ? "Rendu backend" : "Backend rendering"}</p>
+                <p className="text-xs text-text-muted">{locale === "fr" ? "Prévisualisez le rendu réel du template avec un contact, une instance et des variables custom." : "Preview the actual template rendering with a contact, an instance and custom variables."}</p>
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Select label="Instance (optionnel)" value={instanceId} onChange={(event) => setInstanceId(event.target.value)}>
-                <option value="">Aucune</option>
+              <Select label={locale === "fr" ? "Instance (optionnel)" : "Instance (optional)"} value={instanceId} onChange={(event) => setInstanceId(event.target.value)}>
+                <option value="">{locale === "fr" ? "Aucune" : "None"}</option>
                 {instances.map((instance) => (
                   <option key={instance.id} value={instance.id}>{instance.name}</option>
                 ))}
               </Select>
-              <Select label="Contact (optionnel)" value={contactId} onChange={(event) => setContactId(event.target.value)}>
-                <option value="">Aucun</option>
+              <Select label={locale === "fr" ? "Contact (optionnel)" : "Contact (optional)"} value={contactId} onChange={(event) => setContactId(event.target.value)}>
+                <option value="">{locale === "fr" ? "Aucun" : "None"}</option>
                 {contacts.map((contact) => (
                   <option key={contact.id} value={contact.id}>{contact.name} · {contact.phone}</option>
                 ))}
@@ -211,22 +213,22 @@ export default function TemplateDetailPage() {
               <CustomVariableBuilder
                 entries={customEntries}
                 onChange={setCustomEntries}
-                hint="Saisissez uniquement les variables custom.* demandées par le template."
+                hint={locale === "fr" ? "Saisissez uniquement les variables custom.* demandées par le template." : "Enter only the custom.* variables required by the template."}
               />
             )}
 
             <div className="space-y-3">
-              <p className="text-sm font-semibold text-text-body">Rendu généré</p>
+              <p className="text-sm font-semibold text-text-body">{locale === "fr" ? "Rendu généré" : "Generated rendering"}</p>
               <div className="min-h-52 rounded-xl border border-border bg-bg-subtle p-5 text-sm leading-7 text-text">
                 {preview
-                  ? (preview.rendered || <span className="text-text-muted">Aucun rendu</span>)
-                  : <span className="text-text-muted">Lancez un aperçu pour voir le rendu backend du template.</span>}
+                  ? (preview.rendered || <span className="text-text-muted">{locale === "fr" ? "Aucun rendu" : "No rendering yet"}</span>)
+                  : <span className="text-text-muted">{locale === "fr" ? "Lancez un aperçu pour voir le rendu backend du template." : "Run a preview to see the backend rendering of the template."}</span>}
               </div>
 
               {preview?.missingVariables.length ? (
                 <Alert
                   variant="warning"
-                  title="Variables manquantes"
+                  title={locale === "fr" ? "Variables manquantes" : "Missing variables"}
                   message={preview.missingVariables.join(", ")}
                 />
               ) : null}
@@ -239,31 +241,31 @@ export default function TemplateDetailPage() {
         </div>
 
         <div className="space-y-6">
-          <TemplateVariableGuide variables={template.variables} title="Variables du template" />
+          <TemplateVariableGuide variables={template.variables} title={locale === "fr" ? "Variables du template" : "Template variables"} />
 
           <Card className="space-y-4">
             <div>
-              <p className="text-sm font-semibold text-text-body">Catégorisation</p>
-              <p className="mt-1 text-xs text-text-muted">Vue synthétique des variables calculées par l’API.</p>
+              <p className="text-sm font-semibold text-text-body">{locale === "fr" ? "Catégorisation" : "Categorization"}</p>
+              <p className="mt-1 text-xs text-text-muted">{locale === "fr" ? "Vue synthétique des variables calculées par l’API." : "Summary view of the variables computed by the API."}</p>
             </div>
 
             <div className="space-y-3">
               <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">Automatiques</p>
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">{locale === "fr" ? "Automatiques" : "Automatic"}</p>
                 <p className="text-sm text-text-secondary">
-                  {automaticVariables.length > 0 ? automaticVariables.join(", ") : "Aucune variable automatique."}
+                  {automaticVariables.length > 0 ? automaticVariables.join(", ") : (locale === "fr" ? "Aucune variable automatique." : "No automatic variables.")}
                 </p>
               </div>
               <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">À fournir</p>
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">{locale === "fr" ? "À fournir" : "To provide"}</p>
                 <p className="text-sm text-text-secondary">
-                  {customVariables.length > 0 ? customVariables.join(", ") : "Aucune variable custom.*."}
+                  {customVariables.length > 0 ? customVariables.join(", ") : (locale === "fr" ? "Aucune variable custom.*." : "No custom.* variables.")}
                 </p>
               </div>
               {preview && (
                 <div>
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">État du rendu</p>
-                  <p className="text-sm text-text-secondary">{preview.valid ? "Valide" : "Invalide"}</p>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">{locale === "fr" ? "État du rendu" : "Rendering state"}</p>
+                  <p className="text-sm text-text-secondary">{preview.valid ? (locale === "fr" ? "Valide" : "Valid") : (locale === "fr" ? "Invalide" : "Invalid")}</p>
                 </div>
               )}
             </div>

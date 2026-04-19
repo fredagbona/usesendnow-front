@@ -1,11 +1,15 @@
 ---
-title: Billing public
-description: Consultez les plans, la souscription courante, la consommation et l'historique de paiements via l'API publique.
+title: Billing
+description: Read your current plan, usage, and billing history from the public API.
 ---
 
-## Endpoints
+import { DocLocaleSwitch } from "../components/DocLocaleSwitch"
 
-| Méthode | Endpoint |
+<DocLocaleSwitch />
+
+## Public billing endpoints
+
+| Method | Endpoint |
 |---|---|
 | `GET` | `/api/v1/billing/plans` |
 | `GET` | `/api/v1/billing/subscription` |
@@ -14,31 +18,31 @@ description: Consultez les plans, la souscription courante, la consommation et l
 | `GET` | `/api/v1/usage` |
 
 <Note>
-Le billing public via API key est en lecture seule. Les actions sensibles comme checkout, annulation ou downgrade se font depuis le dashboard.
+Public billing through an API key is read-only. Sensitive actions such as checkout, cancellation, or downgrade happen from the dashboard.
 </Note>
 
-## Paramètres
+## Query parameters
 
-Ces routes sont toutes en `GET`.
+All of these routes are `GET`.
 
 | Endpoint | Query params | Body |
 |---|---|---|
-| `/api/v1/billing/plans` | aucun | aucun |
-| `/api/v1/billing/subscription` | aucun | aucun |
-| `/api/v1/billing/usage` | aucun | aucun |
-| `/api/v1/usage` | aucun | aucun |
-| `/api/v1/billing/payments` | `page`, `limit` | aucun |
+| `/api/v1/billing/plans` | none | none |
+| `/api/v1/billing/subscription` | none | none |
+| `/api/v1/billing/usage` | none | none |
+| `/api/v1/usage` | none | none |
+| `/api/v1/billing/payments` | `page`, `limit` | none |
 
 ---
 
-## Lister les plans
+## List plans
 
 ```bash
 curl https://srv.msgflash.com/api/v1/billing/plans \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-### Réponse succès
+### Success response
 
 ```json
 {
@@ -46,7 +50,8 @@ curl https://srv.msgflash.com/api/v1/billing/plans \
     {
       "code": "starter",
       "name": "Starter",
-      "priceEur": 9,
+      "priceMonthly": 9,
+      "currency": "EUR",
       "limits": {
         "maxInstances": 2,
         "maxApiKeys": 3,
@@ -67,14 +72,14 @@ curl https://srv.msgflash.com/api/v1/billing/plans \
 
 ---
 
-## Souscription courante
+## Current subscription
 
 ```bash
 curl https://srv.msgflash.com/api/v1/billing/subscription \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-Exemple :
+Example:
 
 ```json
 {
@@ -115,39 +120,39 @@ Exemple :
 ```
 
 <Note>
-Les limites se lisent dans `subscription.plan.limits.*`, pas dans `subscription.plan.maxInstances`.
+Read limits from `subscription.plan.limits.*`, not from `subscription.plan.maxInstances`.
 </Note>
 
 <Note>
-Le plan Free autorise 1 clé API de test. Cette ouverture ne change pas le quota outbound Free: 20 messages + statuts par mois.
+The Free plan now allows 1 test API key. This does not change the Free outbound quota: 20 messages + statuses per month.
 </Note>
 
 ---
 
-## Usage enrichi
+## Enriched usage
 
 ```bash
 curl https://srv.msgflash.com/api/v1/billing/usage \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-Cet endpoint renvoie :
-- le plan courant
-- les limites
-- les features
-- l'usage du mois
-- la période de facturation
+This endpoint returns:
+- current plan
+- limits
+- features
+- monthly usage
+- billing period
 
 ---
 
-## Historique des paiements
+## Payment history
 
 ```bash
 curl "https://srv.msgflash.com/api/v1/billing/payments?page=1&limit=20" \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-Réponse :
+Response:
 
 ```json
 {
@@ -173,16 +178,16 @@ Réponse :
 }
 ```
 
-### Paramètres query
+### Query params
 
-| Paramètre | Type | Requis | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `page` | integer | non | Défaut `1` |
-| `limit` | integer | non | Défaut `20`, max `100` |
+| `page` | integer | no | Default `1` |
+| `limit` | integer | no | Default `20`, max `100` |
 
-## Erreurs courantes
+## Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `UNAUTHORIZED` | 401 | Clé invalide ou absente |
-| `API_RATE_LIMIT_EXCEEDED` | 429 | Trop de requêtes par seconde |
+| `UNAUTHORIZED` | 401 | Missing or invalid key |
+| `API_RATE_LIMIT_EXCEEDED` | 429 | Too many requests per second |

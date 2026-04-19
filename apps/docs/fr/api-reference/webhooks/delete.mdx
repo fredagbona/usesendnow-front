@@ -1,0 +1,30 @@
+---
+title: DELETE Supprimer un webhook
+description: Supprime un endpoint webhook existant.
+---
+
+import { DocLocaleSwitch } from "../../../components/DocLocaleSwitch"
+
+<DocLocaleSwitch />
+
+## Endpoint
+
+```txt
+DELETE /api/v1/webhooks/{id}
+```
+
+## Paramètres path
+
+| Nom | Type | Requis | Description |
+|---|---|---|---|
+| `id` | UUID | oui | ID du webhook |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "deleted": true
+  }
+}
+```

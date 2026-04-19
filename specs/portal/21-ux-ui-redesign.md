@@ -1,4 +1,4 @@
-UI/UX Specification: Redesign "UseSendNow" 2026
+UI/UX Specification: Redesign "MsgFlash" 2026
 1. Direction Artistique & Identité Visuelle
 L'objectif est d'adopter un style "Modern Enterprise SaaS" : minimaliste, haute précision, avec une palette de couleurs sobre relevée par un vert émeraude "WhatsApp".
 

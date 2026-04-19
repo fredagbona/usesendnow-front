@@ -1,42 +1,46 @@
 ---
-title: Authentification
-description: Comment authentifier vos requêtes au dashboard et à l'API publique MsgFlash.
+title: Authentication
+description: How to authenticate requests for the dashboard and the public MsgFlash API.
 ---
 
-## Les deux surfaces
+import { DocLocaleSwitch } from "./components/DocLocaleSwitch"
 
-| Surface | Méthode | Header | Usage |
+<DocLocaleSwitch />
+
+## The two surfaces
+
+| Surface | Method | Header | Usage |
 |---|---|---|---|
-| Dashboard | JWT Bearer | `Authorization: Bearer <jwt>` | Interface web et endpoints console `/api/*` |
-| API publique | Clé API | `x-api-key: <api_key>` | Endpoints `/api/v1/*` pour vos intégrations |
+| Dashboard | JWT Bearer | `Authorization: Bearer <jwt>` | Web interface and console `/api/*` endpoints |
+| Public API | API key | `x-api-key: <api_key>` | `/api/v1/*` endpoints for server-to-server integrations |
 
-Pour toute intégration serveur à serveur, utilisez une clé API.
+For any server-to-server integration, use an API key.
 
 <Note>
-La console web et l’API publique n’utilisent pas le même mode d’authentification.
+The web console and the public API do not use the same authentication method.
 </Note>
 
 ---
 
-## Format de la clé API
+## API key format
 
-Une clé API MsgFlash ressemble à :
+A MsgFlash API key looks like this:
 
 ```txt
 msgf_live_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
 ```
 
-Structure :
-- préfixe `msgf_live_`
-- 64 caractères hexadécimaux minuscules
+Structure:
+- prefix `msgf_live_`
+- 64 lowercase hexadecimal characters
 
 <Note>
-La clé complète n'est affichée qu'une seule fois lors de la création.
+The full key is only shown once when it is created.
 </Note>
 
 ---
 
-## Utiliser votre clé API
+## Using your API key
 
 ```bash
 curl https://srv.msgflash.com/api/v1/messages/send \
@@ -46,51 +50,51 @@ curl https://srv.msgflash.com/api/v1/messages/send \
     "instanceId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "to": "+33612345000",
     "type": "text",
-    "text": "Bonjour"
+    "text": "Hello"
   }'
 ```
 
 <Warning>
-N'utilisez pas `Authorization: Bearer <api_key>` pour l'API publique. Le backend attend explicitement le header `x-api-key`.
+Do not use `Authorization: Bearer <api_key>` for the public API. The backend explicitly expects the `x-api-key` header.
 </Warning>
 
 ---
 
-## Créer et révoquer une clé
+## Creating and revoking a key
 
-1. Connectez-vous à [app.msgflash.com](https://app.msgflash.com)
-2. Ouvrez **API Keys**
-3. Cliquez sur **New API Key**
-4. Donnez un nom descriptif
-5. Copiez la clé immédiatement
+1. Sign in to [app.msgflash.com](https://app.msgflash.com)
+2. Open **API Keys**
+3. Click **New API Key**
+4. Give it a descriptive name
+5. Copy the key immediately
 
-Pour révoquer une clé :
-1. Retournez dans **API Keys**
-2. Cliquez sur **Revoke**
-3. Confirmez
+To revoke a key:
+1. Go back to **API Keys**
+2. Click **Revoke**
+3. Confirm
 
-La révocation est immédiate.
-
----
-
-## Authentification de la console
-
-Pour la console web, les principaux flux sont :
-- inscription
-- connexion
-- OAuth Google
-- vérification e-mail
-- mot de passe oublié
-
-Guide détaillé :
-
-[Voir le guide d’authentification dashboard](/guides/dashboard-auth)
+Revocation is immediate.
 
 ---
 
-## Nombre de clés par plan
+## Dashboard authentication
 
-| Plan | Clés API autorisées |
+The main dashboard flows are:
+- signup
+- login
+- Google OAuth
+- email verification
+- password reset
+
+Detailed guide:
+
+[See the dashboard auth guide](/guides/dashboard-auth)
+
+---
+
+## Number of keys per plan
+
+| Plan | Allowed API keys |
 |---|---|
 | Free | 1 |
 | Starter | 3 |
@@ -99,30 +103,30 @@ Guide détaillé :
 
 ---
 
-## Bonnes pratiques
+## Best practices
 
 <CardGroup cols={2}>
-  <Card title="Une clé par environnement" icon="key">
-    Utilisez une clé distincte pour la production, le staging et le développement.
+  <Card title="One key per environment" icon="key">
+    Use separate keys for production, staging, and development.
   </Card>
-  <Card title="Variables d'environnement" icon="lock">
-    Stockez votre clé dans une variable comme `MSGFLASH_API_KEY` ou dans un gestionnaire de secrets.
+  <Card title="Environment variables" icon="lock">
+    Store your key in an environment variable such as `MSGFLASH_API_KEY` or in a secrets manager.
   </Card>
 </CardGroup>
 
 ---
 
-## Erreurs liées à l'authentification
+## Authentication-related errors
 
 | Code | HTTP | Description |
 |---|---|---|
-| `UNAUTHORIZED` | 401 | Clé manquante, invalide ou révoquée |
-| `FORBIDDEN` | 403 | La clé est valide mais n'a pas accès à la ressource |
-| `SUBSCRIPTION_INACTIVE` | 403 | Le compte n'a plus de souscription exploitable pour l'action demandée |
-| `API_RATE_LIMIT_EXCEEDED` | 429 | Plus de 10 requêtes/seconde sur la même clé |
-| `MONTHLY_API_REQUEST_QUOTA_EXCEEDED` | 429 | Quota mensuel de requêtes API épuisé |
+| `UNAUTHORIZED` | 401 | Missing, invalid, or revoked key |
+| `FORBIDDEN` | 403 | The key is valid but cannot access the resource |
+| `SUBSCRIPTION_INACTIVE` | 403 | The account no longer has an active subscription for the requested action |
+| `API_RATE_LIMIT_EXCEEDED` | 429 | More than 10 requests/second on the same key |
+| `MONTHLY_API_REQUEST_QUOTA_EXCEEDED` | 429 | Monthly API request quota exhausted |
 
-Exemple :
+Example:
 
 ```json
 {

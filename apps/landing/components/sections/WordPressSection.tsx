@@ -1,45 +1,22 @@
 "use client"
 
 import Image from "next/image"
-import {
-  BubbleChatIcon,
-  Coupon01Icon,
-  PackageSearchIcon,
-} from "hugeicons-react"
+import { BubbleChatIcon, Coupon01Icon, PackageSearchIcon } from "hugeicons-react"
 import { Button } from "../ui/Button"
 import { BrandMark } from "../shared/BrandMark"
 import { landingBrand } from "../../lib/brand"
-
-const PILLARS = [
-  {
-    eyebrow: "Relance panier",
-    title: "Relance panier \"high-touch\"",
-    description:
-      "Déclenchement automatique 45 minutes après abandon de checkout pour récupérer vos ventes sans action manuelle.",
-    result: "+22% de récupération de paniers",
-    icon: BubbleChatIcon,
-  },
-  {
-    eyebrow: "Suivi expédition",
-    title: "Suivi de commande instantané",
-    description:
-      "Dès qu'une commande passe en expédiée, le client reçoit son numéro de suivi cliquable sur WhatsApp.",
-    result: "-40% de tickets \"Où est mon colis ?\"",
-    icon: PackageSearchIcon,
-  },
-  {
-    eyebrow: "Coupon bienvenue",
-    title: "Lead magnet WhatsApp",
-    description:
-      "À chaque nouvelle inscription client, envoyez automatiquement un coupon de bienvenue directement dans WhatsApp.",
-    result: "3x plus d'utilisation qu'un coupon email",
-    icon: Coupon01Icon,
-  },
-] as const
+import { useLandingI18n } from "../../lib/landing-i18n"
 
 interface WordPressSectionProps {}
 
 export function WordPressSection({}: WordPressSectionProps) {
+  const { messages } = useLandingI18n()
+  const pillars = [
+    { ...messages.wordpress.pillars[0], icon: BubbleChatIcon },
+    { ...messages.wordpress.pillars[1], icon: PackageSearchIcon },
+    { ...messages.wordpress.pillars[2], icon: Coupon01Icon },
+  ]
+
   return (
     <section className="border-t border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <div className="mx-auto max-w-6xl">
@@ -49,24 +26,23 @@ export function WordPressSection({}: WordPressSectionProps) {
               <div className="inline-flex items-center gap-3 border border-[#FFD600]/25 bg-[#FFD600]/6 px-4 py-2">
                 <Image src="/logo-wp.png" alt="WordPress" width={24} height={24} className="h-6 w-6 object-contain" />
                 <span className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.14em] text-[#FFD600]">
-                  WordPress x msgflash
+                  {messages.wordpress.title}
                 </span>
               </div>
 
               <h2 className="mt-6 max-w-3xl font-(family-name:--font-geist-sans) text-[1.9rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.8rem]">
-                Le plugin WordPress qui transforme WooCommerce en canal WhatsApp piloté par revenu.
+                {messages.wordpress.subtitle}
               </h2>
               <p className="mt-4 max-w-2xl font-(family-name:--font-poppins) text-sm leading-7 text-[#A3A3A3] sm:text-base">
-                Branchez msgflash à votre boutique, déclenchez vos relances panier, vos suivis de commande et vos coupons de bienvenue
-                sans écrire de code. Installation rapide, plugin léger, impact direct sur votre conversion.
+                {messages.wordpress.description}
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button href={landingBrand.wordpressUrl} showArrow>
-                  Voir la page WordPress
+                  {messages.wordpress.primaryCta}
                 </Button>
                 <Button href={`${landingBrand.appUrl}/signup`} variant="secondary">
-                  Créer un compte gratuit
+                  {messages.wordpress.secondaryCta}
                 </Button>
               </div>
             </div>
@@ -81,7 +57,7 @@ export function WordPressSection({}: WordPressSectionProps) {
                 <div className="mt-6 grid gap-3">
                   <div className="border border-[#FFD600]/25 bg-[#FFD600]/8 p-4">
                     <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.12em] text-[#FFD600]">
-                      Déjà 1 237 boutiques
+                      {messages.wordpress.statsBoutiques}
                     </p>
                     <p className="mt-2 font-(family-name:--font-poppins) text-sm leading-6 text-[#D8D8D8]">
                       utilisent l'infrastructure msgflash pour leurs automatisations WooCommerce.
@@ -89,14 +65,14 @@ export function WordPressSection({}: WordPressSectionProps) {
                   </div>
                   <div className="border border-white/8 bg-[#101010] p-4">
                     <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.12em] text-[#F0F0F0]">
-                      41 237 messages / 24h
+                      {messages.wordpress.statsMessages}
                     </p>
                     <p className="mt-2 font-(family-name:--font-poppins) text-sm leading-6 text-[#A3A3A3]">
                       envoyés avec succès pour les rappels, statuts de commande et relances à forte marge.
                     </p>
                   </div>
                   <div className="inline-flex w-fit items-center gap-2 border border-white/8 bg-[#0B0B0B] px-3 py-2 font-(family-name:--font-geist-sans) text-[11px] font-bold uppercase tracking-[0.12em] text-[#E9E9E9]">
-                    GPL v2 Licensed
+                    {messages.wordpress.license}
                     <span className="text-[#FFD600]">•</span>
                     WordPress Official Partner
                   </div>
@@ -107,30 +83,30 @@ export function WordPressSection({}: WordPressSectionProps) {
 
           <div className="border-t border-white/8 px-6 py-6 sm:px-8">
             <div className="grid gap-5 lg:grid-cols-3">
-              {PILLARS.map((pillar) => {
+              {pillars.map((pillar) => {
                 const Icon = pillar.icon
                 return (
-                <article key={pillar.title} className="border border-white/8 bg-[#151515]">
-                  <div className="border-b border-white/8 bg-[#0F0F0F] p-6">
-                    <div className="inline-flex h-14 w-14 items-center justify-center rounded border border-[#FFD600]/20 bg-[#FFD600]/6 text-[#FFD600]">
-                      <Icon className="h-7 w-7" />
+                  <article key={pillar.title} className="border border-white/8 bg-[#151515]">
+                    <div className="border-b border-white/8 bg-[#0F0F0F] p-6">
+                      <div className="inline-flex h-14 w-14 items-center justify-center rounded border border-[#FFD600]/20 bg-[#FFD600]/6 text-[#FFD600]">
+                        <Icon className="h-7 w-7" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-3 p-5">
-                    <p className="font-(family-name:--font-geist-sans) text-[11px] font-bold uppercase tracking-[0.14em] text-[#FFD600]">
-                      {pillar.eyebrow}
-                    </p>
-                    <h3 className="font-(family-name:--font-geist-sans) text-lg font-black uppercase leading-tight tracking-[-0.03em] text-[#F0F0F0]">
-                      {pillar.title}
-                    </h3>
-                    <p className="font-(family-name:--font-poppins) text-sm leading-6 text-[#A1A1A1]">
-                      {pillar.description}
-                    </p>
-                    <div className="border border-[#FFD600]/20 bg-[#FFD600]/6 px-3 py-2 font-(family-name:--font-poppins) text-sm font-medium text-[#FFF0A6]">
-                      {pillar.result}
+                    <div className="space-y-3 p-5">
+                      <p className="font-(family-name:--font-geist-sans) text-[11px] font-bold uppercase tracking-[0.14em] text-[#FFD600]">
+                        {pillar.eyebrow}
+                      </p>
+                      <h3 className="font-(family-name:--font-geist-sans) text-lg font-black uppercase leading-tight tracking-[-0.03em] text-[#F0F0F0]">
+                        {pillar.title}
+                      </h3>
+                      <p className="font-(family-name:--font-poppins) text-sm leading-6 text-[#A1A1A1]">
+                        {pillar.description}
+                      </p>
+                      <div className="border border-[#FFD600]/20 bg-[#FFD600]/6 px-3 py-2 font-(family-name:--font-poppins) text-sm font-medium text-[#FFF0A6]">
+                        {pillar.result}
+                      </div>
                     </div>
-                  </div>
-                </article>
+                  </article>
                 )
               })}
             </div>

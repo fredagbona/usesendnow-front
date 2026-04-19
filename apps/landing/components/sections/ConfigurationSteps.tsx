@@ -12,71 +12,66 @@ import {
   ZapIcon,
 } from "hugeicons-react"
 import { fadeUp, staggerContainer } from "../../lib/animations"
-
-const STEPS = [
-  {
-    number: "01",
-    title: "Connectez votre compte",
-    icon: Link01Icon,
-    description: (
-      <>
-        Téléchargez le plugin msgflash depuis le répertoire officiel WordPress ou{" "}
-        <a href="/msgflash-v1.0.0.zip" className="text-[#FFD600] underline underline-offset-2 hover:text-[#FFE044]">
-          ici
-        </a>
-        . Une fois activé, collez votre Clé API unique (disponible depuis votre dashboard msgflash) pour lier votre instance WhatsApp à votre site.
-      </>
-    ),
-  },
-  {
-    number: "02",
-    title: "Optimisez votre Checkout",
-    icon: ShoppingCart02Icon,
-    description:
-      "Pour garantir la livraison de vos messages, assurez-vous que vos clients renseignent leur numéro :",
-    checklist: [
-      "Allez dans Apparence > Personnaliser.",
-      "Section WooCommerce > Validation de la commande ou Commander.",
-      "Réglez le champ Téléphone sur \"Obligatoire\".",
-      "Le plugin msgflash ajoutera automatiquement la mention \"(WhatsApp)\" pour rassurer vos clients.",
-    ],
-    badge: "Recommandé",
-  },
-  {
-    number: "03",
-    title: "Activez vos Triggers",
-    icon: Settings02Icon,
-    description: "Choisissez quels événements déclenchent un message :",
-    triggers: [
-      {
-        label: "Panier abandonné",
-        detail: "Relance automatique après 45 min.",
-        icon: SmartPhone01Icon,
-      },
-      {
-        label: "Nouvelle commande",
-        detail: "Confirmation instantanée avec récapitulatif.",
-        icon: CheckmarkCircle01Icon,
-      },
-      {
-        label: "Expédition",
-        detail: "Envoi du lien de suivi de colis en temps réel.",
-        icon: Rocket01Icon,
-      },
-    ],
-  },
-]
-
-const TIP = {
-  icon: ZapIcon,
-  label: "Le conseil msgflash",
-  quote:
-    "98% des messages WhatsApp sont lus dans les 3 minutes. En rendant le champ téléphone obligatoire, vous ne demandez pas juste un numéro, vous ouvrez un canal de vente directe qui convertit 5x mieux que l'email.",
-}
+import { useLandingI18n } from "../../lib/landing-i18n"
 
 interface ConfigurationStepsProps {}
 
 export function ConfigurationSteps({}: ConfigurationStepsProps) {
+  const { messages } = useLandingI18n()
+  const steps = [
+    {
+      number: messages.howItWorks.steps[0].number,
+      title: messages.howItWorks.steps[0].title,
+      icon: Link01Icon,
+      description: (
+        <>
+          Téléchargez le plugin msgflash depuis le répertoire officiel WordPress ou{" "}
+          <a href="/msgflash-v1.0.0.zip" className="text-[#FFD600] underline underline-offset-2 hover:text-[#FFE044]">
+            ici
+          </a>
+          . Une fois activé, collez votre Clé API unique (disponible depuis votre dashboard msgflash) pour lier votre instance WhatsApp à votre site.
+        </>
+      ),
+    },
+    {
+      number: messages.howItWorks.steps[1].number,
+      title: messages.howItWorks.steps[1].title,
+      icon: ShoppingCart02Icon,
+      description:
+        "Pour garantir la livraison de vos messages, assurez-vous que vos clients renseignent leur numéro :",
+      checklist: [
+        "Allez dans Apparence > Personnaliser.",
+        "Section WooCommerce > Validation de la commande ou Commander.",
+        "Réglez le champ Téléphone sur \"Obligatoire\".",
+        "Le plugin msgflash ajoutera automatiquement la mention \"(WhatsApp)\" pour rassurer vos clients.",
+      ],
+      badge: "Recommandé",
+    },
+    {
+      number: messages.howItWorks.steps[2].number,
+      title: messages.howItWorks.steps[2].title,
+      icon: Settings02Icon,
+      description: "Choisissez quels événements déclenchent un message :",
+      triggers: [
+        {
+          label: "Panier abandonné",
+          detail: "Relance automatique après 45 min.",
+          icon: SmartPhone01Icon,
+        },
+        {
+          label: "Nouvelle commande",
+          detail: "Confirmation instantanée avec récapitulatif.",
+          icon: CheckmarkCircle01Icon,
+        },
+        {
+          label: "Expédition",
+          detail: "Envoi du lien de suivi de colis en temps réel.",
+          icon: Rocket01Icon,
+        },
+      ],
+    },
+  ]
+
   return (
     <section className="border-t border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <div className="mx-auto max-w-6xl">
@@ -88,10 +83,10 @@ export function ConfigurationSteps({}: ConfigurationStepsProps) {
             </span>
           </div>
           <h2 className="mt-4 font-(family-name:--font-geist-sans) text-[1.9rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.5rem]">
-            En 4 minutes chrono, activez WhatsApp sur votre boutique
+            {messages.wordpress.setupTitle}
           </h2>
           <p className="mt-2 font-(family-name:--font-poppins) text-sm leading-6 text-[#9D9D9D]">
-            Pas besoin d'être développeur. Suivez ces 3 étapes pour activer la puissance de WhatsApp sur votre boutique.
+            {messages.wordpress.setupDescription}
           </p>
         </div>
 
@@ -102,7 +97,7 @@ export function ConfigurationSteps({}: ConfigurationStepsProps) {
           viewport={{ once: true, amount: 0.15 }}
           className="grid gap-5 lg:grid-cols-3"
         >
-          {STEPS.map((step) => {
+          {steps.map((step) => {
             const Icon = step.icon
             return (
               <motion.div
@@ -195,14 +190,14 @@ export function ConfigurationSteps({}: ConfigurationStepsProps) {
         >
           <div className="flex items-start gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FFD600]">
-              <TIP.icon className="h-4 w-4 text-[#0A0A0A]" />
+              <ZapIcon className="h-4 w-4 text-[#0A0A0A]" />
             </div>
             <div>
               <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.12em] text-[#FFD600]">
-                {TIP.label}
+                {messages.wordpress.tipLabel}
               </p>
               <p className="mt-2 font-(family-name:--font-poppins) text-sm leading-6 italic text-[#D8D8D8]">
-                "{TIP.quote}"
+                "{messages.wordpress.tipQuote}"
               </p>
             </div>
           </div>

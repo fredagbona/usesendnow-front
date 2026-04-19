@@ -1,11 +1,14 @@
 "use client"
 
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+
 interface HighlightedTemplateBodyProps {
   body: string | null
 }
 
 export function HighlightedTemplateBody({ body }: HighlightedTemplateBodyProps) {
-  if (!body) return <span className="text-text-muted">Aucun corps</span>
+  const { locale } = usePortalLocale()
+  if (!body) return <span className="text-text-muted">{locale === "fr" ? "Aucun corps" : "No body"}</span>
 
   const parts = body.split(/(\{\{\s*[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*\s*\}\})/g)
 

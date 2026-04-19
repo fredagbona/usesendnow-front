@@ -17,6 +17,7 @@ import Alert from "@/components/ui/Alert"
 import Badge from "@/components/ui/Badge"
 import { TemplateVariableGuide } from "@/components/templates/TemplateVariableGuide"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import {
   ArrowLeft01Icon,
   File01Icon,
@@ -61,6 +62,8 @@ const EXAMPLES = [
 ]
 
 export default function NewTemplatePage() {
+  const { copy } = usePortalLocale()
+  const tNew = copy.templates.new
   const router = useRouter()
   const [name, setName] = useState("")
   const [type, setType] = useState<TemplateType>("text")
@@ -106,15 +109,15 @@ export default function NewTemplatePage() {
         body: body.trim() || null,
         mediaUrl: type === "text" ? null : mediaUrl.trim() || null,
       })
-      toast.success("Template créé")
+      toast.success(tNew.created)
       router.push(`/templates/${response.id}`)
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "TEMPLATE_INVALID") {
-        setError("Ce template contient des placeholders invalides ou une configuration média incomplète.")
+        setError(tNew.invalid)
       } else if (err instanceof ApiClientError && err.code === "VALIDATION_ERROR") {
-        setError("Vérifiez les champs obligatoires du template.")
+        setError(tNew.requiredFields)
       } else {
-        setError("Impossible d'enregistrer le template.")
+        setError(tNew.saveFailed)
       }
     } finally {
       setLoading(false)
@@ -124,12 +127,12 @@ export default function NewTemplatePage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6 max-w-6xl">
       <PageHeader
-        title="Nouveau template"
-        description="Créez un message réutilisable avec des variables dynamiques."
+        title={tNew.title}
+        description={tNew.description}
         action={
           <Button variant="secondary" onClick={() => router.push("/templates")}>
             <ArrowLeft01Icon className="w-4 h-4 mr-1.5" />
-            Retour aux templates
+            {tNew.back}
           </Button>
         }
       />
@@ -139,11 +142,10 @@ export default function NewTemplatePage() {
         <Card className="space-y-4 border-primary/20 bg-primary-subtle">
           <div className="flex items-center gap-2">
             <InformationCircleIcon className="w-5 h-5 text-primary" />
-            <h3 className="text-sm font-semibold text-text">Syntaxe des variables</h3>
+            <h3 className="text-sm font-semibold text-text">{tNew.variableSyntax}</h3>
           </div>
           <p className="text-sm text-text-secondary">
-            Utilisez <code className="font-mono bg-bg px-1 rounded text-text">&#123;&#123;path.to.value&#125;&#125;</code> pour insérer des variables dynamiques.
-            Elles seront remplacées automatiquement lors de l'envoi.
+            {tNew.variableSyntaxDescription}
           </p>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -176,10 +178,10 @@ export default function NewTemplatePage() {
             <div className="flex items-center gap-2 mb-2">
               <Megaphone01Icon className="w-4 h-4 text-text-secondary" />
               <code className="text-xs font-mono font-bold text-text">custom.*</code>
-              <span className="text-xs text-text-muted">— Variables personnalisées</span>
+              <span className="text-xs text-text-muted">— {tNew.customVariables}</span>
             </div>
             <p className="text-xs text-text-secondary">
-              Définies par vous lors de l'envoi ou de la campagne. Ex : <code className="font-mono bg-bg-subtle px-1 rounded">&#123;&#123;custom.code&#125;&#125;</code>, <code className="font-mono bg-bg-subtle px-1 rounded">&#123;&#123;custom.amount&#125;&#125;</code>
+              {tNew.customVariablesDescription}
             </p>
           </div>
         </Card>
@@ -193,9 +195,9 @@ export default function NewTemplatePage() {
           >
             <div className="flex items-center gap-2">
               <BubbleChatIcon className="w-5 h-5 text-text-secondary" />
-              <h3 className="text-sm font-semibold text-text">Exemples de templates</h3>
+              <h3 className="text-sm font-semibold text-text">{tNew.examplesTitle}</h3>
             </div>
-            <span className="text-xs text-text-secondary">{showExamples ? "Masquer" : "Afficher"}</span>
+            <span className="text-xs text-text-secondary">{showExamples ? tNew.hide : tNew.show}</span>
           </button>
 
           {showExamples && (
@@ -212,9 +214,9 @@ export default function NewTemplatePage() {
                         className="inline-flex items-center gap-1 text-xs text-text-secondary hover:text-primary transition-colors"
                       >
                         {isCopied ? (
-                          <><CheckmarkCircle01Icon className="w-3.5 h-3.5 text-primary" /> Copié</>
+                          <><CheckmarkCircle01Icon className="w-3.5 h-3.5 text-primary" /> {tNew.copied}</>
                         ) : (
-                          <><Copy01Icon className="w-3.5 h-3.5" /> Copier</>
+                          <><Copy01Icon className="w-3.5 h-3.5" /> {tNew.copy}</>
                         )}
                       </button>
                     </div>
@@ -230,11 +232,11 @@ export default function NewTemplatePage() {
         <Card className="space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <File01Icon className="w-5 h-5 text-text-secondary" />
-            <h3 className="text-base font-medium text-text">Informations</h3>
+            <h3 className="text-base font-medium text-text">{tNew.infoTitle}</h3>
           </div>
 
           <Input
-            label="Nom du template"
+            label={tNew.templateName}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="ex. Relance panier abandonné"
@@ -242,7 +244,7 @@ export default function NewTemplatePage() {
             autoFocus
           />
 
-          <Select label="Type" value={type} onChange={(e) => setType(e.target.value as TemplateType)}>
+          <Select label={copy.templates.type} value={type} onChange={(e) => setType(e.target.value as TemplateType)}>
             {TEMPLATE_TYPES.map((t) => (
               <option key={t} value={t}>{TYPE_LABEL[t]}</option>
             ))}
@@ -250,7 +252,7 @@ export default function NewTemplatePage() {
 
           {requiresMedia && (
             <Input
-              label="Media URL"
+              label={tNew.mediaUrl}
               type="url"
               value={mediaUrl}
               onChange={(e) => setMediaUrl(e.target.value)}
@@ -264,21 +266,20 @@ export default function NewTemplatePage() {
         <Card className="space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-text mb-1">
-              Corps du message
+              {tNew.bodyTitle}
             </h3>
             <p className="text-xs text-text-secondary mb-3">
-              Rédigez votre message en utilisant les variables <code className="font-mono bg-bg-subtle px-1 rounded">&#123;&#123;...&#125;&#125;</code>.
-              Cliquez sur les variables ci-dessus pour les insérer.
+              {tNew.bodyDescription}
             </p>
           </div>
 
           <Textarea
-            label={requiresMedia ? "Corps (optionnel)" : "Corps"}
+            label={requiresMedia ? copy.templates.bodyOptional : copy.templates.body}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             required={!requiresMedia}
             rows={8}
-            placeholder="Bonjour {{contact.firstName}}, utilisez {{custom.code}} aujourd'hui."
+            placeholder={tNew.bodyPlaceholder}
           />
 
           {/* Detected variables */}
@@ -286,14 +287,14 @@ export default function NewTemplatePage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <InformationCircleIcon className="w-4 h-4 text-text-secondary" />
-                <p className="text-sm font-medium text-text-body">Variables détectées ({detectedVariables.length})</p>
+                <p className="text-sm font-medium text-text-body">{tNew.variablesDetected} ({detectedVariables.length})</p>
               </div>
 
               {contextVars.length > 0 && (
                 <div>
                   <p className="text-xs font-medium text-text-secondary mb-1.5">
                     <CheckmarkCircle01Icon className="w-3.5 h-3.5 inline mr-1" />
-                    Résolues automatiquement
+                    {tNew.autoResolved}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {contextVars.map((v) => (
@@ -307,7 +308,7 @@ export default function NewTemplatePage() {
                 <div>
                   <p className="text-xs font-medium text-text-secondary mb-1.5">
                     <Megaphone01Icon className="w-3.5 h-3.5 inline mr-1" />
-                    À fournir lors de l'envoi
+                    {tNew.toProvideOnSend}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {customVars.map((v) => (
@@ -321,7 +322,7 @@ export default function NewTemplatePage() {
 
           {detectedVariables.length === 0 && body.length > 0 && (
             <p className="text-xs text-text-muted">
-              Aucune variable détectée. Utilisez <code className="font-mono bg-bg-subtle px-1 rounded">&#123;&#123;contact.firstName&#125;&#125;</code> par exemple.
+              {tNew.noVariablesDetected}
             </p>
           )}
 
@@ -334,13 +335,13 @@ export default function NewTemplatePage() {
         <div className="flex items-center justify-between">
           {!canSubmit && (
             <p className="text-sm text-text-secondary">
-              Remplissez le nom et le corps du message pour créer le template.
+              {tNew.submitHint}
             </p>
           )}
           <div className="flex gap-3 ml-auto">
-            <Button type="button" variant="secondary" onClick={() => router.push("/templates")}>Annuler</Button>
+            <Button type="button" variant="secondary" onClick={() => router.push("/templates")}>{tNew.cancel}</Button>
             <Button type="submit" variant="primary" loading={loading} disabled={!canSubmit}>
-              Créer le template
+              {tNew.create}
             </Button>
           </div>
         </div>

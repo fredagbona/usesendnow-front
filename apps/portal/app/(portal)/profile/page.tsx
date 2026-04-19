@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
 import { apiClient } from "@usesendnow/api-client"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import type { User, SubscriptionResponse } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Avatar from "@/components/ui/Avatar"
@@ -15,6 +16,7 @@ import { SkeletonCard } from "@/components/ui/Skeleton"
 import { Mail01Icon, CreditCardIcon } from "hugeicons-react"
 
 export default function ProfilePage() {
+  const { locale } = usePortalLocale()
   const [user, setUser] = useState<User | null>(null)
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -38,7 +40,7 @@ export default function ProfilePage() {
         setPhone(u.phone)
         setDisplayName(u.displayName ?? "")
       })
-      .catch(() => toast.error("Impossible de charger le profil."))
+      .catch(() => toast.error(locale === "fr" ? "Impossible de charger le profil." : "Unable to load the profile."))
       .finally(() => setLoading(false))
   }, [])
 
@@ -57,7 +59,7 @@ export default function ProfilePage() {
     }
 
     if (Object.keys(payload).length === 0) {
-      toast.info("Aucune modification détectée.")
+      toast.info(locale === "fr" ? "Aucune modification détectée." : "No changes detected.")
       return
     }
 
@@ -68,9 +70,9 @@ export default function ProfilePage() {
       setFullName(updated.fullName)
       setPhone(updated.phone)
       setDisplayName(updated.displayName ?? "")
-      toast.success("Profil mis à jour")
+      toast.success(locale === "fr" ? "Profil mis à jour" : "Profile updated")
     } catch {
-      toast.error("Impossible de mettre à jour le profil.")
+      toast.error(locale === "fr" ? "Impossible de mettre à jour le profil." : "Unable to update the profile.")
     } finally {
       setSaving(false)
     }
@@ -90,7 +92,7 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="text-center py-16">
-        <p className="text-sm text-text-secondary">Profil introuvable.</p>
+        <p className="text-sm text-text-secondary">{locale === "fr" ? "Profil introuvable." : "Profile not found."}</p>
       </div>
     )
   }
@@ -108,8 +110,8 @@ export default function ProfilePage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
-        title="Profil"
-        description="Gérez vos informations personnelles"
+        title={locale === "fr" ? "Profil" : "Profile"}
+        description={locale === "fr" ? "Gérez vos informations personnelles" : "Manage your personal information"}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
@@ -133,7 +135,7 @@ export default function ProfilePage() {
           <div className="w-full flex flex-col gap-2">
             <div className="flex items-center gap-2 px-3 py-2 bg-primary-subtle rounded-xl border border-primary/20">
               <CreditCardIcon className="w-4 h-4 text-primary shrink-0" />
-              <span className="text-sm font-medium text-primary-text truncate">Plan {planName}</span>
+              <span className="text-sm font-medium text-primary-text truncate">{locale === "fr" ? "Plan" : "Plan"} {planName}</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-2 bg-bg-subtle rounded-xl border border-border">
               <Mail01Icon className="w-4 h-4 text-text-muted shrink-0" />
@@ -145,10 +147,10 @@ export default function ProfilePage() {
 
         {/* Right — Editable form */}
         <Card elevated className="lg:col-span-2">
-          <h3 className="text-sm font-semibold text-text mb-5">Modifier le profil</h3>
+          <h3 className="text-sm font-semibold text-text mb-5">{locale === "fr" ? "Modifier le profil" : "Edit profile"}</h3>
           <form onSubmit={handleSave} className="space-y-4">
             <Input
-              label="Nom complet"
+              label={locale === "fr" ? "Nom complet" : "Full name"}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
@@ -156,15 +158,15 @@ export default function ProfilePage() {
               maxLength={100}
             />
             <Input
-              label="Nom d'affichage"
+              label={locale === "fr" ? "Nom d'affichage" : "Display name"}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Laissez vide pour utiliser le nom complet"
+              placeholder={locale === "fr" ? "Laissez vide pour utiliser le nom complet" : "Leave blank to use the full name"}
               maxLength={60}
-              hint="Affiché dans la barre latérale et les notifications"
+              hint={locale === "fr" ? "Affiché dans la barre latérale et les notifications" : "Shown in the sidebar and notifications"}
             />
             <Input
-              label="Téléphone"
+              label={locale === "fr" ? "Téléphone" : "Phone"}
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -174,11 +176,11 @@ export default function ProfilePage() {
 
             {/* Read-only email */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-text-body">Adresse e-mail</label>
+              <label className="text-sm font-medium text-text-body">{locale === "fr" ? "Adresse e-mail" : "Email address"}</label>
               <div className="flex items-center gap-2 px-3.5 py-2.5 bg-bg-subtle border border-border rounded-xl">
                 <span className="text-sm text-text-muted flex-1">{user.email}</span>
                 <span className="text-xs text-text-muted bg-bg border border-border px-2 py-0.5 rounded-md">
-                  Non modifiable
+                  {locale === "fr" ? "Non modifiable" : "Read-only"}
                 </span>
               </div>
             </div>
@@ -190,7 +192,7 @@ export default function ProfilePage() {
                 loading={saving}
                 disabled={!isDirty}
               >
-                Enregistrer les modifications
+                {locale === "fr" ? "Enregistrer les modifications" : "Save changes"}
               </Button>
             </div>
           </form>
