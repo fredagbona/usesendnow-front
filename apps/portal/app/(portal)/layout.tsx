@@ -6,13 +6,17 @@ import { isAuthenticated } from "@/lib/auth"
 import Sidebar, { MobileDrawer } from "@/components/layout/Sidebar"
 import PortalTitleManager from "@/components/layout/PortalTitleManager"
 import TopNav from "@/components/layout/TopNav"
+import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { apiClient } from "@usesendnow/api-client"
 import type { Plan, SubscriptionResponse, User } from "@usesendnow/types"
 
-function getFallbackPlan(code: string): Pick<Plan, "code" | "name" | "monthlyOutboundQuota" | "limits"> {
+function getFallbackPlan(
+  code: string,
+  freePlanDisplayName: string,
+): Pick<Plan, "code" | "name" | "monthlyOutboundQuota" | "limits"> {
   return {
     code,
-    name: code === "free" ? "Gratuit" : code,
+    name: code === "free" ? freePlanDisplayName : code,
     monthlyOutboundQuota: 0,
     limits: {
       maxInstances: 0,
@@ -25,6 +29,7 @@ function getFallbackPlan(code: string): Pick<Plan, "code" | "name" | "monthlyOut
 }
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
+  const { copy } = usePortalLocale()
   const router = useRouter()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [user, setUser] = useState<User | null>(null)
@@ -53,7 +58,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   const sub = subscription?.subscription
   const currentPlanCode = sub?.plan?.code ?? "free"
-  const plan = sub?.plan ?? getFallbackPlan(currentPlanCode)
+  const plan = sub?.plan ?? getFallbackPlan(currentPlanCode, copy.profile.planFallbackFree)
   const planName = plan.name
   const outboundTotal = plan.monthlyOutboundQuota ?? plan.limits?.monthlyOutboundQuota
 

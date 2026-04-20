@@ -41,21 +41,23 @@ interface TemplateVariableGuideProps {
 
 export function TemplateVariableGuide({
   variables,
-  title = "Variables supportées",
+  title,
 }: TemplateVariableGuideProps) {
-  const { locale } = usePortalLocale()
+  const { copy } = usePortalLocale()
+  const g = copy.templates.variableGuide
   const automaticVariables = useMemo(() => getAutomaticVariables(variables), [variables])
   const customVariables = useMemo(() => getCustomVariables(variables), [variables])
+  const displayTitle = title ?? g.defaultTitle
 
   return (
     <div className="space-y-3 rounded-xl border border-border bg-bg-subtle p-4">
       <div className="space-y-1">
-        <p className="text-sm font-semibold text-text-body">{title}</p>
+        <p className="text-sm font-semibold text-text-body">{displayTitle}</p>
         <p className="text-xs text-text-secondary">
-          {locale === "fr" ? "Format" : "Format"}: <code className="rounded bg-bg px-1.5 py-0.5 font-mono text-text">{"{{namespace.variable}}"}</code>
+          {g.formatLabel}: <code className="rounded bg-bg px-1.5 py-0.5 font-mono text-text">{"{{namespace.variable}}"}</code>
         </p>
         <p className="text-xs text-text-secondary">
-          {locale === "fr" ? "Exemples" : "Examples"}{" "}
+          {g.examplesLabel}{" "}
           {VARIABLE_EXAMPLES.map((example, index) => (
             <span key={example}>
               <code className="rounded bg-bg px-1.5 py-0.5 font-mono text-text">{example}</code>
@@ -66,29 +68,29 @@ export function TemplateVariableGuide({
       </div>
 
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-text-body">{locale === "fr" ? "Détectées dans ce template" : "Detected in this template"}</p>
+        <p className="text-sm font-semibold text-text-body">{g.detectedTitle}</p>
         <div className="space-y-2">
           <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">{locale === "fr" ? "Variables automatiques" : "Automatic variables"}</p>
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">{g.autoHeading}</p>
             <VariableBadges
               variables={automaticVariables}
-              emptyLabel={locale === "fr" ? "Aucune variable contact.*, user.* ou instance.* détectée." : "No contact.*, user.* or instance.* variables detected."}
+              emptyLabel={g.autoEmpty}
             />
           </div>
           <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">{locale === "fr" ? "Variables à fournir lors de l’envoi" : "Variables to provide when sending"}</p>
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">{g.customHeading}</p>
             <VariableBadges
               variables={customVariables}
-              emptyLabel={locale === "fr" ? "Aucune variable custom.* détectée." : "No custom.* variables detected."}
+              emptyLabel={g.customEmpty}
             />
           </div>
         </div>
       </div>
 
       <div className="space-y-1 text-xs text-text-muted">
-        <p>{locale === "fr" ? "Les variables contact.*, user.* et instance.* sont remplies automatiquement par le backend." : "contact.*, user.* and instance.* variables are filled automatically by the backend."}</p>
-        <p>{locale === "fr" ? "Les variables custom.* devront être renseignées plus tard lors du preview, de l’envoi d’un message ou de la création d’une campagne." : "custom.* variables must be provided later during preview, message sending, or campaign creation."}</p>
-        <p>{locale === "fr" ? "Le backend détecte et recalcule automatiquement les variables." : "The backend detects and recalculates variables automatically."}</p>
+        <p>{g.footnoteAuto}</p>
+        <p>{g.footnoteCustom}</p>
+        <p>{g.footnoteBackend}</p>
       </div>
     </div>
   )

@@ -28,16 +28,10 @@ const STATUS_VARIANT: Record<string, "success" | "yellow" | "neutral" | "error">
   suspended:    "error",
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  connected:    "Connecté",
-  connecting:   "Connexion...",
-  disconnected: "Déconnecté",
-  suspended:    "Suspendue",
-}
-
 export default function InstancesPage() {
   const router = useRouter()
   const { copy } = usePortalLocale()
+  const list = copy.instances.list
   const { instances, loading, createInstance } = useInstances()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -49,7 +43,7 @@ export default function InstancesPage() {
     normalizedNewName.length === 0
       ? null
       : normalizedNewName.length <= 3
-        ? "Le nom de l'instance doit contenir plus de 3 caractères."
+        ? list.nameTooShort
         : null
 
   useEffect(() => {
@@ -63,22 +57,30 @@ export default function InstancesPage() {
   const activeCount = subscription?.usage?.activeInstancesCount ?? 0
   const isAtLimit = activeCount >= maxInstances
 
+  const instanceBadgeLabel = (status: string) => {
+    if (status === "connected") return list.badgeConnected
+    if (status === "connecting") return list.badgeConnecting
+    if (status === "disconnected") return list.badgeDisconnected
+    if (status === "suspended") return list.badgeSuspended
+    return status
+  }
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!normalizedNewName || createNameError) return
     setCreating(true)
     try {
       await createInstance(normalizedNewName)
-      toast.success("Instance créée")
+      toast.success(list.createSuccess)
       setModalOpen(false)
       setNewName("")
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "MAX_INSTANCES_REACHED") {
         setModalOpen(false)
         setPlanLimitReached(true)
-        toast.error("Limite d'instances atteinte. Mettez à niveau votre plan.")
+        toast.error(list.createErrorMax)
       } else {
-        toast.error("Impossible de créer l'instance.")
+        toast.error(list.createErrorGeneric)
       }
     } finally {
       setCreating(false)
@@ -88,15 +90,15 @@ export default function InstancesPage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
-        title="Instances WhatsApp"
-        description="Gérez vos numéros WhatsApp connectés"
+        title={list.pageTitle}
+        description={list.pageDescription}
         action={
           <Button
             variant="primary"
             onClick={() => setModalOpen(true)}
             disabled={isAtLimit || planLimitReached}
           >
-            Nouvelle instance
+            {list.newInstance}
           </Button>
         }
       />
@@ -105,7 +107,7 @@ export default function InstancesPage() {
         <div className="mb-6 flex items-center gap-3 p-4 bg-warning-subtle border border-warning/30 rounded-2xl">
           <AlertDiamondIcon className="w-5 h-5 text-warning shrink-0" />
           <p className="text-sm text-text flex-1">
-            Limite d&apos;instances atteinte ({maxInstances}).{" "}
+            {list.limitReachedBanner} ({maxInstances}).{" "}
             <button
               onClick={() => router.push("/billing")}
               className="text-primary-ink font-medium hover:text-text hover:underline"
@@ -123,9 +125,9 @@ export default function InstancesPage() {
       ) : instances.length === 0 ? (
         <EmptyState
           icon={<SmartPhone01Icon className="w-8 h-8" />}
-          title="Aucune instance pour l'instant"
-          description="Créez votre première connexion WhatsApp."
-          ctaLabel="Nouvelle instance"
+          title={list.emptyTitle}
+          description={list.emptyDescription}
+          ctaLabel={list.newInstance}
           onCta={() => setModalOpen(true)}
         />
       ) : (
@@ -159,13 +161,7 @@ export default function InstancesPage() {
                   variant={STATUS_VARIANT[instance.status] ?? "neutral"}
                   pulse={instance.status === "connecting"}
                 >
-                  {instance.status === "connected"
-                    ? "WhatsApp connecté"
-                    : instance.status === "connecting"
-                      ? "Connexion en cours"
-                      : instance.status === "disconnected"
-                        ? "WhatsApp non connecté"
-                        : "Instance suspendue"}
+                  {instanceBadgeLabel(instance.status)}
                 </Badge>
               </div>
               <h3 className="mb-1 text-base font-semibold text-text truncate">
@@ -178,7 +174,7 @@ export default function InstancesPage() {
               )}
               {instance.status === "suspended" && (
                 <p className="text-xs text-error mb-3">
-                  Suspendue suite à un changement de plan.
+                  {list.suspendedCardHint}
                 </p>
               )}
               <div className={instance.status === "suspended" ? "mt-2" : "mt-4"}>
@@ -190,7 +186,7 @@ export default function InstancesPage() {
                     router.push(`/instances/${instance.id}`)
                   }}
                 >
-                  Gérer
+                  {list.manage}
                 </Button>
               </div>
             </Card>
@@ -202,27 +198,27 @@ export default function InstancesPage() {
       <Modal
         open={modalOpen}
         onClose={() => { setModalOpen(false); setNewName("") }}
-        title="Nouvelle instance"
-        description="Créez une nouvelle connexion WhatsApp"
+        title={list.modalTitle}
+        description={list.modalDescription}
       >
         <form onSubmit={handleCreate} className="space-y-4">
           <Input
-            label="Nom de l'instance"
+            label={list.nameLabel}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="ex : Boutique Principale"
+            placeholder={list.namePlaceholder}
             required
             autoFocus
             minLength={4}
             error={createNameError ?? undefined}
-            hint="Minimum 4 caractères."
+            hint={list.nameHint}
           />
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
-              Annuler
+              {list.cancel}
             </Button>
             <Button type="submit" variant="primary" loading={creating} disabled={!normalizedNewName || !!createNameError}>
-              Créer
+              {list.create}
             </Button>
           </div>
         </form>

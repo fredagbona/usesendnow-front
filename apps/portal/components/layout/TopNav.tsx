@@ -25,10 +25,10 @@ interface TopNavProps {
   onMobileMenu?: () => void
 }
 
-export default function TopNav({ user, planName = "Gratuit", onMobileMenu }: TopNavProps) {
+export default function TopNav({ user, planName, onMobileMenu }: TopNavProps) {
   const router = useRouter()
   const { theme, toggleTheme } = usePortalTheme()
-  const { locale, copy, toggleLocale } = usePortalLocale()
+  const { copy, toggleLocale } = usePortalLocale()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -64,14 +64,14 @@ export default function TopNav({ user, planName = "Gratuit", onMobileMenu }: Top
           type="button"
           onClick={toggleTheme}
           className="hidden lg:inline-flex items-center gap-2 rounded-xl border border-border bg-bg px-3 py-2 text-xs font-medium text-text-secondary hover:bg-bg-subtle hover:text-text transition-colors cursor-pointer"
-          title={theme === "dark" ? "Activer le thème clair" : "Activer le thème sombre"}
+          title={theme === "dark" ? copy.topnav.themeSwitchToLight : copy.topnav.themeSwitchToDark}
         >
           {theme === "dark" ? (
             <Sun01Icon className="w-4 h-4" />
           ) : (
             <Moon02Icon className="w-4 h-4" />
           )}
-          <span>{theme === "dark" ? "Clair" : "Sombre"}</span>
+          <span>{theme === "dark" ? copy.topnav.light : copy.topnav.dark}</span>
         </button>
       </div>
 
@@ -81,10 +81,10 @@ export default function TopNav({ user, planName = "Gratuit", onMobileMenu }: Top
         type="button"
         onClick={toggleLocale}
         className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg px-3 py-2 text-xs font-medium text-text-secondary hover:bg-bg-subtle hover:text-text transition-colors cursor-pointer"
-        title={`${copy.topnav.language}: ${locale === "fr" ? copy.common.french : copy.common.english}`}
+        title={`${copy.topnav.language}: ${copy.common.currentLanguageName}`}
       >
-        <span className="font-semibold uppercase tracking-wide">{locale.toUpperCase()}</span>
-        <span>{locale === "fr" ? copy.common.french : copy.common.english}</span>
+        <span className="font-semibold uppercase tracking-wide">{copy.common.localeCode}</span>
+        <span>{copy.common.currentLanguageName}</span>
       </button>
 
       {/* Right spacer */}
@@ -117,7 +117,7 @@ export default function TopNav({ user, planName = "Gratuit", onMobileMenu }: Top
               <p className="text-xs font-semibold text-text leading-tight">
                 {user ? (user.displayName ?? user.fullName) : "—"}
               </p>
-              <p className="text-[10px] text-text-muted leading-tight">{planName}</p>
+              <p className="text-[10px] text-text-muted leading-tight">{planName ?? copy.profile.planFallbackFree}</p>
             </div>
             <ArrowDown01Icon className="w-3.5 h-3.5 text-text-muted shrink-0" />
           </button>

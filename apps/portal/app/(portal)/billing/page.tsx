@@ -43,9 +43,14 @@ function formatPrice(priceMonthly: number | undefined, locale: "fr" | "en", bill
   return `${(priceMonthly / 100).toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.priceUnit}`
 }
 
-function formatUsdValue(amount: number | undefined, locale: "fr" | "en"): string {
+function formatUsdValue(
+  amount: number | undefined,
+  locale: "fr" | "en",
+  billingCopy: ReturnType<typeof usePortalLocale>["copy"]["billing"],
+): string {
   if (amount === undefined || amount === null) return ""
-  return `(${amount.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} €)`
+  const formatted = amount.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")
+  return billingCopy.priceSecondaryEur.replace("{{amount}}", formatted)
 }
 
 function formatAmount(amount: number, currency: string): string {
@@ -69,14 +74,14 @@ function getPlanLimits(plan: Plan) {
 function getPlanDisplayPrice(plan: Plan, locale: "fr" | "en", billingCopy: ReturnType<typeof usePortalLocale>["copy"]["billing"]) {
   if (plan.priceEur !== undefined) {
     return {
-      primary: formatUsdValue(plan.priceEur, locale),
+      primary: formatUsdValue(plan.priceEur, locale, billingCopy),
       secondary: "",
     }
   }
 
   if (plan.priceFcfa !== undefined) {
     return {
-      primary: formatUsdValue(plan.priceFcfa, locale),
+      primary: formatUsdValue(plan.priceFcfa, locale, billingCopy),
       secondary: "",
     }
   }
@@ -84,7 +89,7 @@ function getPlanDisplayPrice(plan: Plan, locale: "fr" | "en", billingCopy: Retur
   if (plan.currency === "XOF" && plan.priceMonthly !== undefined) {
     const usd = plan.priceMonthly / 100
     return {
-      primary: formatUsdValue(usd, locale),
+      primary: formatUsdValue(usd, locale, billingCopy),
       secondary: "",
     }
   }
@@ -114,7 +119,7 @@ function getPlanFeatures(plan: Plan, locale: "fr" | "en", billingCopy: ReturnTyp
         : undefined
 
   return [
-    `${limits.maxInstances} ${limits.maxInstances > 1 ? billingCopy.instances : "instance"}`,
+    `${limits.maxInstances} ${limits.maxInstances > 1 ? billingCopy.instances : billingCopy.instance}`,
     `${displayedMonthlyOutboundQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.messagesPerMonth}`,
     `${limits.monthlyApiRequestQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.apiRequests}`,
     `${limits.maxApiKeys} ${limits.maxApiKeys > 1 ? billingCopy.apiKeys : billingCopy.apiKey}`,
@@ -352,7 +357,7 @@ function BillingPageContent() {
         // Downgrade → schedule at end of period
         await apiClient.billing.downgrade(plan.code)
         await refetch()
-        toast.success(`${billingCopy.toast.downgradeScheduledPrefix} ${plan.name} ${billingCopy.toast.downgradeScheduledSuffix}`)
+        toast.success(billingCopy.toast.downgradeScheduled.replace("{{planName}}", plan.name))
         setPlanModalOpen(false)
       }
     } catch (err) {
@@ -381,7 +386,11 @@ function BillingPageContent() {
     try {
       await apiClient.billing.cancel()
       await refetch()
-      toast.success(`${billingCopy.toast.cancelSuccessPrefix}${currentPlan.name ? ` ${currentPlan.name}` : ""} ${billingCopy.toast.cancelSuccessSuffix}`)
+      toast.success(
+        currentPlan.name
+          ? billingCopy.toast.cancelSuccessWithPlan.replace("{{planName}}", currentPlan.name)
+          : billingCopy.toast.cancelSuccess,
+      )
       setCancelModalOpen(false)
     } catch (err) {
       if (err instanceof ApiClientError) {

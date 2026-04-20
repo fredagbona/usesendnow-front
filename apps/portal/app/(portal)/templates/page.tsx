@@ -9,7 +9,7 @@ import { useTemplates } from "@/hooks/useTemplates"
 import { formatDate } from "@/lib/format"
 import { parseTemplateVariables } from "@/lib/templateEngine"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
-import { portalCopy } from "@/lib/portal-copy"
+import { renderWithStrongCount, renderWithStrongName } from "@/lib/render-copy-placeholders"
 import type { Template, TemplateType } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
@@ -29,14 +29,6 @@ import { apiClient as api, ApiClientError } from "@usesendnow/api-client"
 
 const TEMPLATE_TYPES: TemplateType[] = ["text", "image", "video", "audio", "document"]
 
-const TYPE_LABEL: Record<TemplateType, string> = {
-  text: "Texte",
-  image: "Image",
-  video: "Vidéo",
-  audio: "Audio",
-  document: "Document",
-}
-
 function TemplateEditModal({
   template,
   onSuccess,
@@ -46,6 +38,11 @@ function TemplateEditModal({
   onSuccess: (template: Template) => void
   onClose: () => void
 }) {
+  const { copy } = usePortalLocale()
+  const t = copy.templates
+  const tNew = t.new
+  const typeLabels = t.detail.typeLabels
+
   const [name, setName] = useState(template.name)
   const [body, setBody] = useState(template.body ?? "")
   const [mediaUrl, setMediaUrl] = useState(template.mediaUrl ?? "")
@@ -68,14 +65,14 @@ function TemplateEditModal({
       })
       onSuccess(response)
       onClose()
-      toast.success("Template mis à jour")
+      toast.success(t.templateUpdated)
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "TEMPLATE_INVALID") {
-        setError("Ce template contient des placeholders invalides ou une configuration média incomplète.")
+        setError(t.invalidTemplate)
       } else if (err instanceof ApiClientError && err.code === "VALIDATION_ERROR") {
-        setError("Vérifiez les champs obligatoires du template.")
+        setError(t.validationError)
       } else {
-        setError("Impossible d'enregistrer le template.")
+        setError(t.templateUpdateFailed)
       }
     } finally {
       setLoading(false)
@@ -83,34 +80,38 @@ function TemplateEditModal({
   }
 
   return (
-    <Modal open onClose={onClose} title="Modifier le template" maxWidth="max-w-2xl">
+    <Modal open onClose={onClose} title={t.editTitle} maxWidth="max-w-2xl">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input label="Nom" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
-        <Select label="Type" value={template.type} disabled>
-          <option>{TYPE_LABEL[template.type]}</option>
+        <Input label={t.name} value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+        <Select label={t.type} value={template.type} disabled>
+          <option>{typeLabels[template.type]}</option>
         </Select>
         <Textarea
-          label={requiresMedia ? "Corps (optionnel)" : "Corps"}
+          label={requiresMedia ? t.bodyOptional : t.body}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           required={!requiresMedia}
           rows={5}
-          placeholder="Bonjour {{contact.firstName}}, utilisez {{custom.code}} aujourd'hui."
+          placeholder={tNew.bodyPlaceholder}
         />
         <TemplateVariableGuide variables={detectedVariables} />
         {requiresMedia && (
           <Input
-            label="Media URL"
+            label={t.detail.mediaUrlTitle}
             type="url"
             value={mediaUrl}
             onChange={(e) => setMediaUrl(e.target.value)}
-            placeholder="https://cdn.msgflash.com/assets/promo.jpg"
+            placeholder={t.mediaUrlPlaceholder}
           />
         )}
         {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
         <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="secondary" onClick={onClose}>Annuler</Button>
-          <Button type="submit" variant="primary" loading={loading}>Enregistrer</Button>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            {tNew.cancel}
+          </Button>
+          <Button type="submit" variant="primary" loading={loading}>
+            {t.save}
+          </Button>
         </div>
       </form>
     </Modal>
@@ -119,48 +120,64 @@ function TemplateEditModal({
 
 export default function TemplatesPage() {
   const router = useRouter()
-  const { locale } = usePortalLocale()
-  const copy = portalCopy[locale]
-  const { templates, total, page, limit, loading, goToPage, addTemplate, updateTemplate, removeTemplate } = useTemplates()
+  const { copy } = usePortalLocale()
+  const t = copy.templates
+  const { templates, total, page, limit, loading, goToPage, updateTemplate, removeTemplate } = useTemplates()
   const [editTarget, setEditTarget] = useState<Template | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Template | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
 
   const totalPages = Math.ceil(total / limit)
+  const typeLabels = t.detail.typeLabels
 
   const handleDelete = async () => {
     if (!deleteTarget) return
     setDeleting(deleteTarget.id)
-      try {
-        await api.templates.delete(deleteTarget.id)
-        removeTemplate(deleteTarget.id)
-        setDeleteTarget(null)
-      toast.success(copy.templates.templateDeleted)
-      } catch {
-      toast.error(copy.templates.templateDeleteFailed)
-      } finally {
-        setDeleting(null)
-      }
+    try {
+      await api.templates.delete(deleteTarget.id)
+      removeTemplate(deleteTarget.id)
+      setDeleteTarget(null)
+      toast.success(t.templateDeleted)
+    } catch {
+      toast.error(t.templateDeleteFailed)
+    } finally {
+      setDeleting(null)
+    }
   }
+
+  const pageIndicator =
+    totalPages > 1
+      ? t.pageIndicator.replace("{{page}}", String(page)).replace("{{total}}", String(totalPages))
+      : null
 
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
-        title={copy.templates.pageTitle}
-        description={total > 0 ? `${total} template${total !== 1 ? "s" : ""}` : copy.templates.pageDescription}
-        action={<Button variant="primary" onClick={() => router.push("/templates/new")}>{copy.templates.newTemplate}</Button>}
+        title={t.pageTitle}
+        description={
+          total > 0
+            ? renderWithStrongCount(total === 1 ? t.headerCountOne : t.headerCountMany, total)
+            : t.pageDescription
+        }
+        action={
+          <Button variant="primary" onClick={() => router.push("/templates/new")}>
+            {t.newTemplate}
+          </Button>
+        }
       />
 
       {loading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3].map((index) => <SkeletonCard key={index} />)}
+          {[1, 2, 3].map((index) => (
+            <SkeletonCard key={index} />
+          ))}
         </div>
       ) : templates.length === 0 ? (
         <EmptyState
           icon={<File01Icon className="w-8 h-8" />}
-          title={copy.templates.emptyTitle}
-          description={copy.templates.emptyDescription}
-          ctaLabel={copy.templates.newTemplate}
+          title={t.emptyTitle}
+          description={t.emptyDescription}
+          ctaLabel={t.newTemplate}
           onCta={() => router.push("/templates/new")}
         />
       ) : (
@@ -171,8 +188,8 @@ export default function TemplatesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-sm font-semibold text-text truncate">{template.name}</h3>
                   <div className="flex gap-1.5">
-                    <Badge variant="neutral">{TYPE_LABEL[template.type]}</Badge>
-                    {template.type !== "text" && <Badge variant="warning">{copy.templates.media}</Badge>}
+                    <Badge variant="neutral">{typeLabels[template.type]}</Badge>
+                    {template.type !== "text" && <Badge variant="warning">{t.media}</Badge>}
                   </div>
                 </div>
 
@@ -190,28 +207,34 @@ export default function TemplatesPage() {
                   </div>
                 )}
 
-                <p className="mt-4 text-xs text-text-muted">{copy.templates.modifiedAt} {formatDate(template.updatedAt)}</p>
+                <p className="mt-4 text-xs text-text-muted">
+                  {t.modifiedAt} {formatDate(template.updatedAt)}
+                </p>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => setEditTarget(template)}>{copy.templates.edit}</Button>
-                  <Button size="sm" variant="ghost" onClick={() => router.push(`/templates/${template.id}`)}>{copy.templates.preview}</Button>
+                  <Button size="sm" variant="secondary" onClick={() => setEditTarget(template)}>
+                    {t.edit}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => router.push(`/templates/${template.id}`)}>
+                    {t.preview}
+                  </Button>
                   <Button size="sm" variant="danger" loading={deleting === template.id} onClick={() => setDeleteTarget(template)}>
-                    {copy.templates.delete}
+                    {t.delete}
                   </Button>
                 </div>
               </Card>
             ))}
           </div>
 
-          {totalPages > 1 && (
+          {totalPages > 1 && pageIndicator && (
             <div className="mt-6 flex items-center justify-between">
-              <p className="text-sm text-text-secondary">Page {page} / {totalPages}</p>
+              <p className="text-sm text-text-secondary">{pageIndicator}</p>
               <div className="flex gap-2">
                 <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => goToPage(page - 1)}>
-                  {copy.templates.previous}
+                  {t.previous}
                 </Button>
                 <Button variant="secondary" size="sm" disabled={page >= totalPages} onClick={() => goToPage(page + 1)}>
-                  {copy.templates.next}
+                  {t.next}
                 </Button>
               </div>
             </div>
@@ -230,15 +253,17 @@ export default function TemplatesPage() {
         />
       )}
 
-        <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={copy.templates.deleteTitle}>
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={t.deleteTitle}>
         {deleteTarget && (
           <div>
-            <p className="mb-6 text-sm text-text-body">
-              {copy.templates.confirmDelete} <strong className="text-text">{deleteTarget.name}</strong> ?
-            </p>
+            <p className="mb-6 text-sm text-text-body">{renderWithStrongName(t.deleteConfirmMessage, deleteTarget.name)}</p>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Annuler</Button>
-              <Button variant="danger" loading={!!deleting} onClick={handleDelete}>{copy.templates.deleteConfirm}</Button>
+              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
+                {t.cancel}
+              </Button>
+              <Button variant="danger" loading={!!deleting} onClick={handleDelete}>
+                {t.deleteConfirm}
+              </Button>
             </div>
           </div>
         )}

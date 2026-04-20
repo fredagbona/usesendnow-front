@@ -32,38 +32,34 @@ import {
 
 const TEMPLATE_TYPES: TemplateType[] = ["text", "image", "video", "audio", "document"]
 
-const TYPE_LABEL: Record<TemplateType, string> = {
-  text: "Texte",
-  image: "Image",
-  video: "Vidéo",
-  audio: "Audio",
-  document: "Document",
-}
+const AUTO_VARIABLE_BLOCKS = [
+  {
+    namespace: "contact.*",
+    descKey: "contact" as const,
+    icon: BubbleChatIcon,
+    fields: ["contact.name", "contact.firstName", "contact.phone", "contact.tags", "contact.meta.*"],
+  },
+  {
+    namespace: "user.*",
+    descKey: "user" as const,
+    icon: UserIcon,
+    fields: ["user.fullName", "user.email", "user.phone"],
+  },
+  {
+    namespace: "instance.*",
+    descKey: "instance" as const,
+    icon: Settings02Icon,
+    fields: ["instance.name"],
+  },
+] as const
 
-const AUTO_VARIABLES = [
-  { namespace: "contact.*", icon: BubbleChatIcon, fields: ["contact.name", "contact.firstName", "contact.phone", "contact.tags", "contact.meta.*"], desc: "Données du contact" },
-  { namespace: "user.*", icon: UserIcon, fields: ["user.fullName", "user.email", "user.phone"], desc: "Vos données utilisateur" },
-  { namespace: "instance.*", icon: Settings02Icon, fields: ["instance.name"], desc: "Données de l'instance" },
-]
-
-const EXAMPLES = [
-  {
-    label: "Relance personnalisée",
-    body: "Bonjour {{contact.firstName}}, vous avez laissé un article dans votre panier. Utilisez {{custom.code}} pour 10% de réduction.",
-  },
-  {
-    label: "Confirmation de commande",
-    body: "Merci {{contact.firstName}} ! Votre commande {{custom.orderId}} de {{custom.amount}}€ est confirmée. Livraison prévue le {{custom.deliveryDate}}.",
-  },
-  {
-    label: "Note de service",
-    body: "Bonjour à tous, l'instance {{instance.name}} sera en maintenance le {{custom.date}}. Merci de votre compréhension.",
-  },
-]
+const EXAMPLE_KEYS = ["followup", "order", "notice"] as const
 
 export default function NewTemplatePage() {
   const { copy } = usePortalLocale()
-  const tNew = copy.templates.new
+  const t = copy.templates
+  const tNew = t.new
+  const typeLabels = t.detail.typeLabels
   const router = useRouter()
   const [name, setName] = useState("")
   const [type, setType] = useState<TemplateType>("text")
@@ -77,13 +73,10 @@ export default function NewTemplatePage() {
   const detectedVariables = useMemo(() => parseTemplateVariables(body), [body])
   const requiresMedia = type !== "text"
 
-  const customVars = useMemo(
-    () => detectedVariables.filter((v) => v.startsWith("custom.")),
-    [detectedVariables]
-  )
+  const customVars = useMemo(() => detectedVariables.filter((v) => v.startsWith("custom.")), [detectedVariables])
   const contextVars = useMemo(
     () => detectedVariables.filter((v) => v.startsWith("contact.") || v.startsWith("user.") || v.startsWith("instance.")),
-    [detectedVariables]
+    [detectedVariables],
   )
 
   const canSubmit =
@@ -144,18 +137,16 @@ export default function NewTemplatePage() {
             <InformationCircleIcon className="w-5 h-5 text-primary" />
             <h3 className="text-sm font-semibold text-text">{tNew.variableSyntax}</h3>
           </div>
-          <p className="text-sm text-text-secondary">
-            {tNew.variableSyntaxDescription}
-          </p>
+          <p className="text-sm text-text-secondary">{tNew.variableSyntaxDescription}</p>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            {AUTO_VARIABLES.map(({ namespace, icon: Icon, fields, desc }) => (
+            {AUTO_VARIABLE_BLOCKS.map(({ namespace, icon: Icon, fields, descKey }) => (
               <div key={namespace} className="bg-bg border border-border rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <Icon className="w-4 h-4 text-text-secondary" />
                   <code className="text-xs font-mono font-bold text-text">{namespace}</code>
                 </div>
-                <p className="text-xs text-text-muted mb-2">{desc}</p>
+                <p className="text-xs text-text-muted mb-2">{tNew.autoVariables[descKey]}</p>
                 <div className="flex flex-wrap gap-1">
                   {fields.map((f) => (
                     <button
@@ -180,9 +171,7 @@ export default function NewTemplatePage() {
               <code className="text-xs font-mono font-bold text-text">custom.*</code>
               <span className="text-xs text-text-muted">— {tNew.customVariables}</span>
             </div>
-            <p className="text-xs text-text-secondary">
-              {tNew.customVariablesDescription}
-            </p>
+            <p className="text-xs text-text-secondary">{tNew.customVariablesDescription}</p>
           </div>
         </Card>
 
@@ -202,25 +191,33 @@ export default function NewTemplatePage() {
 
           {showExamples && (
             <div className="mt-4 space-y-3">
-              {EXAMPLES.map((ex) => {
-                const isCopied = copied === ex.body
+              {EXAMPLE_KEYS.map((key) => {
+                const label = tNew.examples[key]
+                const bodyText = tNew.examplesBodies[key]
+                const isCopied = copied === bodyText
                 return (
-                  <div key={ex.label} className="bg-bg-subtle border border-border rounded-xl p-3">
+                  <div key={key} className="bg-bg-subtle border border-border rounded-xl p-3">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs font-medium text-text">{ex.label}</p>
+                      <p className="text-xs font-medium text-text">{label}</p>
                       <button
                         type="button"
-                        onClick={() => handleCopy(ex.body)}
+                        onClick={() => handleCopy(bodyText)}
                         className="inline-flex items-center gap-1 text-xs text-text-secondary hover:text-primary transition-colors"
                       >
                         {isCopied ? (
-                          <><CheckmarkCircle01Icon className="w-3.5 h-3.5 text-primary" /> {tNew.copied}</>
+                          <>
+                            <CheckmarkCircle01Icon className="w-3.5 h-3.5 text-primary" /> {tNew.copied}
+                          </>
                         ) : (
-                          <><Copy01Icon className="w-3.5 h-3.5" /> {tNew.copy}</>
+                          <>
+                            <Copy01Icon className="w-3.5 h-3.5" /> {tNew.copy}
+                          </>
                         )}
                       </button>
                     </div>
-                    <p className="text-xs font-mono text-text-secondary leading-relaxed break-words whitespace-pre-wrap">{ex.body}</p>
+                    <p className="text-xs font-mono text-text-secondary leading-relaxed wrap-break-word whitespace-pre-wrap">
+                      {bodyText}
+                    </p>
                   </div>
                 )
               })}
@@ -239,14 +236,16 @@ export default function NewTemplatePage() {
             label={tNew.templateName}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="ex. Relance panier abandonné"
+            placeholder={tNew.templateNamePlaceholder}
             required
             autoFocus
           />
 
-          <Select label={copy.templates.type} value={type} onChange={(e) => setType(e.target.value as TemplateType)}>
-            {TEMPLATE_TYPES.map((t) => (
-              <option key={t} value={t}>{TYPE_LABEL[t]}</option>
+          <Select label={t.type} value={type} onChange={(e) => setType(e.target.value as TemplateType)}>
+            {TEMPLATE_TYPES.map((templateType) => (
+              <option key={templateType} value={templateType}>
+                {typeLabels[templateType]}
+              </option>
             ))}
           </Select>
 
@@ -256,7 +255,7 @@ export default function NewTemplatePage() {
               type="url"
               value={mediaUrl}
               onChange={(e) => setMediaUrl(e.target.value)}
-              placeholder="https://cdn.msgflash.com/assets/promo.jpg"
+              placeholder={t.mediaUrlPlaceholder}
               required
             />
           )}
@@ -265,16 +264,12 @@ export default function NewTemplatePage() {
         {/* Body */}
         <Card className="space-y-4">
           <div>
-            <h3 className="text-sm font-semibold text-text mb-1">
-              {tNew.bodyTitle}
-            </h3>
-            <p className="text-xs text-text-secondary mb-3">
-              {tNew.bodyDescription}
-            </p>
+            <h3 className="text-sm font-semibold text-text mb-1">{tNew.bodyTitle}</h3>
+            <p className="text-xs text-text-secondary mb-3">{tNew.bodyDescription}</p>
           </div>
 
           <Textarea
-            label={requiresMedia ? copy.templates.bodyOptional : copy.templates.body}
+            label={requiresMedia ? t.bodyOptional : t.body}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             required={!requiresMedia}
@@ -287,7 +282,9 @@ export default function NewTemplatePage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <InformationCircleIcon className="w-4 h-4 text-text-secondary" />
-                <p className="text-sm font-medium text-text-body">{tNew.variablesDetected} ({detectedVariables.length})</p>
+                <p className="text-sm font-medium text-text-body">
+                  {tNew.variablesDetected} ({detectedVariables.length})
+                </p>
               </div>
 
               {contextVars.length > 0 && (
@@ -298,7 +295,9 @@ export default function NewTemplatePage() {
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {contextVars.map((v) => (
-                      <Badge key={v} variant="neutral">{v}</Badge>
+                      <Badge key={v} variant="neutral">
+                        {v}
+                      </Badge>
                     ))}
                   </div>
                 </div>
@@ -312,7 +311,9 @@ export default function NewTemplatePage() {
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {customVars.map((v) => (
-                      <Badge key={v} variant="warning">{v}</Badge>
+                      <Badge key={v} variant="warning">
+                        {v}
+                      </Badge>
                     ))}
                   </div>
                 </div>
@@ -321,9 +322,7 @@ export default function NewTemplatePage() {
           )}
 
           {detectedVariables.length === 0 && body.length > 0 && (
-            <p className="text-xs text-text-muted">
-              {tNew.noVariablesDetected}
-            </p>
+            <p className="text-xs text-text-muted">{tNew.noVariablesDetected}</p>
           )}
 
           <TemplateVariableGuide variables={detectedVariables} />
@@ -333,13 +332,11 @@ export default function NewTemplatePage() {
         {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
 
         <div className="flex items-center justify-between">
-          {!canSubmit && (
-            <p className="text-sm text-text-secondary">
-              {tNew.submitHint}
-            </p>
-          )}
+          {!canSubmit && <p className="text-sm text-text-secondary">{tNew.submitHint}</p>}
           <div className="flex gap-3 ml-auto">
-            <Button type="button" variant="secondary" onClick={() => router.push("/templates")}>{tNew.cancel}</Button>
+            <Button type="button" variant="secondary" onClick={() => router.push("/templates")}>
+              {tNew.cancel}
+            </Button>
             <Button type="submit" variant="primary" loading={loading} disabled={!canSubmit}>
               {tNew.create}
             </Button>

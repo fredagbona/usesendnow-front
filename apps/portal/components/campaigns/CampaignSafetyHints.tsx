@@ -57,7 +57,7 @@ export default function CampaignSafetyHints({
             {reasons.map((reason, i) => (
               <li key={i} className="flex items-start gap-1.5 text-xs text-warning-text">
                 <AlertDiamondIcon className="w-3 h-3 shrink-0 mt-0.5" />
-                <span>{translateReason(reason)}</span>
+                <span>{translateReason(reason, locale)}</span>
               </li>
             ))}
           </ul>
@@ -71,7 +71,7 @@ export default function CampaignSafetyHints({
             {recommendations.map((rec, i) => (
               <li key={i} className="flex items-start gap-1.5 text-xs text-warning-text">
                 <Megaphone01Icon className="w-3 h-3 shrink-0 mt-0.5" />
-                <span>{translateRecommendation(rec)}</span>
+                <span>{translateRecommendation(rec, locale)}</span>
               </li>
             ))}
           </ul>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { toast } from "@/lib/toast"
 import { ApiClientError } from "@usesendnow/api-client"
 import { apiClient } from "@usesendnow/api-client"
@@ -8,7 +8,6 @@ import Button from "@/components/ui/Button"
 import Select from "@/components/ui/Select"
 import Input from "@/components/ui/Input"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
-import { portalCopy } from "@/lib/portal-copy"
 import { Contact01Icon } from "hugeicons-react"
 import type { ContactGroup } from "@usesendnow/types"
 
@@ -27,12 +26,17 @@ export default function ImportContactsPanel({
   groups,
   onValidCount,
 }: ImportContactsPanelProps) {
-  const { locale } = usePortalLocale()
-  const copy = portalCopy[locale]
+  const { copy } = usePortalLocale()
+  const ip = copy.numberLookups.importPanel
   const [groupId, setGroupId] = useState("")
   const [tag, setTag] = useState("")
   const [open, setOpen] = useState(false)
   const [importing, setImporting] = useState(false)
+
+  const openCta = useMemo(() => {
+    const template = onValidCount === 1 ? ip.importAsContactsOne : ip.importAsContactsMany
+    return template.replace("{{count}}", String(onValidCount))
+  }, [onValidCount, ip.importAsContactsOne, ip.importAsContactsMany])
 
   const handleOpen = () => {
     setGroupId("")
@@ -48,9 +52,7 @@ export default function ImportContactsPanel({
         className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-border-strong rounded-xl text-sm font-medium text-text-secondary hover:text-text hover:border-primary hover:bg-primary-subtle transition-colors"
       >
         <Contact01Icon className="w-4 h-4" />
-        {locale === "fr"
-          ? `Importer ${onValidCount} numéro${onValidCount !== 1 ? "s" : ""} comme contacts`
-          : `Import ${onValidCount} number${onValidCount !== 1 ? "s" : ""} as contacts`}
+        {openCta}
       </button>
     )
   }
@@ -95,17 +97,17 @@ export default function ImportContactsPanel({
   return (
     <div className="bg-bg border border-border rounded-2xl p-5 shadow-[4px_4px_0px_0px_rgba(10,10,10,0.10)]">
       <h4 className="text-sm font-medium text-text mb-4">
-        {locale === "fr" ? "Importer les numéros trouvés sur WhatsApp" : "Import WhatsApp numbers"}
+        {ip.title}
       </h4>
 
       <div className="space-y-3">
         <Select
-          label={locale === "fr" ? "Groupe (optionnel)" : "Group (optional)"}
+          label={ip.groupOptional}
           value={groupId}
           onChange={(e) => setGroupId(e.target.value)}
-          hint={locale === "fr" ? "Les contacts seront ajoutés à ce groupe." : "Contacts will be added to this group."}
+          hint={ip.groupHint}
         >
-          <option value="">{locale === "fr" ? "— Aucun groupe —" : "— No group —"}</option>
+          <option value="">{ip.noGroupOption}</option>
           {groups.map((g) => (
             <option key={g.id} value={g.id}>
               {g.name}
@@ -114,20 +116,20 @@ export default function ImportContactsPanel({
         </Select>
 
         <Input
-          label={locale === "fr" ? "Tag (optionnel)" : "Tag (optional)"}
-          placeholder="ex: verified-whatsapp"
+          label={ip.tagOptional}
+          placeholder={ip.tagPlaceholder}
           value={tag}
           onChange={(e) => setTag(e.target.value)}
-          hint={locale === "fr" ? "Tag appliqué à tous les contacts importés." : "Tag applied to all imported contacts."}
+          hint={ip.tagHint}
         />
 
         <div className="flex items-center gap-2 pt-2">
           <Button variant="primary" size="sm" loading={importing} onClick={handleImport}>
             <Contact01Icon className="w-4 h-4 mr-1.5" />
-            {locale === "fr" ? "Importer" : "Import"}
+            {ip.import}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
-            {locale === "fr" ? "Annuler" : "Cancel"}
+            {ip.cancel}
           </Button>
         </div>
       </div>

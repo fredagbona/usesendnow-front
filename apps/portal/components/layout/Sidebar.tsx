@@ -32,12 +32,15 @@ interface SidebarProps {
 export default function Sidebar({
   outboundUsed = 0,
   outboundTotal = 0,
-  planName = "Gratuit",
+  planName,
   collapsed,
   onToggle,
 }: SidebarProps) {
   const pathname = usePathname()
-  const { copy } = usePortalLocale()
+  const { copy, locale } = usePortalLocale()
+  const numberLocale = locale === "fr" ? "fr-FR" : "en-US"
+  const sb = copy.sidebar
+  const planLabel = planName ?? copy.profile.planFallbackFree
   const NAV_ITEMS = [
     { label: copy.nav.dashboard, href: "/dashboard", icon: Home01Icon },
     { label: copy.nav.instances, href: "/instances", icon: SmartPhone01Icon },
@@ -87,7 +90,7 @@ export default function Sidebar({
             <button
               onClick={onToggle}
               className="flex items-center justify-center w-8 h-8 rounded-xl hover:bg-bg-subtle transition-colors cursor-pointer"
-              title="Développer"
+              title={sb.expandNav}
             >
               <BrandMark compact textClassName="text-text text-xs" />
             </button>
@@ -98,7 +101,7 @@ export default function Sidebar({
             <button
               onClick={onToggle}
               className="p-1.5 rounded-xl hover:bg-bg-subtle transition-colors cursor-pointer text-text-muted hover:text-text"
-              title="Réduire"
+              title={sb.collapseNav}
             >
               <ArrowLeft01Icon className="w-4 h-4" />
             </button>
@@ -173,9 +176,9 @@ export default function Sidebar({
         {!collapsed && !isUnlimited && outboundTotal > 0 && (
           <div className="px-1 pb-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-text-muted">Messages restants</span>
+              <span className="text-xs text-text-muted">{sb.messagesRemaining}</span>
               <span className="text-xs font-semibold" style={{ color: barColor }}>
-                {remaining?.toLocaleString("fr-FR")}
+                {remaining?.toLocaleString(numberLocale)}
               </span>
             </div>
             <div className="w-full bg-bg-muted rounded-full h-1.5">
@@ -191,7 +194,7 @@ export default function Sidebar({
         {collapsed && !isUnlimited && outboundTotal > 0 && (
           <div
             className="flex justify-center py-1"
-            title={`${remaining?.toLocaleString("fr-FR")} messages restants`}
+            title={sb.quotaTooltip.replace("{{count}}", remaining?.toLocaleString(numberLocale) ?? "")}
           >
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: barColor }} />
           </div>
@@ -200,7 +203,7 @@ export default function Sidebar({
         {/* Plan badge — expanded */}
         {!collapsed && (
           <div className="px-3 py-2 rounded-xl bg-bg-subtle border border-border flex items-center justify-between">
-            <span className="text-xs font-medium text-text-secondary truncate mr-2">{planName}</span>
+            <span className="text-xs font-medium text-text-secondary truncate mr-2">{planLabel}</span>
             <Link
               href="/billing"
               className="text-xs font-semibold text-primary-ink hover:text-text transition-colors shrink-0"
@@ -214,7 +217,7 @@ export default function Sidebar({
         {collapsed && (
           <Link
             href="/billing"
-            title={`${copy.topnav.upgrade} — Plan ${planName}`}
+            title={sb.upgradePlanTooltip.replace("{{upgrade}}", copy.topnav.upgrade).replace("{{planName}}", planLabel)}
             className="flex justify-center py-1.5"
           >
             <div className="w-2 h-2 rounded-full bg-primary" />
@@ -230,7 +233,7 @@ export default function Sidebar({
 export function MobileDrawer({
   open,
   onClose,
-  planName = "Gratuit",
+  planName,
 }: {
   open: boolean
   onClose: () => void
@@ -238,6 +241,7 @@ export function MobileDrawer({
 }) {
   const pathname = usePathname()
   const { copy } = usePortalLocale()
+  const planLabel = planName ?? copy.profile.planFallbackFree
   const NAV_ITEMS = [
     { label: copy.nav.dashboard, href: "/dashboard", icon: Home01Icon },
     { label: copy.nav.instances, href: "/instances", icon: SmartPhone01Icon },
@@ -346,7 +350,7 @@ export function MobileDrawer({
 
         <div className="border-t border-border p-3 shrink-0">
           <div className="px-3 py-2 rounded-xl bg-bg-subtle border border-border flex items-center justify-between">
-            <span className="text-sm font-medium text-text-secondary">{planName}</span>
+            <span className="text-sm font-medium text-text-secondary">{planLabel}</span>
             <Link
               href="/billing"
               onClick={onClose}

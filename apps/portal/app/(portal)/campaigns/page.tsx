@@ -30,7 +30,7 @@ import EmptyState from "@/components/ui/EmptyState"
 import { SkeletonTableRow } from "@/components/ui/Skeleton"
 import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
-import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, TYPE_LABEL, formatBytes } from "@/lib/messageComposer"
+import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, formatBytes } from "@/lib/messageComposer"
 import { Megaphone01Icon } from "hugeicons-react"
 
 const STATUS_VARIANT: Record<string, "neutral" | "yellow" | "blue" | "orange" | "success" | "error" | "purple"> = {
@@ -43,18 +43,6 @@ const STATUS_VARIANT: Record<string, "neutral" | "yellow" | "blue" | "orange" | 
   completed:    "success",
   failed:       "error",
   cancelled:    "neutral",
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  draft:        "Brouillon",
-  scheduled:    "Planifié",
-  running:      "En cours",
-  paused:       "En pause",
-  paused_quota: "En pause (quota)",
-  paused_plan:  "En pause (plan)",
-  completed:    "Terminé",
-  failed:       "Échoué",
-  cancelled:    "Annulée",
 }
 
 // Which actions are available per status (list view shows abbreviated actions)
@@ -73,77 +61,8 @@ function getCampaignTotal(campaign: Campaign) {
 
 export default function CampaignsPage() {
   const router = useRouter()
-  const { locale } = usePortalLocale()
-  const copy = {
-    fr: {
-      title: "Campagnes",
-      description: "Envois en masse WhatsApp",
-      create: "Nouvelle campagne",
-      emptyTitle: "Aucune campagne pour l'instant",
-      emptyDescription: "Créez votre première campagne.",
-      template: "Template",
-      pause: "Pause",
-      resume: "Reprendre",
-      cancel: "Annuler",
-      delete: "Supprimer",
-      cancelModal: "Annuler la campagne",
-      deleteModal: "Supprimer la campagne",
-      back: "Retour",
-      monthlyQuota: "Quota mensuel épuisé.",
-      instanceMissing: "Instance introuvable.",
-      invalidContent: "Choisissez un template ou un message direct valide avant de créer la campagne.",
-      createFailed: "Impossible de créer la campagne.",
-      pauseFailed: "Impossible de mettre en pause.",
-      resumeFailed: "Impossible de reprendre la campagne.",
-      cancelFailed: "Impossible d'annuler la campagne.",
-      deleteFailed: "Impossible de supprimer la campagne.",
-      scheduled: "Campagne planifiée",
-      paused: "Campagne mise en pause",
-      resumed: "Campagne reprise",
-      resumedWarmup: "Campagne reprise avec recommandations de warmup",
-      cancelled: "Campagne annulée",
-      deleted: "Campagne supprimée",
-      campaignRunning: "En cours",
-      campaignScheduled: "Planifié",
-      campaignPaused: "En pause",
-      campaignCompleted: "Terminé",
-      campaignFailed: "Échoué",
-    },
-    en: {
-      title: "Campaigns",
-      description: "WhatsApp bulk sends",
-      create: "New campaign",
-      emptyTitle: "No campaigns yet",
-      emptyDescription: "Create your first campaign.",
-      template: "Template",
-      pause: "Pause",
-      resume: "Resume",
-      cancel: "Cancel",
-      delete: "Delete",
-      cancelModal: "Cancel campaign",
-      deleteModal: "Delete campaign",
-      back: "Back",
-      monthlyQuota: "Monthly quota exhausted.",
-      instanceMissing: "Instance not found.",
-      invalidContent: "Choose a valid template or direct message before creating the campaign.",
-      createFailed: "Unable to create the campaign.",
-      pauseFailed: "Unable to pause the campaign.",
-      resumeFailed: "Unable to resume the campaign.",
-      cancelFailed: "Unable to cancel the campaign.",
-      deleteFailed: "Unable to delete the campaign.",
-      scheduled: "Campaign scheduled",
-      paused: "Campaign paused",
-      resumed: "Campaign resumed",
-      resumedWarmup: "Campaign resumed with warmup guidance",
-      cancelled: "Campaign cancelled",
-      deleted: "Campaign deleted",
-      campaignRunning: "Running",
-      campaignScheduled: "Scheduled",
-      campaignPaused: "Paused",
-      campaignCompleted: "Completed",
-      campaignFailed: "Failed",
-    },
-  }[locale]
+  const { copy, locale } = usePortalLocale()
+  const list = copy.campaigns.list
   const { campaigns, loading, prependCampaign, updateCampaignStatus, removeCampaign } = useCampaigns()
   const { contacts } = useContacts()
   const { instances } = useInstances()
@@ -201,12 +120,13 @@ export default function CampaignsPage() {
   const selectedTemplate = templates.find((template) => template.id === form.templateId) ?? null
   const contextVariables = selectedTemplate ? getContextVariables(selectedTemplate.variables) : []
   const requiredCustomVariables = selectedTemplate ? getCustomVariables(selectedTemplate.variables) : []
+  const tagSortLocale = locale === "fr" ? "fr" : "en"
   const availableTags = useMemo(
     () =>
       Array.from(new Set(contacts.flatMap((contact) => contact.tags).filter(Boolean))).sort((a, b) =>
-        a.localeCompare(b, "fr")
+        a.localeCompare(b, tagSortLocale)
       ),
-    [contacts]
+    [contacts, tagSortLocale]
   )
   const isDirectMediaType = FILE_UPLOAD_TYPES.includes(form.directType)
   const recipientsValid =
@@ -275,20 +195,20 @@ export default function CampaignsPage() {
 
     if (file.size > GLOBAL_MAX_FILE_SIZE || file.size > maxSize) {
       setMediaError(targetType === "voice_note"
-        ? "La note vocale est trop longue. Limitez-vous à 15 minutes."
-        : `Fichier trop volumineux. Maximum ${formatBytes(maxSize)}.`)
+        ? list.mediaVoiceTooLong
+        : `${list.mediaFileTooLargePrefix} ${formatBytes(maxSize, copy.common.bytesMegabyte)}.`)
       return
     }
 
     const accepted = ACCEPTED_MIME[targetType] ?? []
     if (accepted.length > 0 && !accepted.includes(file.type)) {
-      setMediaError(`Format non supporté. Accepté : ${ACCEPTED_LABELS[targetType] ?? ""}.`)
+      setMediaError(`${list.formatUnsupportedPrefix} ${ACCEPTED_LABELS[targetType] ?? ""}.`)
       return
     }
 
     if (uploadedMediaRef.current) {
       void apiClient.media.delete(uploadedMediaRef.current.id).catch(() => {})
-      setMediaNotice("Le précédent fichier temporaire sera remplacé par le nouveau.")
+      setMediaNotice(list.mediaReplaceNotice)
     }
 
     shouldCleanupMediaRef.current = true
@@ -306,14 +226,14 @@ export default function CampaignsPage() {
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "MEDIA_TYPE_NOT_ALLOWED") {
-          setMediaError("Ce format de fichier n’est pas supporté.")
+          setMediaError(list.mediaTypeNotAllowed)
         } else if (err.code === "MEDIA_TOO_LARGE") {
-          setMediaError("Le fichier dépasse la taille maximale autorisée.")
+          setMediaError(list.mediaTooLarge)
         } else {
-          setMediaError("L’upload du fichier a échoué. Réessayez.")
+          setMediaError(list.mediaUploadFailed)
         }
       } else {
-        setMediaError("L’upload du fichier a échoué. Réessayez.")
+        setMediaError(list.mediaUploadFailed)
       }
       setUploadedMedia(null)
       setForm((prev) => ({ ...prev, directMediaUrl: "" }))
@@ -397,7 +317,7 @@ export default function CampaignsPage() {
       }
       const campaign = await apiClient.campaigns.create(payload)
       prependCampaign(campaign)
-      toast.success(copy.scheduled)
+      toast.success(list.scheduled)
       setCreateModalOpen(false)
       setCustomVariables([])
       releaseUploadedMedia()
@@ -423,16 +343,16 @@ export default function CampaignsPage() {
           setPlanBlocked(true)
           setCreateModalOpen(false)
         } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
-          toast.error(copy.monthlyQuota)
+          toast.error(list.monthlyQuota)
         } else if (err.code === "NOT_FOUND") {
-          toast.error(copy.instanceMissing)
+          toast.error(list.instanceMissing)
         } else if (err.code === "VALIDATION_ERROR") {
-          toast.error(copy.invalidContent)
+          toast.error(list.invalidContent)
         } else {
-          toast.error(copy.createFailed)
+          toast.error(list.createFailed)
         }
       }
-      } finally {
+    } finally {
       setCreating(false)
     }
   }
@@ -442,9 +362,9 @@ export default function CampaignsPage() {
     try {
       await apiClient.campaigns.pause(id)
       updateCampaignStatus(id, "paused")
-      toast.success(copy.paused)
+      toast.success(list.paused)
     } catch {
-      toast.error(copy.pauseFailed)
+      toast.error(list.pauseFailed)
     } finally {
       setPausing(null)
     }
@@ -459,12 +379,12 @@ export default function CampaignsPage() {
       // Check for safety warnings
       const safetyData = (response as any)?.safety
       if (safetyData && safetyData.decision === "warn") {
-        toast.success(copy.resumedWarmup)
+        toast.success(list.resumedWarmup)
       } else {
-        toast.success(copy.resumed)
+        toast.success(list.resumed)
       }
     } catch {
-      toast.error(copy.resumeFailed)
+      toast.error(list.resumeFailed)
     } finally {
       setResuming(null)
     }
@@ -476,13 +396,13 @@ export default function CampaignsPage() {
     try {
       await apiClient.campaigns.cancel(cancelTarget.id)
       updateCampaignStatus(cancelTarget.id, "cancelled")
-      toast.success(copy.cancelled)
+      toast.success(list.cancelled)
       setCancelTarget(null)
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "BAD_REQUEST") {
-        toast.error("La campagne est déjà terminée ou annulée.")
+        toast.error(list.alreadyFinishedToast)
       } else {
-      toast.error(copy.cancelFailed)
+        toast.error(list.cancelFailed)
       }
     } finally {
       setCancelling(null)
@@ -495,24 +415,34 @@ export default function CampaignsPage() {
     try {
       await apiClient.campaigns.delete(deleteTarget.id)
       removeCampaign(deleteTarget.id)
-      toast.success(copy.deleted)
+      toast.success(list.deleted)
       setDeleteTarget(null)
     } catch {
-      toast.error(copy.deleteFailed)
+      toast.error(list.deleteFailed)
     } finally {
       setDeleting(null)
     }
   }
 
+  const tableHeaders = [list.tableName, list.tableStatus, list.tableProgress, list.tableSchedule, list.tableActions]
+  const statusLabel = (status: string) =>
+    (list.status as Record<string, string>)[status] ?? status
+  const rowActionLabels = {
+    pause: list.pause,
+    resume: list.resume,
+    cancel: list.cancel,
+    delete: list.delete,
+  }
+
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
-        title={copy.title}
-        description={copy.description}
+        title={list.title}
+        description={list.description}
         action={
           !planBlocked && (
             <Button variant="primary" onClick={() => router.push("/campaigns/new")}>
-              {copy.create}
+              {list.newCta}
             </Button>
           )
         }
@@ -520,7 +450,7 @@ export default function CampaignsPage() {
 
       {planBlocked && (
         <div className="mb-6">
-          <PlanGateBanner message="Les campagnes ne sont pas disponibles sur votre plan actuel. Mettez à niveau pour envoyer des messages en masse." />
+          <PlanGateBanner message={list.planGateMessage} />
         </div>
       )}
 
@@ -532,7 +462,7 @@ export default function CampaignsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      {["Nom", "Statut", "Progression", "Planification", ""].map((h) => (
+                      {tableHeaders.map((h) => (
                         <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                       ))}
                     </tr>
@@ -552,9 +482,9 @@ export default function CampaignsPage() {
           ) : campaigns.length === 0 ? (
             <EmptyState
               icon={<Megaphone01Icon className="w-8 h-8" />}
-              title={copy.emptyTitle}
-              description={copy.emptyDescription}
-              ctaLabel="Nouvelle campagne"
+              title={list.emptyTitle}
+              description={list.emptyDescription}
+              ctaLabel={list.newCta}
               onCta={() => router.push("/campaigns/new")}
             />
           ) : (
@@ -564,7 +494,7 @@ export default function CampaignsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      {["Nom", "Statut", "Progression", "Planification", ""].map((h) => (
+                      {tableHeaders.map((h) => (
                         <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                       ))}
                     </tr>
@@ -580,12 +510,12 @@ export default function CampaignsPage() {
                             >
                               {camp.name}
                             </button>
-                            {camp.templateId && <Badge variant="warning">{copy.template}</Badge>}
+                            {camp.templateId && <Badge variant="warning">{list.template}</Badge>}
                           </div>
                         </td>
                         <td className="py-3 pr-4">
                           <Badge variant={STATUS_VARIANT[camp.status] ?? "neutral"} pulse={camp.status === "running"}>
-                            {STATUS_LABEL[camp.status] ?? camp.status}
+                            {statusLabel(camp.status)}
                           </Badge>
                         </td>
                         <td className="py-3 pr-4 text-sm text-text-secondary whitespace-nowrap">
@@ -595,6 +525,7 @@ export default function CampaignsPage() {
                         <td className="py-3">
                           <CampaignRowActions
                             campaign={camp}
+                            labels={rowActionLabels}
                             pausing={pausing === camp.id}
                             resuming={resuming === camp.id}
                             cancelling={cancelling === camp.id}
@@ -623,10 +554,10 @@ export default function CampaignsPage() {
                         >
                           {camp.name}
                         </button>
-                        {camp.templateId && <Badge variant="warning">{copy.template}</Badge>}
+                        {camp.templateId && <Badge variant="warning">{list.template}</Badge>}
                       </div>
                       <Badge variant={STATUS_VARIANT[camp.status] ?? "neutral"} pulse={camp.status === "running"}>
-                        {STATUS_LABEL[camp.status] ?? camp.status}
+                        {statusLabel(camp.status)}
                       </Badge>
                     </div>
                     <p className="text-xs text-text-muted mb-2">
@@ -634,6 +565,7 @@ export default function CampaignsPage() {
                     </p>
                     <CampaignRowActions
                       campaign={camp}
+                      labels={rowActionLabels}
                       pausing={pausing === camp.id}
                       resuming={resuming === camp.id}
                       cancelling={cancelling === camp.id}
@@ -654,33 +586,34 @@ export default function CampaignsPage() {
       {/* Create modal */}
 
       {/* Cancel confirmation */}
-      <Modal open={!!cancelTarget} onClose={() => setCancelTarget(null)} title={copy.cancelModal}>
+      <Modal open={!!cancelTarget} onClose={() => setCancelTarget(null)} title={list.cancelModalTitle}>
         {cancelTarget && (
           <>
             <p className="text-sm text-text-body mb-2">
-              {copy.cancel} <strong className="text-text">{cancelTarget.name}</strong> ?
+              {list.cancelModalLead} <strong className="text-text">{cancelTarget.name}</strong> ?
             </p>
             <p className="text-sm text-text-secondary mb-6">
-              Les messages encore en file seront marqués comme annulés. Les messages déjà partis ou déjà en cours d&apos;envoi ne seront pas rappelés.
+              {list.cancelModalBody}
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setCancelTarget(null)}>{copy.back}</Button>
-              <Button variant="danger" loading={!!cancelling} onClick={handleCancel}>{copy.cancelModal}</Button>
+              <Button variant="secondary" onClick={() => setCancelTarget(null)}>{list.back}</Button>
+              <Button variant="danger" loading={!!cancelling} onClick={handleCancel}>{list.cancelModalTitle}</Button>
             </div>
           </>
         )}
       </Modal>
 
       {/* Delete confirmation */}
-      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={copy.deleteModal}>
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={list.deleteModalTitle}>
         {deleteTarget && (
           <>
             <p className="text-sm text-text-body mb-6">
-              Supprimer <strong className="text-text">{deleteTarget.name}</strong> ? Cette action est irréversible.
+              {list.deleteModalBodyPrefix} <strong className="text-text">{deleteTarget.name}</strong>
+              {list.deleteModalBodySuffix}
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>{copy.back}</Button>
-              <Button variant="danger" loading={!!deleting} onClick={handleDelete}>{copy.delete}</Button>
+              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>{list.back}</Button>
+              <Button variant="danger" loading={!!deleting} onClick={handleDelete}>{list.delete}</Button>
             </div>
           </>
         )}
@@ -691,6 +624,7 @@ export default function CampaignsPage() {
 
 function CampaignRowActions({
   campaign,
+  labels,
   pausing,
   resuming,
   cancelling,
@@ -701,6 +635,7 @@ function CampaignRowActions({
   onDelete,
 }: {
   campaign: Campaign
+  labels: { pause: string; resume: string; cancel: string; delete: string }
   pausing: boolean
   resuming: boolean
   cancelling: boolean
@@ -715,22 +650,22 @@ function CampaignRowActions({
     <div className="flex items-center gap-2">
       {canPause(s) && (
         <Button size="sm" variant="secondary" loading={pausing} onClick={onPause}>
-          Pause
+          {labels.pause}
         </Button>
       )}
       {canResume(s) && (
         <Button size="sm" variant="primary" loading={resuming} onClick={onResume}>
-          Reprendre
+          {labels.resume}
         </Button>
       )}
       {canCancel(s) && (
         <Button size="sm" variant="danger" loading={cancelling} onClick={onCancel}>
-          Annuler
+          {labels.cancel}
         </Button>
       )}
       {canDelete(s) && (
         <Button size="sm" variant="ghost" loading={deleting} onClick={onDelete}>
-          Supprimer
+          {labels.delete}
         </Button>
       )}
     </div>

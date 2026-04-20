@@ -26,13 +26,17 @@ import PlanGateBanner from "@/components/ui/PlanGateBanner"
 import CampaignSafetyHints from "@/components/campaigns/CampaignSafetyHints"
 import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
-import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, TYPE_LABEL, formatBytes } from "@/lib/messageComposer"
-import { Megaphone01Icon, ArrowLeft01Icon, InformationCircleIcon, AlertDiamondIcon } from "hugeicons-react"
+import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, formatBytes } from "@/lib/messageComposer"
+import { Megaphone01Icon, ArrowLeft01Icon, InformationCircleIcon } from "hugeicons-react"
 
 export default function NewCampaignPage() {
   const router = useRouter()
-  const { copy } = usePortalLocale()
-  const { campaigns, prependCampaign } = useCampaigns()
+  const { copy, locale } = usePortalLocale()
+  const np = copy.campaigns.newPage
+  const list = copy.campaigns.list
+  const dRepeat = copy.campaigns.detail.repeat
+  const messageTypes = copy.messages.detail.types
+  const { prependCampaign } = useCampaigns()
   const { contacts } = useContacts()
   const { instances } = useInstances()
   const { templates } = useTemplates()
@@ -92,8 +96,10 @@ export default function NewCampaignPage() {
   const requiredCustomVariables = selectedTemplate ? getCustomVariables(selectedTemplate.variables) : []
   const availableTags = useMemo(
     () =>
-      Array.from(new Set(contacts.flatMap((c) => c.tags).filter(Boolean))).sort((a, b) => a.localeCompare(b, "fr")),
-    [contacts]
+      Array.from(new Set(contacts.flatMap((c) => c.tags).filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b, locale === "fr" ? "fr" : "en"),
+      ),
+    [contacts, locale],
   )
   const isDirectMediaType = FILE_UPLOAD_TYPES.includes(form.directType)
   const recipientsValid =
@@ -159,19 +165,23 @@ export default function NewCampaignPage() {
     setMediaNotice(null)
 
     if (file.size > GLOBAL_MAX_FILE_SIZE || file.size > maxSize) {
-      setMediaError(targetType === "voice_note" ? "La note vocale est trop longue." : `Fichier trop volumineux. Maximum ${formatBytes(maxSize)}.`)
+      setMediaError(
+        targetType === "voice_note"
+          ? list.mediaVoiceTooLong
+          : `${list.mediaFileTooLargePrefix} ${formatBytes(maxSize, copy.common.bytesMegabyte)}.`,
+      )
       return
     }
 
     const accepted = ACCEPTED_MIME[targetType] ?? []
     if (accepted.length > 0 && !accepted.includes(file.type)) {
-      setMediaError(`Format non supporté. Accepté : ${ACCEPTED_LABELS[targetType] ?? ""}.`)
+      setMediaError(`${list.formatUnsupportedPrefix} ${ACCEPTED_LABELS[targetType] ?? ""}.`)
       return
     }
 
     if (uploadedMediaRef.current) {
       void apiClient.media.delete(uploadedMediaRef.current.id).catch(() => {})
-      setMediaNotice("Le précédent fichier sera remplacé.")
+      setMediaNotice(list.mediaReplaceNotice)
     }
 
     shouldCleanupMediaRef.current = true
@@ -188,11 +198,11 @@ export default function NewCampaignPage() {
       }))
     } catch (err) {
       if (err instanceof ApiClientError) {
-        if (err.code === "MEDIA_TYPE_NOT_ALLOWED") setMediaError("Ce format n'est pas supporté.")
-        else if (err.code === "MEDIA_TOO_LARGE") setMediaError("Le fichier dépasse la taille maximale.")
-        else setMediaError("L'upload a échoué.")
+        if (err.code === "MEDIA_TYPE_NOT_ALLOWED") setMediaError(list.mediaTypeNotAllowed)
+        else if (err.code === "MEDIA_TOO_LARGE") setMediaError(list.mediaTooLarge)
+        else setMediaError(list.mediaUploadFailed)
       } else {
-        setMediaError("L'upload a échoué.")
+        setMediaError(list.mediaUploadFailed)
       }
       setUploadedMedia(null)
       setForm((prev) => ({ ...prev, directMediaUrl: "" }))
@@ -305,18 +315,18 @@ export default function NewCampaignPage() {
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "CAMPAIGNS_NOT_AVAILABLE_ON_PLAN") {
-          toast.error("Les campagnes ne sont pas disponibles sur votre plan.")
+          toast.error(np.errorCampaignsNotOnPlan)
         } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
-          toast.error("Quota mensuel épuisé.")
+          toast.error(np.errorQuotaExceeded)
         } else if (err.code === "NOT_FOUND") {
-          toast.error("Instance ou template introuvable.")
+          toast.error(np.errorNotFound)
         } else if (err.code === "VALIDATION_ERROR") {
-          toast.error("Vérifiez les champs du formulaire.")
+          toast.error(np.errorValidation)
         } else {
-          toast.error("Impossible de créer la campagne.")
+          toast.error(np.errorGeneric)
         }
       } else {
-        toast.error("Impossible de créer la campagne.")
+        toast.error(np.errorGeneric)
       }
     } finally {
       setCreating(false)
@@ -331,7 +341,7 @@ export default function NewCampaignPage() {
           description={copy.campaigns.description}
           action={<Button variant="secondary" onClick={() => router.push("/campaigns")}>{copy.campaigns.back}</Button>}
         />
-        <PlanGateBanner message="Les campagnes ne sont pas disponibles sur le plan Gratuit. Passez au plan Starter pour y accéder." />
+        <PlanGateBanner message={list.planGateMessage} />
       </motion.div>
     )
   }
@@ -355,33 +365,33 @@ export default function NewCampaignPage() {
             </div>
 
             <Input
-              label="Nom de la campagne"
+              label={np.campaignNameLabel}
               value={form.name}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="ex. Relance paniers abandonnés"
+              placeholder={np.campaignNamePlaceholder}
               required
               autoFocus
             />
 
-            <Select label="Instance" value={form.instanceId} onChange={(e) => setForm((prev) => ({ ...prev, instanceId: e.target.value }))} required>
-              <option value="">— Sélectionner une instance —</option>
+            <Select label={np.instanceLabel} value={form.instanceId} onChange={(e) => setForm((prev) => ({ ...prev, instanceId: e.target.value }))} required>
+              <option value="">{np.instancePlaceholder}</option>
               {instances.filter((i) => i.status === "connected").map((i) => (
                 <option key={i.id} value={i.id}>{i.name}</option>
               ))}
             </Select>
 
             <Input
-              label="Planifier le lancement"
+              label={np.scheduleLabel}
               type="datetime-local"
               value={form.schedule}
               onChange={(e) => setForm((prev) => ({ ...prev, schedule: e.target.value }))}
               required
             />
 
-            <Select label="Répétition" value={form.repeat} onChange={(e) => setForm((prev) => ({ ...prev, repeat: e.target.value as "none" | "daily" | "weekly" }))}>
-              <option value="none">Aucune</option>
-              <option value="daily">Quotidienne</option>
-              <option value="weekly">Hebdomadaire</option>
+            <Select label={np.repeatLabel} value={form.repeat} onChange={(e) => setForm((prev) => ({ ...prev, repeat: e.target.value as "none" | "daily" | "weekly" }))}>
+              <option value="none">{dRepeat.none}</option>
+              <option value="daily">{dRepeat.daily}</option>
+              <option value="weekly">{dRepeat.weekly}</option>
             </Select>
           </Card>
 
@@ -393,22 +403,22 @@ export default function NewCampaignPage() {
             </div>
 
             <Select
-              label="Type de destinataires"
+              label={np.recipientTypeLabel}
               value={form.recipientType}
               onChange={(e) => setForm((prev) => ({ ...prev, recipientType: e.target.value as "all" | "tags" | "explicit" | "group" }))}
             >
-              <option value="all">Tous les contacts</option>
-              <option value="tags">Par tags</option>
-              <option value="explicit">Contacts explicites</option>
-              <option value="group">Par groupe</option>
+              <option value="all">{np.recipientTypeAll}</option>
+              <option value="tags">{np.recipientTypeTags}</option>
+              <option value="explicit">{np.recipientTypeExplicit}</option>
+              <option value="group">{np.recipientTypeGroup}</option>
             </Select>
 
             {form.recipientType === "tags" && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-body">Tags</label>
+                <label className="text-sm font-medium text-text-body">{np.tagsLabel}</label>
                 <div className="flex flex-wrap gap-2">
                   {availableTags.length === 0 ? (
-                    <p className="text-xs text-text-muted">Aucun tag disponible.</p>
+                    <p className="text-xs text-text-muted">{np.noTagsAvailable}</p>
                   ) : (
                     availableTags.map((tag) => (
                       <button
@@ -429,7 +439,7 @@ export default function NewCampaignPage() {
 
             {form.recipientType === "explicit" && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-body">Contacts</label>
+                <label className="text-sm font-medium text-text-body">{np.explicitContactsLabel}</label>
                 <div className="max-h-40 overflow-y-auto space-y-1">
                   {contacts.map((c) => (
                     <label key={c.id} className="flex items-center gap-2 text-sm text-text-body">
@@ -448,12 +458,12 @@ export default function NewCampaignPage() {
 
             {form.recipientType === "group" && (
               <Select
-                label="Groupe de contacts"
+                label={np.groupLabel}
                 value={form.groupId}
                 onChange={(e) => setForm((prev) => ({ ...prev, groupId: e.target.value }))}
                 required={form.recipientType === "group"}
               >
-                <option value="">— Sélectionner un groupe —</option>
+                <option value="">{np.groupPlaceholder}</option>
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
@@ -490,8 +500,8 @@ export default function NewCampaignPage() {
 
           {contentMode === "template" ? (
             <div className="space-y-4">
-              <Select label="Template" value={form.templateId} onChange={(e) => handleTemplateChange(e.target.value)} required>
-                <option value="">— Sélectionner un template —</option>
+              <Select label={np.templateLabel} value={form.templateId} onChange={(e) => handleTemplateChange(e.target.value)} required>
+                <option value="">{np.templatePlaceholder}</option>
                 {templates.map((t) => (
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
@@ -501,7 +511,7 @@ export default function NewCampaignPage() {
                 <>
                   {contextVariables.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-text-body">Variables de contexte</p>
+                      <p className="text-sm font-medium text-text-body">{np.contextVariablesLabel}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {contextVariables.map((key) => (
                           <span key={key} className="rounded-full border border-border bg-bg-subtle px-3 py-1 text-xs text-text-secondary">{key}</span>
@@ -521,18 +531,18 @@ export default function NewCampaignPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <Select label="Type de message" value={form.directType} onChange={(e) => handleDirectTypeChange(e.target.value as typeof form.directType)}>
+              <Select label={np.messageTypeLabel} value={form.directType} onChange={(e) => handleDirectTypeChange(e.target.value as typeof form.directType)}>
                 {(["text", "image", "video", "document", "audio", "voice_note"] as typeof form.directType[]).map((t) => (
-                  <option key={t} value={t}>{TYPE_LABEL[t] ?? t}</option>
+                  <option key={t} value={t}>{messageTypes[t as keyof typeof messageTypes] ?? t}</option>
                 ))}
               </Select>
 
               {form.directType === "text" ? (
                 <Textarea
-                  label="Message"
+                  label={np.messageLabel}
                   value={form.directBody}
                   onChange={(e) => setForm((prev) => ({ ...prev, directBody: e.target.value }))}
-                  placeholder="Votre message..."
+                  placeholder={np.messagePlaceholder}
                   rows={5}
                   required
                   maxLength={4096}
@@ -565,10 +575,10 @@ export default function NewCampaignPage() {
 
                   {form.directType !== "voice_note" && (
                     <Textarea
-                      label="Légende (optionnel)"
+                      label={np.captionLabel}
                       value={form.directBody}
                       onChange={(e) => setForm((prev) => ({ ...prev, directBody: e.target.value }))}
-                      placeholder="Texte accompagnant le média..."
+                      placeholder={np.captionPlaceholder}
                       rows={3}
                       maxLength={1024}
                     />
@@ -589,12 +599,12 @@ export default function NewCampaignPage() {
             {!canCreateCampaign && (
               <span className="flex items-center gap-1.5">
                 <InformationCircleIcon className="w-4 h-4" />
-                Remplissez tous les champs requis pour créer la campagne.
+                {np.fillRequiredHint}
               </span>
             )}
           </div>
           <div className="flex gap-3">
-            <Button type="button" variant="secondary" onClick={() => router.push("/campaigns")}>Annuler</Button>
+            <Button type="button" variant="secondary" onClick={() => router.push("/campaigns")}>{np.cancel}</Button>
             <Button type="submit" variant="primary" loading={creating} disabled={!canCreateCampaign}>{copy.campaigns.create}</Button>
           </div>
         </div>

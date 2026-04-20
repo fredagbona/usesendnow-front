@@ -9,7 +9,7 @@ import { useContacts } from "@/hooks/useContacts"
 import { useContactGroups } from "@/hooks/useContactGroups"
 import { useContactImports } from "@/hooks/useContactImports"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
-import { portalCopy } from "@/lib/portal-copy"
+import { renderWithStrongCount, renderWithStrongName } from "@/lib/render-copy-placeholders"
 import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
 import { formatDate } from "@/lib/format"
@@ -55,8 +55,7 @@ function ContactModal({
   onSuccess: (c: Contact) => void
   onClose: () => void
 }) {
-  const { locale } = usePortalLocale()
-  const copy = portalCopy[locale]
+  const { copy } = usePortalLocale()
   const [form, setForm] = useState<ContactFormState>({
     name: contact?.name ?? "",
     phone: contact?.phone ?? "",
@@ -130,7 +129,7 @@ function ContactModal({
         {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
         <div className="flex justify-end gap-2 pt-1">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Annuler
+            {copy.contacts.cancel}
           </Button>
           <Button type="submit" variant="primary" loading={loading}>
             {mode === "create" ? copy.contacts.addContact : copy.contacts.saveContact}
@@ -154,8 +153,8 @@ function ImportModal({
   onSuccess: (result: ImportResult) => void
   onClose: () => void
 }) {
-  const { locale } = usePortalLocale()
-  const copy = portalCopy[locale]
+  const { copy } = usePortalLocale()
+  const iw = copy.contacts.importWizard
   const [step, setStep] = useState<ImportStep>("upload")
   const [file, setFile] = useState<File | null>(null)
   const [groupId, setGroupId] = useState("")
@@ -214,7 +213,7 @@ function ImportModal({
         } else if (err.code === "CSV_TOO_LARGE") {
           setError(copy.contacts.csvTooLarge)
         } else if (err.code === "NOT_FOUND") {
-          setError("Le groupe sélectionné est introuvable.")
+          setError(copy.contacts.importGroupNotFound)
         } else {
           setError(copy.contacts.importFailed)
         }
@@ -267,8 +266,8 @@ function ImportModal({
               <p className="text-sm font-medium text-text">{file.name}</p>
             ) : (
               <>
-                <p className="text-sm font-medium text-text">Glissez un fichier CSV ou cliquez</p>
-                <p className="text-xs text-text-muted mt-1">Max 5MB · Format .csv uniquement</p>
+                <p className="text-sm font-medium text-text">{iw.dropzoneClick}</p>
+                <p className="text-xs text-text-muted mt-1">{iw.dropzoneSizeHint}</p>
               </>
             )}
             <input
@@ -285,19 +284,19 @@ function ImportModal({
             onClick={downloadSample}
             className="text-xs text-primary-ink hover:text-text hover:underline"
           >
-            Télécharger un exemple CSV
+            {copy.contacts.sampleFile}
           </button>
 
           <div>
             <label className="block text-sm font-medium text-text-body mb-1.5">
-              Assigner à un groupe (optionnel)
+              {iw.assignGroupLabel}
             </label>
             <select
               value={groupId}
               onChange={(e) => setGroupId(e.target.value)}
               className="w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-text bg-bg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             >
-              <option value="">Aucun groupe</option>
+              <option value="">{iw.noGroupOption}</option>
               {groups.map((g) => (
                 <option key={g.id} value={g.id}>{g.name}</option>
               ))}
@@ -305,15 +304,16 @@ function ImportModal({
           </div>
 
           <p className="text-xs text-text-muted">
-            Format attendu : <code className="font-mono bg-bg-subtle px-1 rounded">phone,name,tags</code>
+            {iw.expectedFormatLabel}{" "}
+            <code className="font-mono bg-bg-subtle px-1 rounded">phone,name,tags</code>
           </p>
 
           {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
 
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="secondary" onClick={onClose}>Annuler</Button>
+            <Button variant="secondary" onClick={onClose}>{copy.contacts.cancel}</Button>
             <Button variant="primary" disabled={!file} onClick={() => file && setStep("preview")}>
-              Suivant
+              {iw.next}
             </Button>
           </div>
         </div>
@@ -323,12 +323,15 @@ function ImportModal({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-text-body">
-              <strong>{totalRows}</strong> ligne{totalRows !== 1 ? "s" : ""} détectée{totalRows !== 1 ? "s" : ""}
+              {renderWithStrongCount(
+                totalRows === 1 ? iw.rowsDetectedOne : iw.rowsDetectedMany,
+                totalRows,
+              )}
             </p>
             {totalRows > 500 && (
               <div className="flex items-center gap-1.5 text-xs text-warning">
                 <InformationCircleIcon className="w-4 h-4" />
-                Fichier volumineux : l&apos;import tournera en arrière-plan
+                {iw.largeFileWarning}
               </div>
             )}
           </div>
@@ -365,18 +368,30 @@ function ImportModal({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-success">
                   <CheckmarkCircle01Icon className="w-4 h-4" />
-                  {result.importedCount} contact{(result.importedCount ?? 0) !== 1 ? "s" : ""} importé{(result.importedCount ?? 0) !== 1 ? "s" : ""}
+                  {renderWithStrongCount(
+                    (() => {
+                      const n = result.importedCount ?? 0
+                      return n === 1 ? iw.resultImportedOne : iw.resultImportedMany
+                    })(),
+                    result.importedCount ?? 0,
+                  )}
                 </div>
                 {(result.updatedCount ?? 0) > 0 && (
                   <div className="flex items-center gap-2 text-sm text-text-body">
                     <InformationCircleIcon className="w-4 h-4 text-primary" />
-                    {result.updatedCount} mis à jour
+                    {renderWithStrongCount(iw.resultUpdated, result.updatedCount ?? 0)}
                   </div>
                 )}
                 {(result.invalidCount ?? 0) > 0 && (
                   <div className="flex items-center gap-2 text-sm text-error">
                     <AlertCircleIcon className="w-4 h-4" />
-                    {result.invalidCount} invalide{(result.invalidCount ?? 0) !== 1 ? "s" : ""}
+                    {renderWithStrongCount(
+                      (() => {
+                        const n = result.invalidCount ?? 0
+                        return n === 1 ? iw.invalidOne : iw.invalidMany
+                      })(),
+                      result.invalidCount ?? 0,
+                    )}
                   </div>
                 )}
               </div>
@@ -388,16 +403,19 @@ function ImportModal({
                     onClick={() => setShowErrors((v) => !v)}
                     className="text-xs text-primary-ink hover:text-text hover:underline"
                   >
-                    {showErrors ? "Masquer" : "Voir"} les erreurs ({result.errors!.length})
+                    {renderWithStrongCount(
+                      showErrors ? iw.errorsToggleHide : iw.errorsToggleShow,
+                      result.errors!.length,
+                    )}
                   </button>
                   {showErrors && (
                     <div className="mt-2 border border-border rounded-xl overflow-hidden">
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="bg-bg-subtle border-b border-border">
-                            <th className="px-3 py-2 text-left text-text-secondary">Ligne</th>
-                            <th className="px-3 py-2 text-left text-text-secondary">Téléphone</th>
-                            <th className="px-3 py-2 text-left text-text-secondary">Raison</th>
+                            <th className="px-3 py-2 text-left text-text-secondary">{iw.errorsTableLine}</th>
+                            <th className="px-3 py-2 text-left text-text-secondary">{iw.errorsTablePhone}</th>
+                            <th className="px-3 py-2 text-left text-text-secondary">{iw.errorsTableReason}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -420,18 +438,19 @@ function ImportModal({
               <div className="w-10 h-10 rounded-full bg-primary-subtle flex items-center justify-center">
                 <Upload01Icon className="w-5 h-5 text-primary" />
               </div>
-              <p className="text-sm font-medium text-text">Import en cours…</p>
+              <p className="text-sm font-medium text-text">{iw.asyncTitle}</p>
               <p className="text-xs text-text-secondary">
-                Import ID : <code className="font-mono">{result.importId}</code>
+                {iw.asyncImportIdLabel}{" "}
+                <code className="font-mono">{result.importId}</code>
               </p>
               <p className="text-xs text-text-secondary">
-                Vous pouvez fermer cette fenêtre. Suivez le statut dans l&apos;onglet Imports.
+                {iw.asyncCloseHint}
               </p>
             </div>
           )}
 
           <div className="flex justify-end pt-1">
-            <Button variant="primary" onClick={onClose}>Fermer</Button>
+            <Button variant="primary" onClick={onClose}>{iw.close}</Button>
           </div>
         </div>
       )}
@@ -448,21 +467,17 @@ const IMPORT_STATUS_VARIANT: Record<string, "neutral" | "blue" | "success" | "er
   failed:     "error",
 }
 
-const IMPORT_STATUS_LABEL: Record<string, string> = {
-  pending:    "En attente",
-  processing: "En cours",
-  done:       "Terminé",
-  failed:     "Échoué",
-}
-
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 type Tab = "contacts" | "imports"
 
 export default function ContactsPage() {
   const router = useRouter()
-  const { locale } = usePortalLocale()
-  const copy = portalCopy[locale]
+  const { copy } = usePortalLocale()
+  const importStatusLabel = (status: string) => {
+    const labels = copy.contacts.importStatus
+    return labels[status as keyof typeof labels] ?? status
+  }
   const { contacts, loading, addContact, updateContact, removeContact } = useContacts()
   const { groups } = useContactGroups()
   const { imports, loading: importsLoading } = useContactImports()
@@ -525,7 +540,7 @@ export default function ContactsPage() {
       toast.success(copy.contacts.contactDeleted)
       setDeleteTarget(null)
     } catch {
-      toast.error(copy.contacts.importFailed)
+      toast.error(copy.contacts.deleteFailed)
     } finally {
       setDeleting(null)
     }
@@ -533,7 +548,7 @@ export default function ContactsPage() {
 
   const handleExport = async () => {
     setExporting(true)
-    const toastId = toast.loading("Export en cours…")
+    const toastId = toast.loading(copy.contacts.exportLoading)
     try {
       const { blob, filename } = await apiClient.contacts.export()
       const a = document.createElement("a")
@@ -544,7 +559,7 @@ export default function ContactsPage() {
       toast.dismiss(toastId)
     } catch {
       toast.dismiss(toastId)
-      toast.error(copy.contacts.importFailed)
+      toast.error(copy.contacts.exportFailed)
     } finally {
       setExporting(false)
     }
@@ -580,20 +595,30 @@ export default function ContactsPage() {
       const result = await apiClient.contacts.deleteMany(Array.from(selectedIds))
       selectedIds.forEach((id) => removeContact(id))
       if (result.notFound && result.notFound.length > 0) {
-        toast.warning(`${result.deletedCount} contact${result.deletedCount > 1 ? "s" : ""} supprimé${result.deletedCount > 1 ? "s" : ""}, ${result.notFound.length} introuvable${result.notFound.length > 1 ? "s" : ""}`)
+        toast.warning(
+          copy.contacts.bulkDeletePartial
+            .replace("{{deleted}}", String(result.deletedCount))
+            .replace("{{notFound}}", String(result.notFound.length)),
+        )
       } else {
-        toast.success(`${result.deletedCount} contact${result.deletedCount > 1 ? "s" : ""} supprimé${result.deletedCount > 1 ? "s" : ""}`)
+        const tpl =
+          result.deletedCount === 1
+            ? copy.contacts.bulkDeleteSuccessOne
+            : copy.contacts.bulkDeleteSuccessMany
+        toast.success(tpl.replace("{{count}}", String(result.deletedCount)))
       }
       setSelectedIds(new Set())
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "VALIDATION_ERROR") {
-          toast.error("Sélection invalide. Réessayez.")
+          toast.error(copy.contacts.bulkDeleteErrorValidation)
         } else if (err.code === "FORBIDDEN") {
-          toast.error("Accès refusé pour supprimer ces contacts.")
+          toast.error(copy.contacts.bulkDeleteErrorForbidden)
         } else {
-          toast.error("Impossible de supprimer les contacts.")
+          toast.error(copy.contacts.bulkDeleteErrorGeneric)
         }
+      } else {
+        toast.error(copy.contacts.bulkDeleteErrorGeneric)
       }
     } finally {
       setBulkDeleting(false)
@@ -604,7 +629,14 @@ export default function ContactsPage() {
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
         title={copy.contacts.pageTitle}
-        description={contacts.length > 0 ? `${contacts.length} contact${contacts.length !== 1 ? "s" : ""}` : copy.contacts.pageDescription}
+        description={
+          contacts.length > 0
+            ? renderWithStrongCount(
+                contacts.length === 1 ? copy.contacts.headerCountOne : copy.contacts.headerCountMany,
+                contacts.length,
+              )
+            : copy.contacts.pageDescription
+        }
         action={
           <div className="flex items-center flex-wrap gap-2">
             <Button
@@ -612,7 +644,7 @@ export default function ContactsPage() {
               onClick={() => router.push("/contacts/groups")}
             >
               <UserMultiple02Icon className="w-4 h-4" />
-              Groupes
+              {copy.contacts.navGroups}
               {maxContactGroups !== -1 && (
                 <span className="ml-1 text-xs text-text-muted">
                   {groupCount}/{maxContactGroups}
@@ -621,11 +653,11 @@ export default function ContactsPage() {
             </Button>
             <Button variant="secondary" loading={exporting} onClick={handleExport}>
               <Download01Icon className="w-4 h-4" />
-              Export CSV
+              {copy.contacts.exportCsv}
             </Button>
             <Button variant="secondary" onClick={() => setImportOpen(true)}>
               <Upload01Icon className="w-4 h-4" />
-              Import CSV
+              {copy.contacts.importCsv}
             </Button>
             <Button variant="primary" onClick={() => setCreateOpen(true)}>
               {copy.contacts.newContact}
@@ -638,7 +670,7 @@ export default function ContactsPage() {
       <div className="flex gap-1 p-1 bg-bg-muted rounded-xl w-fit mb-5">
         {([
           { value: "contacts", label: copy.contacts.pageTitle },
-          { value: "imports",  label: "Imports" },
+          { value: "imports", label: copy.contacts.tabImports },
         ] as const).map(({ value, label }) => (
           <button
             key={value}
@@ -662,7 +694,7 @@ export default function ContactsPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher par nom ou numéro..."
+              placeholder={copy.contacts.searchPlaceholder}
               className="max-w-sm"
             />
           </div>
@@ -674,16 +706,21 @@ export default function ContactsPage() {
                 <div className="flex items-center gap-3">
                   <CheckmarkCircle01Icon className="w-5 h-5 text-primary" />
                   <span className="text-sm text-text">
-                    <strong>{selectedIds.size}</strong> contact{selectedIds.size > 1 ? "s" : ""} sélectionné{selectedIds.size > 1 ? "s" : ""}
+                    {renderWithStrongCount(
+                      selectedIds.size === 1
+                        ? copy.contacts.bulkSelectedOne
+                        : copy.contacts.bulkSelectedMany,
+                      selectedIds.size,
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="secondary" size="sm" onClick={() => setSelectedIds(new Set())}>
-                    Désélectionner tout
+                    {copy.contacts.deselectAll}
                   </Button>
                   <Button variant="danger" size="sm" loading={bulkDeleting} onClick={handleBulkDelete}>
                     <Delete01Icon className="w-4 h-4 mr-1.5" />
-                    Supprimer
+                    {copy.contacts.deleteAction}
                   </Button>
                 </div>
               </div>
@@ -792,8 +829,8 @@ export default function ContactsPage() {
                             <td className="py-3 pr-4 text-sm text-text-muted whitespace-nowrap">{formatDate(contact.createdAt)}</td>
                             <td className="py-3">
                               <div className="flex items-center gap-2">
-                                <Button size="sm" variant="secondary" onClick={() => setEditTarget(contact)}>Modifier</Button>
-                                <Button size="sm" variant="danger" loading={deleting === contact.id} onClick={() => setDeleteTarget(contact)}>Supprimer</Button>
+                                <Button size="sm" variant="secondary" onClick={() => setEditTarget(contact)}>{copy.contacts.editAction}</Button>
+                                <Button size="sm" variant="danger" loading={deleting === contact.id} onClick={() => setDeleteTarget(contact)}>{copy.contacts.deleteAction}</Button>
                               </div>
                             </td>
                           </tr>
@@ -862,7 +899,14 @@ export default function ContactsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      {["Date", "Statut", "Lignes", "Importés", "Mis à jour", "Invalides"].map((h) => (
+                      {[
+                        copy.contacts.importTableDate,
+                        copy.contacts.importTableStatus,
+                        copy.contacts.importTableRows,
+                        copy.contacts.importTableImported,
+                        copy.contacts.importTableUpdated,
+                        copy.contacts.importTableInvalid,
+                      ].map((h) => (
                         <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                       ))}
                     </tr>
@@ -882,9 +926,9 @@ export default function ContactsPage() {
           ) : imports.length === 0 ? (
             <EmptyState
               icon={<Upload01Icon className="w-8 h-8" />}
-              title="Aucun import pour l'instant."
-              description="Importez des contacts depuis un fichier CSV."
-              ctaLabel="Import CSV"
+              title={copy.contacts.importEmptyTitle}
+              description={copy.contacts.importEmptyDescription}
+              ctaLabel={copy.contacts.importCsv}
               onCta={() => setImportOpen(true)}
             />
           ) : (
@@ -894,7 +938,14 @@ export default function ContactsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      {["Date", "Statut", "Lignes", "Importés", "Mis à jour", "Invalides"].map((h) => (
+                      {[
+                        copy.contacts.importTableDate,
+                        copy.contacts.importTableStatus,
+                        copy.contacts.importTableRows,
+                        copy.contacts.importTableImported,
+                        copy.contacts.importTableUpdated,
+                        copy.contacts.importTableInvalid,
+                      ].map((h) => (
                         <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                       ))}
                     </tr>
@@ -905,7 +956,7 @@ export default function ContactsPage() {
                         <td className="py-3 pr-4 text-sm text-text-muted whitespace-nowrap">{formatDate(imp.createdAt)}</td>
                         <td className="py-3 pr-4">
                           <Badge variant={IMPORT_STATUS_VARIANT[imp.status] ?? "neutral"} pulse={imp.status === "processing"}>
-                            {IMPORT_STATUS_LABEL[imp.status] ?? imp.status}
+                            {importStatusLabel(imp.status)}
                           </Badge>
                         </td>
                         <td className="py-3 pr-4 text-sm text-text-body">{imp.totalRows}</td>
@@ -925,12 +976,15 @@ export default function ContactsPage() {
                     <div>
                       <div className="mb-1">
                         <Badge variant={IMPORT_STATUS_VARIANT[imp.status] ?? "neutral"} pulse={imp.status === "processing"}>
-                          {IMPORT_STATUS_LABEL[imp.status] ?? imp.status}
+                          {importStatusLabel(imp.status)}
                         </Badge>
                       </div>
                       <p className="text-xs text-text-muted">{formatDate(imp.createdAt)}</p>
                       <p className="text-xs text-text-secondary mt-0.5">
-                        {imp.totalRows} lignes · {imp.importedCount} importés · {imp.invalidCount} invalides
+                        {copy.contacts.importMobileSummary
+                          .replace("{{rows}}", String(imp.totalRows))
+                          .replace("{{imported}}", String(imp.importedCount))
+                          .replace("{{invalid}}", String(imp.invalidCount))}
                       </p>
                     </div>
                   </div>
@@ -962,13 +1016,15 @@ export default function ContactsPage() {
       <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={copy.contacts.deleteContact}>
         {deleteTarget && (
           <>
-            <p className="text-sm text-text-body mb-6">
-              Supprimer <strong className="text-text">{deleteTarget.name}</strong> ?
-              Ce contact sera retiré de tous les tags et campagnes.
+            <p className="text-sm text-text-body mb-2">
+              {renderWithStrongName(copy.contacts.deleteContactConfirm, deleteTarget.name)}
+            </p>
+            <p className="text-sm text-text-secondary mb-6">
+              {copy.contacts.deleteContactConsequence}
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Annuler</Button>
-              <Button variant="danger" loading={!!deleting} onClick={handleDelete}>Supprimer</Button>
+              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>{copy.contacts.cancel}</Button>
+              <Button variant="danger" loading={!!deleting} onClick={handleDelete}>{copy.contacts.deleteAction}</Button>
             </div>
           </>
         )}

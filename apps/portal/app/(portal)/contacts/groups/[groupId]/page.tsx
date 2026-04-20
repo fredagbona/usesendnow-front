@@ -25,6 +25,7 @@ import {
   UserAdd01Icon,
 } from "hugeicons-react"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { renderWithStrongCount, renderWithStrongName } from "@/lib/render-copy-placeholders"
 
 const PRESET_COLORS = ["#FFD600", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6", "#EC4899"]
 
@@ -62,7 +63,7 @@ function EditGroupModal({
       onClose()
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "CONFLICT") {
-        setError(`${gCopy.nameConflictPrefix} "${name.trim()}" existe déjà.`)
+        setError(gCopy.nameConflictTemplate.replace("{{name}}", name.trim()))
       } else {
         setError(gCopy.updateFailed)
       }
@@ -178,11 +179,13 @@ function AddMembersModal({
     setError(null)
     try {
       const res = await apiClient.contactGroups.addMembers(groupId, [...selected])
-      toast.success(`${res.added} contact${res.added !== 1 ? "s" : ""} ajouté${res.added !== 1 ? "s" : ""}`)
+      const tpl =
+        res.added === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
+      toast.success(tpl.replace("{{count}}", String(res.added)))
       onSuccess(res.added)
       onClose()
     } catch {
-      setError("Impossible d'ajouter les contacts.")
+      setError(gCopy.addMembersFailed)
     } finally {
       setAdding(false)
     }
@@ -268,7 +271,7 @@ export default function ContactGroupDetailPage() {
     } finally {
       setLoadingGroup(false)
     }
-  }, [groupId, router])
+  }, [groupId, router, gCopy])
 
   const fetchMembers = useCallback(async (searchVal?: string, cursor?: string) => {
     setLoadingMembers(true)
@@ -328,7 +331,7 @@ export default function ContactGroupDetailPage() {
       setMembers((prev) => prev.filter((m) => m.id !== removeTarget.id))
       setTotal((prev) => Math.max(0, prev - 1))
       setGroup((prev) => prev ? { ...prev, contactCount: Math.max(0, prev.contactCount - 1) } : prev)
-      toast.success("Contact retiré du groupe")
+      toast.success(gCopy.removeMemberSuccess)
       setRemoveTarget(null)
     } catch {
       toast.error(gCopy.removeMemberFailed)
@@ -385,7 +388,15 @@ export default function ContactGroupDetailPage() {
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-6">
       <PageHeader
         title={group.name}
-        description={`${total} contact${total !== 1 ? "s" : ""}${group.description ? ` · ${group.description}` : ""}`}
+        description={
+          <>
+            {renderWithStrongCount(
+              total === 1 ? gCopy.detailPageCountOne : gCopy.detailPageCountMany,
+              total,
+            )}
+            {group.description ? ` · ${group.description}` : ""}
+          </>
+        }
         action={
           <div className="flex items-center flex-wrap gap-2">
             <Button variant="ghost" size="sm" onClick={() => router.push("/contacts/groups")}>
@@ -541,10 +552,15 @@ export default function ContactGroupDetailPage() {
       {deleteGroupOpen && (
         <Modal open onClose={() => setDeleteGroupOpen(false)} title={gCopy.deleteModalTitle}>
           <p className="text-sm text-text-body mb-2">
-            Supprimer <strong className="text-text">{group.name}</strong> ?
+            {renderWithStrongName(gCopy.deleteGroupQuestion, group.name)}
           </p>
           <p className="text-sm text-text-secondary mb-6">
-            Les {group.contactCount} contact{group.contactCount !== 1 ? "s" : ""} dans ce groupe ne seront PAS supprimés — uniquement le groupe.
+            {renderWithStrongCount(
+              group.contactCount === 1
+                ? gCopy.deleteGroupContactsNoteOne
+                : gCopy.deleteGroupContactsNoteMany,
+              group.contactCount,
+            )}
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setDeleteGroupOpen(false)}>{gCopy.cancel}</Button>
@@ -571,9 +587,11 @@ export default function ContactGroupDetailPage() {
         {removeTarget && (
           <>
             <p className="text-sm text-text-body mb-6">
-              Retirer <strong className="text-text">{removeTarget.name}</strong> du groupe{" "}
-              <strong className="text-text">{group.name}</strong> ?
-              Le contact ne sera pas supprimé.
+              {gCopy.removeMemberPart1}
+              <strong className="text-text">{removeTarget.name}</strong>
+              {gCopy.removeMemberPart2}
+              <strong className="text-text">{group.name}</strong>
+              {gCopy.removeMemberPart3}
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setRemoveTarget(null)}>{gCopy.cancel}</Button>

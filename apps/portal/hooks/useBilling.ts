@@ -23,13 +23,13 @@ export function useBilling() {
       setSubscription(sub)
       setPlans(plansData)
     } catch {
-      setError(`${copy.billing.loadErrorTitle}.`)
+      setError(copy.hooks.billingLoadError)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchBilling() }, [copy.billing.loadErrorTitle])
+  useEffect(() => { fetchBilling() }, [copy.hooks.billingLoadError])
 
   return { subscription, plans, loading, error, refetch: fetchBilling, setSubscription }
 }

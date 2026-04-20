@@ -125,7 +125,7 @@ export default function NewWebhookPage() {
               label={webhookCopy.endpointLabel}
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
-              placeholder="https://mon-api.com/webhooks/msgflash"
+              placeholder={webhookCopy.endpointUrlPlaceholder}
               required
               autoFocus
               type="url"

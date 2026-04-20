@@ -26,24 +26,14 @@ import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 // ─── Quick Start dark block ────────────────────────────────────────────────────
 
-const SNIPPET = `curl -X POST https://srv.msgflash.com/v1/messages/send \\
-  -H "x-api-key: msgf_live_your_api_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "instanceId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "to": "+33612345000",
-    "type": "text",
-    "text": "Bonjour"
-  }'
-`
-
 function QuickStartBlock() {
   const { copy } = usePortalLocale()
   const apiCopy = copy.apiKeys
+  const snippet = apiCopy.quickStartCurlSnippet
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(SNIPPET.replace(/••••••••••••/g, "VOTRE_CLE_API"))
+    navigator.clipboard.writeText(snippet)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -67,7 +57,7 @@ function QuickStartBlock() {
       </div>
       <pre className="text-xs font-mono text-[#E2E8F0] leading-relaxed overflow-x-auto">
         <code>
-          {SNIPPET.split("\n").map((line, i) => (
+          {snippet.split("\n").map((line, i) => (
             <span key={i} className="block">
               {line.startsWith("  -H") || line.startsWith("  -d") || line.startsWith("    ") || line.startsWith("  }") || line === "  }'" ? (
                 <span className="text-[#94A3B8]">{line}</span>

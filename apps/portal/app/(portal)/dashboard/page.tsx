@@ -40,12 +40,13 @@ const CAMPAIGN_STATUS_VARIANT: Record<string, "neutral" | "yellow" | "blue" | "o
   paused_plan: "orange",
   completed: "success",
   failed: "error",
+  cancelled: "neutral",
 }
 
-function getFallbackPlan(code: string): Plan {
+function getFallbackPlan(code: string, freePlanDisplayName: string): Plan {
   return {
     code,
-    name: code === "free" ? "Gratuit" : code,
+    name: code === "free" ? freePlanDisplayName : code,
     priceMonthly: 0,
     maxInstances: 0,
     monthlyOutboundQuota: 0,
@@ -89,6 +90,7 @@ function StatTile({
   label,
   trend,
   loading,
+  numberLocale,
 }: {
   icon: React.ReactNode
   iconBg: string
@@ -98,6 +100,7 @@ function StatTile({
   label: string
   trend?: { label: string; positive?: boolean }
   loading: boolean
+  numberLocale: string
 }) {
   return (
     <Card elevated>
@@ -120,7 +123,7 @@ function StatTile({
         <Skeleton className="h-8 w-24 mb-1" />
       ) : (
         <p className="text-2xl font-bold text-text mb-0.5 tracking-tight">
-          {value.toLocaleString("fr-FR")}
+          {value.toLocaleString(numberLocale)}
           {suffix && (
             <span className="text-sm font-normal text-text-muted ml-1">{suffix}</span>
           )}
@@ -134,6 +137,7 @@ function StatTile({
 export default function DashboardPage() {
   const { locale, copy } = usePortalLocale()
   const d = copy.dashboard
+  const numberLocale = locale === "fr" ? "fr-FR" : "en-US"
   const router = useRouter()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -163,7 +167,7 @@ export default function DashboardPage() {
   const sub = subscription?.subscription
   const usage = subscription?.usage
   const currentPlanCode = sub?.plan?.code ?? "free"
-  const currentPlan = sub?.plan ?? getFallbackPlan(currentPlanCode)
+  const currentPlan = sub?.plan ?? getFallbackPlan(currentPlanCode, d.planNameFree)
   const limits = getPlanLimits(currentPlan)
 
   const outboundPercent =
@@ -203,13 +207,14 @@ export default function DashboardPage() {
           iconBg="bg-primary-subtle"
           iconColor="text-primary"
           value={usage?.effectiveOutboundUsage ?? 0}
-          suffix={`/ ${limits.monthlyOutboundQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")}`}
+          suffix={`/ ${limits.monthlyOutboundQuota.toLocaleString(numberLocale)}`}
           label={d.messagesThisMonth}
           trend={usage ? {
             label: (usage.effectiveOutboundUsage ?? 0) > 0 ? d.active : d.noSends,
             positive: (usage.effectiveOutboundUsage ?? 0) > 0,
           } : undefined}
           loading={loading}
+          numberLocale={numberLocale}
         />
         <StatTile
           icon={<SmartPhone01Icon className="w-5 h-5" />}
@@ -223,6 +228,7 @@ export default function DashboardPage() {
             positive: (usage.activeInstancesCount ?? 0) > 0,
           } : undefined}
           loading={loading}
+          numberLocale={numberLocale}
         />
         <StatTile
           icon={<WebhookIcon className="w-5 h-5" />}
@@ -232,6 +238,7 @@ export default function DashboardPage() {
           label={d.apiRequestsThisMonth}
           trend={{ label: d.thisMonth }}
           loading={loading}
+          numberLocale={numberLocale}
         />
         <StatTile
           icon={<Megaphone01Icon className="w-5 h-5" />}
@@ -244,6 +251,7 @@ export default function DashboardPage() {
             positive: campaigns.filter((c) => c.status === "running").length > 0,
           } : undefined}
           loading={loading}
+          numberLocale={numberLocale}
         />
       </div>
 
@@ -277,7 +285,7 @@ export default function DashboardPage() {
           {subscription?.period && (
             <p className="text-xs text-text-muted mt-4">
               {d.quotaResetOn}{" "}
-              {new Date(subscription.period.end).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
+              {new Date(subscription.period.end).toLocaleDateString(numberLocale, {
                 day: "numeric",
                 month: "long",
                 year: "numeric",

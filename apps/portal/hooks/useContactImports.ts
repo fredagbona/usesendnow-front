@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 import { apiClient } from "@usesendnow/api-client"
 import type { ContactImport } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"

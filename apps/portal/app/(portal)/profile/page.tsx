@@ -16,12 +16,12 @@ import { SkeletonCard } from "@/components/ui/Skeleton"
 import { Mail01Icon, CreditCardIcon } from "hugeicons-react"
 
 export default function ProfilePage() {
-  const { locale } = usePortalLocale()
+  const { copy } = usePortalLocale()
+  const p = copy.profile
   const [user, setUser] = useState<User | null>(null)
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-
 
   // Form state — mirrors editable fields
   const [fullName, setFullName] = useState("")
@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("")
 
   useEffect(() => {
+    setLoading(true)
     Promise.all([
       apiClient.auth.me(),
       apiClient.billing.getSubscription().catch(() => null),
@@ -40,9 +41,9 @@ export default function ProfilePage() {
         setPhone(u.phone)
         setDisplayName(u.displayName ?? "")
       })
-      .catch(() => toast.error(locale === "fr" ? "Impossible de charger le profil." : "Unable to load the profile."))
+      .catch(() => toast.error(p.loadError))
       .finally(() => setLoading(false))
-  }, [])
+  }, [p.loadError])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,7 +60,7 @@ export default function ProfilePage() {
     }
 
     if (Object.keys(payload).length === 0) {
-      toast.info(locale === "fr" ? "Aucune modification détectée." : "No changes detected.")
+      toast.info(p.noChanges)
       return
     }
 
@@ -70,15 +71,13 @@ export default function ProfilePage() {
       setFullName(updated.fullName)
       setPhone(updated.phone)
       setDisplayName(updated.displayName ?? "")
-      toast.success(locale === "fr" ? "Profil mis à jour" : "Profile updated")
+      toast.success(copy.toasts.profileUpdated)
     } catch {
-      toast.error(locale === "fr" ? "Impossible de mettre à jour le profil." : "Unable to update the profile.")
+      toast.error(p.updateError)
     } finally {
       setSaving(false)
     }
   }
-
-
 
   if (loading) {
     return (
@@ -92,7 +91,7 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="text-center py-16">
-        <p className="text-sm text-text-secondary">{locale === "fr" ? "Profil introuvable." : "Profile not found."}</p>
+        <p className="text-sm text-text-secondary">{p.notFound}</p>
       </div>
     )
   }
@@ -100,7 +99,8 @@ export default function ProfilePage() {
   const planName =
     subscription?.subscription?.plan?.name ??
     subscription?.subscription?.plan?.code ??
-    user.plan ?? "Gratuit"
+    user.plan ??
+    p.planFallbackFree
 
   const isDirty =
     fullName.trim() !== user.fullName ||
@@ -110,8 +110,8 @@ export default function ProfilePage() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
-        title={locale === "fr" ? "Profil" : "Profile"}
-        description={locale === "fr" ? "Gérez vos informations personnelles" : "Manage your personal information"}
+        title={copy.titles.profile}
+        description={p.pageDescription}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
@@ -135,7 +135,7 @@ export default function ProfilePage() {
           <div className="w-full flex flex-col gap-2">
             <div className="flex items-center gap-2 px-3 py-2 bg-primary-subtle rounded-xl border border-primary/20">
               <CreditCardIcon className="w-4 h-4 text-primary shrink-0" />
-              <span className="text-sm font-medium text-primary-text truncate">{locale === "fr" ? "Plan" : "Plan"} {planName}</span>
+              <span className="text-sm font-medium text-primary-text truncate">{p.planLabel} {planName}</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-2 bg-bg-subtle rounded-xl border border-border">
               <Mail01Icon className="w-4 h-4 text-text-muted shrink-0" />
@@ -147,10 +147,10 @@ export default function ProfilePage() {
 
         {/* Right — Editable form */}
         <Card elevated className="lg:col-span-2">
-          <h3 className="text-sm font-semibold text-text mb-5">{locale === "fr" ? "Modifier le profil" : "Edit profile"}</h3>
+          <h3 className="text-sm font-semibold text-text mb-5">{p.formSectionTitle}</h3>
           <form onSubmit={handleSave} className="space-y-4">
             <Input
-              label={locale === "fr" ? "Nom complet" : "Full name"}
+              label={p.fullNameLabel}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
@@ -158,15 +158,15 @@ export default function ProfilePage() {
               maxLength={100}
             />
             <Input
-              label={locale === "fr" ? "Nom d'affichage" : "Display name"}
+              label={p.displayNameLabel}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder={locale === "fr" ? "Laissez vide pour utiliser le nom complet" : "Leave blank to use the full name"}
+              placeholder={p.displayNamePlaceholder}
               maxLength={60}
-              hint={locale === "fr" ? "Affiché dans la barre latérale et les notifications" : "Shown in the sidebar and notifications"}
+              hint={p.displayNameHint}
             />
             <Input
-              label={locale === "fr" ? "Téléphone" : "Phone"}
+              label={p.phoneLabel}
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -176,11 +176,11 @@ export default function ProfilePage() {
 
             {/* Read-only email */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-text-body">{locale === "fr" ? "Adresse e-mail" : "Email address"}</label>
+              <label className="text-sm font-medium text-text-body">{p.emailLabel}</label>
               <div className="flex items-center gap-2 px-3.5 py-2.5 bg-bg-subtle border border-border rounded-xl">
                 <span className="text-sm text-text-muted flex-1">{user.email}</span>
                 <span className="text-xs text-text-muted bg-bg border border-border px-2 py-0.5 rounded-md">
-                  {locale === "fr" ? "Non modifiable" : "Read-only"}
+                  {p.readOnly}
                 </span>
               </div>
             </div>
@@ -192,7 +192,7 @@ export default function ProfilePage() {
                 loading={saving}
                 disabled={!isDirty}
               >
-                {locale === "fr" ? "Enregistrer les modifications" : "Save changes"}
+                {p.save}
               </Button>
             </div>
           </form>

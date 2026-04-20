@@ -10,7 +10,7 @@ import { useInstances } from "@/hooks/useInstances"
 import { useTemplates } from "@/hooks/useTemplates"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { entriesToVariableMap, getCustomVariables, getCustomVariableKey, variableMapToEntries, type CustomVariableEntry } from "@/lib/templateEngine"
-import { ACCEPTED_MIME, ACCEPTED_LABELS, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, TYPE_LABEL, formatBytes } from "@/lib/messageComposer"
+import { ACCEPTED_MIME, ACCEPTED_LABELS, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, formatBytes } from "@/lib/messageComposer"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
 import Card from "@/components/ui/Card"
@@ -29,6 +29,9 @@ type ComposeMode = "freeform" | "template"
 export default function NewMessagePage() {
   const router = useRouter()
   const { copy } = usePortalLocale()
+  const messageTypes = copy.messages.detail.types
+  const m = copy.messages.compose
+  const cList = copy.campaigns.list
   const { instances } = useInstances()
   const { templates } = useTemplates()
   const { contacts } = useContacts()
@@ -147,21 +150,23 @@ export default function NewMessagePage() {
     const targetType = nextType ?? sendForm.type
     const maxSize = FILE_LIMITS[targetType] ?? GLOBAL_MAX_FILE_SIZE
     if (file.size > GLOBAL_MAX_FILE_SIZE || file.size > maxSize) {
-      setMediaError(targetType === "voice_note"
-        ? "La note vocale est trop longue. Limitez-vous à 15 minutes."
-        : `Fichier trop volumineux. Maximum ${formatBytes(maxSize)}.`)
+      setMediaError(
+        targetType === "voice_note"
+          ? cList.mediaVoiceTooLong
+          : `${cList.mediaFileTooLargePrefix} ${formatBytes(maxSize, copy.common.bytesMegabyte)}.`,
+      )
       return
     }
 
     const accepted = ACCEPTED_MIME[targetType] ?? []
     if (accepted.length > 0 && !accepted.includes(file.type)) {
-      setMediaError(`Format non supporté. Accepté : ${ACCEPTED_LABELS[targetType] ?? ""}.`)
+      setMediaError(`${cList.formatUnsupportedPrefix} ${ACCEPTED_LABELS[targetType] ?? ""}.`)
       return
     }
 
     if (uploadedMediaRef.current) {
       void apiClient.media.delete(uploadedMediaRef.current.id).catch(() => {})
-      setMediaNotice("Le précédent fichier temporaire sera remplacé par le nouveau.")
+      setMediaNotice(cList.mediaReplaceNotice)
     }
 
     shouldCleanupMediaRef.current = true
@@ -179,26 +184,26 @@ export default function NewMessagePage() {
       }))
       setStatusMessage(copy.messages.uploadQueued)
       if (media.suggestedMessageType === "voice_note" && targetType === "audio") {
-        setMediaNotice("Le fichier ressemble à une note vocale. Le type a été prérempli en conséquence.")
+        setMediaNotice(m.voiceSuggestedNotice)
       }
       toast.success(copy.messages.uploadSuccess)
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "MEDIA_FILE_MISSING") {
-          setMediaError("Aucun fichier sélectionné.")
+          setMediaError(m.noFileSelected)
         } else if (err.code === "MEDIA_TYPE_NOT_ALLOWED") {
-          setMediaError("Ce format de fichier n’est pas supporté.")
+          setMediaError(cList.mediaTypeNotAllowed)
         } else if (err.code === "MEDIA_TOO_LARGE") {
-          setMediaError("Le fichier dépasse la taille maximale autorisée.")
+          setMediaError(cList.mediaTooLarge)
         } else if (err.code === "MEDIA_UPLOAD_NOT_CONFIGURED") {
-          setMediaError("L’upload média n’est pas disponible pour le moment.")
+          setMediaError(m.mediaUploadUnavailable)
         } else {
-          setMediaError("L’upload du fichier a échoué. Réessayez.")
+          setMediaError(cList.mediaUploadFailed)
         }
       } else {
-        setMediaError("L’upload du fichier a échoué. Réessayez.")
+        setMediaError(cList.mediaUploadFailed)
       }
-      setStatusMessage("Échec de l’upload média.")
+      setStatusMessage(m.uploadFailedStatusLine)
       setUploadedMedia(null)
       setSendForm((prev) => ({ ...prev, mediaUrl: "" }))
       shouldCleanupMediaRef.current = false
@@ -223,7 +228,7 @@ export default function NewMessagePage() {
     releaseUploadedMedia()
     setSendForm((prev) => ({ ...prev, mediaUrl: "" }))
     resetMediaState()
-    setStatusMessage("Média supprimé. Vous pouvez en choisir un autre.")
+    setStatusMessage(copy.messages.mediaRemoved)
   }
 
   const handleRefreshPreview = async () => {
@@ -239,16 +244,16 @@ export default function NewMessagePage() {
       })
       setTemplatePreview(data.rendered)
       if (!data.valid && data.missingVariables.length > 0) {
-        setPreviewError(`Variables manquantes : ${data.missingVariables.join(", ")}`)
+        setPreviewError(m.missingVarsPreview.replace("{{vars}}", data.missingVariables.join(", ")))
       }
       setStatusMessage(copy.messages.templatePreview)
     } catch (err) {
       if (err instanceof ApiClientError && err.code === "TEMPLATE_INVALID") {
-        setPreviewError("Le template sélectionné est invalide.")
+        setPreviewError(m.templateInvalidShort)
       } else {
         setPreviewError(copy.messages.templatePreviewError)
       }
-      setStatusMessage("Impossible de générer l’aperçu.")
+      setStatusMessage(m.previewFailedStatusLine)
     } finally {
       setPreviewLoading(false)
     }
@@ -258,7 +263,7 @@ export default function NewMessagePage() {
     event.preventDefault()
 
     if (composeMode === "freeform" && FILE_UPLOAD_TYPES.includes(sendForm.type) && !sendForm.mediaUrl) {
-      setMediaError("Aucun fichier sélectionné.")
+      setMediaError(m.noFileSelected)
       return
     }
 
@@ -266,7 +271,7 @@ export default function NewMessagePage() {
       const scheduledAt = new Date(sendForm.scheduledAt)
       const expiresAt = new Date(uploadedMedia.expiresAt)
       if (scheduledAt.getTime() > expiresAt.getTime()) {
-        setMediaError("Le média doit rester valide jusqu'à l'envoi. Si la date prévue dépasse l'expiration, l'envoi peut échouer.")
+        setMediaError(m.schedulePastExpiryError)
         return
       }
     }
@@ -304,26 +309,26 @@ export default function NewMessagePage() {
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.code === "TEMPLATE_VARIABLES_MISSING") {
-          toast.error("Certaines variables du template sont manquantes.")
+          toast.error(m.sendErrorTemplateVars)
         } else if (err.code === "TEMPLATE_CONTEXT_UNAVAILABLE") {
-          toast.error("Le contact ou l'instance sélectionné est indisponible pour le rendu.")
+          toast.error(m.sendErrorTemplateContext)
         } else if (err.code === "TEMPLATE_INVALID") {
-          toast.error("Le template sélectionné est invalide.")
+          toast.error(m.sendErrorTemplateInvalid)
         } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
-          toast.error("Quota mensuel épuisé. Mettez à niveau votre plan.")
+          toast.error(m.sendErrorQuota)
         } else if (err.code === "NOT_FOUND") {
-          toast.error("Instance ou template introuvable.")
+          toast.error(m.sendErrorNotFound)
         } else if (err.code === "VALIDATION_ERROR") {
-          toast.error("Données invalides. Vérifiez les champs et réessayez.")
+          toast.error(m.sendErrorValidation)
         } else if (err.code === "UNSUPPORTED_FEATURE") {
-          toast.error("Les boutons nécessitent un compte WhatsApp Business.")
+          toast.error(m.sendErrorUnsupportedFeature)
         } else {
-          toast.error("Impossible d'envoyer le message.")
+          toast.error(m.sendErrorGeneric)
         }
       } else {
-        toast.error("Impossible d'envoyer le message.")
+        toast.error(m.sendErrorGeneric)
       }
-      setStatusMessage("Échec de l'envoi. Corrigez les champs puis réessayez.")
+      setStatusMessage(m.sendFailedStatusLine)
     } finally {
       setSending(false)
     }
@@ -334,7 +339,7 @@ export default function NewMessagePage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Nouveau message"
+        title={copy.messages.title}
         description={copy.messages.description}
         action={<Button variant="secondary" onClick={() => router.push("/messages")}>{copy.messages.sendBack}</Button>}
       />
@@ -394,7 +399,7 @@ export default function NewMessagePage() {
 
           {composeMode === "template" ? (
             <Card className="space-y-5">
-              <Select label="Template" value={sendForm.templateId} onChange={(event) => handleTemplateChange(event.target.value)} required>
+              <Select label={copy.messages.detail.template} value={sendForm.templateId} onChange={(event) => handleTemplateChange(event.target.value)} required>
                 <option value="">{copy.messages.selectTemplate}</option>
                 {templates.map((template) => (
                   <option key={template.id} value={template.id}>{template.name}</option>
@@ -408,7 +413,9 @@ export default function NewMessagePage() {
                     <div className="flex flex-wrap gap-1.5">
                       {selectedTemplate.variables.map((variable) => (
                         <span key={variable} className="rounded-full border border-border bg-bg-subtle px-3 py-1 text-xs text-text-secondary">
-                          {variable.startsWith("custom.") ? `${variable} · à saisir` : `${variable} · contexte`}
+                          {variable.startsWith("custom.")
+                            ? `${variable}${m.variableBadgeCustomSuffix}`
+                            : `${variable}${m.variableBadgeContextSuffix}`}
                         </span>
                       ))}
                     </div>
@@ -418,19 +425,19 @@ export default function NewMessagePage() {
                     <CustomVariableBuilder
                       entries={templateVariables.length > 0 ? templateVariables : selectedTemplateCustomVars.map((variable) => ({ key: getCustomVariableKey(variable), value: "" }))}
                       onChange={setTemplateVariables}
-                      hint="Renseignez uniquement les valeurs pour les variables custom.*"
+                      hint={m.customVariablesBuilderHint}
                     />
                   )}
 
                   <div className="rounded-xl border border-border bg-bg-subtle p-4">
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-text-body">Aperçu du rendu</p>
+                      <p className="text-sm font-medium text-text-body">{m.renderPreviewTitle}</p>
                       <Button type="button" variant="secondary" size="sm" loading={previewLoading} onClick={handleRefreshPreview}>
-                        Actualiser l’aperçu
+                        {m.refreshPreview}
                       </Button>
                     </div>
                     <div className="min-h-24 text-sm leading-6 text-text">
-                      {templatePreview ?? <span className="text-text-muted">Aucun aperçu généré pour le moment.</span>}
+                      {templatePreview ?? <span className="text-text-muted">{m.previewEmpty}</span>}
                     </div>
                   </div>
                 </>
@@ -438,19 +445,19 @@ export default function NewMessagePage() {
             </Card>
           ) : (
             <Card className="space-y-5">
-              <Select label="Type de message" value={sendForm.type} onChange={(event) => handleTypeChange(event.target.value as MessageType)}>
+              <Select label={copy.messages.directComposeTypeLabel} value={sendForm.type} onChange={(event) => handleTypeChange(event.target.value as MessageType)}>
                 {(["text", "image", "video", "document", "audio", "voice_note"] as MessageType[]).map((type) => (
-                  <option key={type} value={type}>{TYPE_LABEL[type] ?? type}</option>
+                  <option key={type} value={type}>{messageTypes[type as keyof typeof messageTypes] ?? type}</option>
                 ))}
               </Select>
 
               {sendForm.type === "text" ? (
                 <div>
                   <MessageTextarea
-                    label="Texte"
+                    label={m.freeformTextLabel}
                     value={sendForm.text}
                     onChange={(value) => setSendForm((prev) => ({ ...prev, text: value }))}
-                    placeholder="Votre message..."
+                    placeholder={m.freeformTextPlaceholder}
                     rows={4}
                     maxLength={4096}
                   />
@@ -468,7 +475,7 @@ export default function NewMessagePage() {
                   releaseUploadedMedia()
                   setSendForm((prev) => ({ ...prev, mediaUrl: "" }))
                           resetMediaState()
-                          setStatusMessage("Prêt à enregistrer une nouvelle note vocale.")
+                          setStatusMessage(m.voiceResetReady)
                         }}
                         uploadError={mediaError}
                         uploadNotice={mediaNotice}
@@ -491,10 +498,10 @@ export default function NewMessagePage() {
 
                   {sendForm.type !== "voice_note" && (
                     <MessageTextarea
-                      label="Légende (optionnel)"
+                      label={m.freeformCaptionLabel}
                       value={sendForm.text}
                       onChange={(value) => setSendForm((prev) => ({ ...prev, text: value }))}
-                      placeholder="Ajouter une légende ou un contexte..."
+                      placeholder={m.freeformCaptionPlaceholder}
                       rows={3}
                       maxLength={1024}
                     />
@@ -503,7 +510,7 @@ export default function NewMessagePage() {
               )}
 
               <Input
-                label="Planifier (optionnel)"
+                label={m.scheduleOptionalLabel}
                 type="datetime-local"
                 value={sendForm.scheduledAt}
                 onChange={(event) => setSendForm((prev) => ({ ...prev, scheduledAt: event.target.value }))}
@@ -514,9 +521,13 @@ export default function NewMessagePage() {
           {previewError && <Alert variant="warning" message={previewError} onClose={() => setPreviewError(null)} />}
 
           <div className="flex flex-wrap justify-end gap-3">
-            <Button type="button" variant="secondary" onClick={() => router.push("/messages")}>Annuler</Button>
+            <Button type="button" variant="secondary" onClick={() => router.push("/messages")}>{m.cancel}</Button>
             <Button type="submit" variant="primary" loading={sending || uploading}>
-              {composeMode === "template" ? "Envoyer le template" : sendForm.scheduledAt ? "Planifier le message" : "Envoyer le message"}
+              {composeMode === "template"
+                ? m.submitTemplate
+                : sendForm.scheduledAt
+                  ? m.submitSchedule
+                  : m.submitSend}
             </Button>
           </div>
         </form>
@@ -524,22 +535,24 @@ export default function NewMessagePage() {
         <div className="space-y-6">
           <SendStatusPanel
             uploadProgress={uploading ? uploadProgress : uploadedMedia ? 100 : 0}
-            uploadStatus={uploading ? "En cours" : uploadedMedia ? "Terminé" : "En attente"}
+            uploadStatus={
+              uploading ? m.uploadBadgeInProgress : uploadedMedia ? m.uploadBadgeDone : m.uploadBadgeIdle
+            }
             sendStatus={statusMessage}
             mediaExpiresAt={uploadedMedia?.expiresAt ?? null}
           />
 
           <Card className="space-y-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-muted">Bonnes pratiques</p>
-              <h3 className="mt-2 text-lg font-semibold uppercase text-text">Avant l’envoi</h3>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-muted">{m.bestPracticesKicker}</p>
+              <h3 className="mt-2 text-lg font-semibold uppercase text-text">{m.bestPracticesTitle}</h3>
             </div>
             <ul className="space-y-3 text-sm leading-6 text-text-secondary">
-              <li>Vérifiez que l'instance est bien connectée avant de lancer l'envoi.</li>
-              <li>Pour un média temporaire, gardez une date planifiée avant son expiration.</li>
-              <li>Les liens médias sont publics. Évitez les documents sensibles.</li>
-              <li>Une note vocale peut être envoyée comme `audio` ou `note vocale` selon votre besoin.</li>
-              <li>Les messages avec boutons nécessitent un compte WhatsApp Business.</li>
+              <li>{m.bestPractice1}</li>
+              <li>{m.bestPractice2}</li>
+              <li>{m.bestPractice3}</li>
+              <li>{m.bestPractice4}</li>
+              <li>{m.bestPractice5}</li>
             </ul>
           </Card>
         </div>

@@ -32,6 +32,7 @@ export function MediaUploadPanel({
   onRemove,
 }: MediaUploadPanelProps) {
   const { copy } = usePortalLocale()
+  const mbUnit = copy.common.bytesMegabyte
   const m = copy.messages.mediaUpload
   const maxSize = FILE_LIMITS[type] ?? GLOBAL_MAX_FILE_SIZE
   const fieldLabel =
@@ -40,7 +41,7 @@ export function MediaUploadPanel({
 
   const fileDetailsLine = uploadedMedia
     ? m.fileDetails
-        .replace("{{size}}", formatBytes(uploadedMedia.sizeBytes))
+        .replace("{{size}}", formatBytes(uploadedMedia.sizeBytes, mbUnit))
         .replace("{{mime}}", uploadedMedia.type)
         .replace("{{date}}", formatFullDate(uploadedMedia.expiresAt))
     : ""
@@ -104,7 +105,7 @@ export function MediaUploadPanel({
             </div>
             <span className="text-sm font-medium text-primary-ink">{m.chooseFile}</span>
             <span className="text-xs text-text-muted">
-              {m.acceptedMax.replace("{{accepted}}", accepted).replace("{{size}}", formatBytes(maxSize))}
+              {m.acceptedMax.replace("{{accepted}}", accepted).replace("{{size}}", formatBytes(maxSize, mbUnit))}
             </span>
           </button>
         )}

@@ -51,6 +51,7 @@ export const TYPE_LABEL: Record<string, string> = {
 
 export const FILE_UPLOAD_TYPES: MessageType[] = ["image", "video", "audio", "voice_note", "document"]
 
-export function formatBytes(bytes: number): string {
-  return `${(bytes / 1024 / 1024).toFixed(2)} Mo`
+/** @param megabyteUnitLabel e.g. `copy.common.bytesMegabyte` — `"Mo"` (FR) or `"MB"` (EN). */
+export function formatBytes(bytes: number, megabyteUnitLabel: string): string {
+  return `${(bytes / 1024 / 1024).toFixed(2)} ${megabyteUnitLabel}`
 }

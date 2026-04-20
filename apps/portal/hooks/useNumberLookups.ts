@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
 import type { NumberLookup, CreateLookupResponse, Instance } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export function useNumberLookups() {
   const { copy } = usePortalLocale()
+  const nl = copy.numberLookups
   const [lookups, setLookups] = useState<NumberLookup[]>([])
   const [activeLookup, setActiveLookup] = useState<NumberLookup | null>(null)
   const [loading, setLoading] = useState(true)
@@ -36,16 +37,16 @@ export function useNumberLookups() {
           setPolling(false)
           await fetchLookups()
           if (data.status === "done") {
-            toast.success(copy.toasts.lookupCompleted)
+            toast.success(nl.lookupCompleted)
           } else {
-            toast.error(copy.toasts.lookupFailed)
+            toast.error(nl.lookupFailed)
           }
         }
       } catch {
         // continue polling
       }
     }, 4000)
-  }, [clearPoll])
+  }, [clearPoll, nl.lookupCompleted, nl.lookupFailed])
 
   const fetchLookups = useCallback(async () => {
     setLoading(true)
@@ -91,9 +92,9 @@ export function useNumberLookups() {
           updatedAt: now,
         }
         setActiveLookup(syncLookup)
-        toast.success(copy.toasts.lookupCompleted)
+        toast.success(nl.lookupCompleted)
       } else {
-        toast.info(copy.toasts.lookupStarted)
+        toast.info(nl.lookupStarted)
         startPolling(result.lookupId)
       }
 
@@ -140,9 +141,9 @@ export function useNumberLookups() {
       }
       const result = await apiClient.numberLookups.importContacts(lookupId, payload)
       if (result.skipped > 0 && result.created === 0 && result.updated === 0) {
-        toast.info(copy.toasts.partialImport)
+        toast.info(nl.partialImport)
       } else {
-        toast.success(copy.toasts.contactsImported)
+        toast.success(nl.contactsImported)
       }
       return true
     } catch (err) {

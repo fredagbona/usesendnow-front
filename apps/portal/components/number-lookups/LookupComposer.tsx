@@ -32,7 +32,8 @@ export default function LookupComposer({
   onSubmit,
   submitting,
 }: LookupComposerProps) {
-  const { locale } = usePortalLocale()
+  const { copy } = usePortalLocale()
+  const c = copy.numberLookups.composer
   const [rawInput, setRawInput] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -45,6 +46,12 @@ export default function LookupComposer({
 
   const isLargeBatch = numbers.length >= 1000
   const isValid = numbers.length > 0 && selectedInstanceId !== ""
+
+  const numbersHint = useMemo(() => {
+    const n = numbers.length
+    const template = n === 1 ? c.numbersHintOne : c.numbersHintMany
+    return template.replace("{{count}}", String(n))
+  }, [numbers.length, c.numbersHintOne, c.numbersHintMany])
 
   const handleSubmit = () => {
     if (!isValid) return
@@ -85,16 +92,16 @@ export default function LookupComposer({
 
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="bg-bg border border-border rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(10,10,10,0.10)]">
-      <h3 className="text-base font-medium text-text mb-5">{locale === "fr" ? "Vérifier des numéros" : "Check numbers"}</h3>
+      <h3 className="text-base font-medium text-text mb-5">{c.title}</h3>
 
       <div className="space-y-4">
         <Select
-          label={locale === "fr" ? "Instance" : "Instance"}
+          label={c.instanceLabel}
           value={selectedInstanceId}
           onChange={(e) => onInstanceChange(e.target.value)}
-          hint={locale === "fr" ? "Choisissez une instance connectée pour exécuter le lookup." : "Choose a connected instance to run the lookup."}
+          hint={c.instanceHint}
         >
-          <option value="">{locale === "fr" ? "— Sélectionner une instance —" : "— Select an instance —"}</option>
+          <option value="">{c.instancePlaceholder}</option>
           {instances.map((inst) => (
             <option key={inst.id} value={inst.id}>
               {inst.name} ({inst.status})
@@ -103,14 +110,12 @@ export default function LookupComposer({
         </Select>
 
         <Textarea
-          label={locale === "fr" ? "Numéros de téléphone" : "Phone numbers"}
-          placeholder="+41791234567
-+81476222311
-+33612345000"
+          label={c.phonesLabel}
+          placeholder={c.phonesPlaceholder}
           value={rawInput}
           onChange={(e) => setRawInput(e.target.value)}
           rows={8}
-          hint={`${numbers.length} numéro${numbers.length !== 1 ? "s" : ""} détecté${numbers.length !== 1 ? "s" : ""}`}
+          hint={numbersHint}
         />
 
         {/* Import section */}
@@ -124,15 +129,15 @@ export default function LookupComposer({
           />
           <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
             <Upload01Icon className="w-4 h-4 mr-1.5" />
-            {locale === "fr" ? "Importer un CSV" : "Import CSV"}
+            {c.importCsv}
           </Button>
           <Button variant="ghost" size="sm" onClick={handleDownloadTemplate}>
             <Download01Icon className="w-4 h-4 mr-1.5" />
-            {locale === "fr" ? "Télécharger le template" : "Download template"}
+            {c.downloadTemplate}
           </Button>
           <div className="flex items-center gap-1.5 text-xs text-text-muted ml-auto">
             <File02Icon className="w-3.5 h-3.5" />
-            <span>{locale === "fr" ? "1 colonne :" : "1 column:"} <code className="font-mono bg-bg px-1 rounded">phone</code></span>
+            <span>{c.columnHintPrefix} <code className="font-mono bg-bg px-1 rounded">phone</code></span>
           </div>
         </div>
 
@@ -140,7 +145,7 @@ export default function LookupComposer({
           <div className="flex items-start gap-2 p-3 bg-warning-subtle border border-warning/30 rounded-xl">
             <AlertCircleIcon className="w-4 h-4 text-warning shrink-0 mt-0.5" />
             <p className="text-sm text-warning-text">
-              {locale === "fr" ? "Volume important détecté (≥ 1000 numéros). Le lookup s'exécutera en arrière-plan." : "Large batch detected (≥ 1000 numbers). The lookup will run in the background."}
+              {c.largeBatchWarning}
             </p>
           </div>
         )}
@@ -154,7 +159,7 @@ export default function LookupComposer({
             onClick={handleSubmit}
           >
             <Search01Icon className="w-4 h-4 mr-1.5" />
-            {locale === "fr" ? "Lancer le lookup" : "Run lookup"}
+            {c.submit}
           </Button>
         </div>
       </div>

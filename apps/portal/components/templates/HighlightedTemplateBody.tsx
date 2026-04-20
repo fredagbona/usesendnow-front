@@ -7,8 +7,8 @@ interface HighlightedTemplateBodyProps {
 }
 
 export function HighlightedTemplateBody({ body }: HighlightedTemplateBodyProps) {
-  const { locale } = usePortalLocale()
-  if (!body) return <span className="text-text-muted">{locale === "fr" ? "Aucun corps" : "No body"}</span>
+  const { copy } = usePortalLocale()
+  if (!body) return <span className="text-text-muted">{copy.templates.detail.noBody}</span>
 
   const parts = body.split(/(\{\{\s*[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*\s*\}\})/g)
 

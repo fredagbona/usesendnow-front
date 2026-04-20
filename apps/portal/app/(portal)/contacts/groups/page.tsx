@@ -20,6 +20,7 @@ import EmptyState from "@/components/ui/EmptyState"
 import { SkeletonCard } from "@/components/ui/Skeleton"
 import { UserMultiple02Icon, ArrowLeft01Icon } from "hugeicons-react"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { renderWithStrongCount, renderWithStrongName } from "@/lib/render-copy-placeholders"
 
 const PRESET_COLORS = ["#FFD600", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6", "#EC4899"]
 
@@ -68,7 +69,7 @@ function GroupModal({
         if (err.code === "MAX_CONTACT_GROUPS_REACHED") {
           setError(gCopy.maxReached)
         } else if (err.code === "CONFLICT") {
-          setError(`${gCopy.nameConflictPrefix} "${name.trim()}" existe déjà.`)
+          setError(gCopy.nameConflictTemplate.replace("{{name}}", name.trim()))
         } else {
           setError(gCopy.saveFailed)
         }
@@ -164,10 +165,13 @@ function DeleteGroupModal({
   return (
     <Modal open onClose={onCancel} title={gCopy.deleteModalTitle}>
       <p className="text-sm text-text-body mb-2">
-        Supprimer <strong className="text-text">{groupName}</strong> ?
+        {renderWithStrongName(gCopy.deleteGroupQuestion, groupName)}
       </p>
       <p className="text-sm text-text-secondary mb-6">
-        Les {contactCount} contact{contactCount !== 1 ? "s" : ""} dans ce groupe ne seront PAS supprimés — uniquement le groupe.
+        {renderWithStrongCount(
+          contactCount === 1 ? gCopy.deleteGroupContactsNoteOne : gCopy.deleteGroupContactsNoteMany,
+          contactCount,
+        )}
       </p>
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onCancel}>{gCopy.cancel}</Button>

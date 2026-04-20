@@ -1,7 +1,9 @@
 /**
- * Traduction côté frontend des messages safety/warmup renvoyés par le backend.
- * Si un message n'est pas dans le dictionnaire, il est affiché tel quel.
+ * Traduction côté frontend des messages safety/warmup renvoyés par le backend (anglais).
+ * En `fr`, les entrées connues sont traduites ; en `en`, le texte API est affiché tel quel.
  */
+
+import type { PortalLocale } from "@/lib/portal-locale"
 
 const REASON_TRANSLATIONS: Record<string, string> = {
   "this instance is still warming up and campaign pacing should stay gradual.":
@@ -33,16 +35,17 @@ const RECOMMENDATION_TRANSLATIONS: Record<string, string> = {
     "Utilisez les segments d'audience ayant déjà fonctionné pour une délivrabilité plus sûre.",
 }
 
-function translateMessage(text: string, dict: Record<string, string>): string {
+function translateMessage(text: string, locale: PortalLocale, dict: Record<string, string>): string {
+  if (locale === "en") return text
   const lower = text.trim().toLowerCase()
   if (dict[lower]) return dict[lower]
   return text
 }
 
-export function translateReason(text: string): string {
-  return translateMessage(text, REASON_TRANSLATIONS)
+export function translateReason(text: string, locale: PortalLocale): string {
+  return translateMessage(text, locale, REASON_TRANSLATIONS)
 }
 
-export function translateRecommendation(text: string): string {
-  return translateMessage(text, RECOMMENDATION_TRANSLATIONS)
+export function translateRecommendation(text: string, locale: PortalLocale): string {
+  return translateMessage(text, locale, RECOMMENDATION_TRANSLATIONS)
 }

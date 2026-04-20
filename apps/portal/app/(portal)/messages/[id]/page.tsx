@@ -14,12 +14,14 @@ import { SkeletonCard } from "@/components/ui/Skeleton"
 import { ArrowLeft01Icon, AlertDiamondIcon } from "hugeicons-react"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
-const STATUS_VARIANT: Record<string, "neutral" | "blue" | "success" | "purple" | "error"> = {
+const STATUS_VARIANT: Record<string, "neutral" | "blue" | "success" | "purple" | "error" | "orange"> = {
   queued: "neutral",
   sent: "blue",
   delivered: "success",
   read: "purple",
   failed: "error",
+  cancelled: "orange",
+  received: "neutral",
 }
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -34,13 +36,9 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 export default function MessageDetailPage() {
   const { copy } = usePortalLocale()
   const detailCopy = copy.messages.detail
-  const statusLabel: Record<string, string> = {
-    queued: copy.dashboard.status.queued,
-    sent: copy.dashboard.status.sent,
-    delivered: copy.dashboard.status.delivered,
-    read: copy.dashboard.status.read,
-    failed: copy.dashboard.status.failed,
-  }
+  const list = copy.messages.list
+  const messageStatusLabel = (status: string) =>
+    list.statusLabels[status as keyof typeof list.statusLabels] ?? status
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
   const { message, loading, error } = useMessage(id)
@@ -73,7 +71,7 @@ export default function MessageDetailPage() {
           <div className="flex items-center gap-3">
             {message.meta?.templateId && <Badge variant="warning">{detailCopy.template}</Badge>}
             <Badge variant={STATUS_VARIANT[message.status] ?? "neutral"}>
-              {statusLabel[message.status] ?? message.status}
+              {messageStatusLabel(message.status)}
             </Badge>
             <Button variant="ghost" size="sm" onClick={() => router.push("/messages")}>
               <ArrowLeft01Icon className="w-4 h-4" />
@@ -88,7 +86,7 @@ export default function MessageDetailPage() {
           <AlertDiamondIcon className="w-5 h-5 text-error shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-error-hover">
-              {message.meta?.templateId ? "Template rendering failed" : detailCopy.sendFailed}
+              {message.meta?.templateId ? detailCopy.templateRenderFailed : detailCopy.sendFailed}
             </p>
             <p className="text-sm text-text-body mt-0.5">{message.error}</p>
           </div>
@@ -98,7 +96,7 @@ export default function MessageDetailPage() {
       <Card>
         <DetailRow label={detailCopy.status}>
           <Badge variant={STATUS_VARIANT[message.status] ?? "neutral"}>
-            {statusLabel[message.status] ?? message.status}
+            {messageStatusLabel(message.status)}
           </Badge>
         </DetailRow>
         <DetailRow label={detailCopy.type}>
