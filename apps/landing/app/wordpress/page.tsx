@@ -5,7 +5,6 @@ import { Navbar } from "../../components/sections/Navbar"
 import { Footer } from "../../components/sections/Footer"
 import { ConfigurationSteps } from "../../components/sections/ConfigurationSteps"
 import { Button } from "../../components/ui/Button"
-import { BrandMark } from "../../components/shared/BrandMark"
 import { detectLandingLocaleFromHeaders } from "../../lib/landing-locale.server"
 import { getLandingMessages } from "../../lib/landing-i18n-data"
 
@@ -59,8 +58,6 @@ export default async function WordPressPage() {
                   {messages.wordpress.title}
                 </span>
               </div>
-              <span className="font-(family-name:--font-geist-sans) text-2xl font-black text-[#F0F0F0]">×</span>
-              <BrandMark textClassName="text-[#FFD600]" />
             </div>
 
             <div className="mt-8 mx-auto max-w-4xl text-center">
