@@ -11,12 +11,12 @@ POST /api/v1/number-lookups
 
 ## Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---:|---|
-| `instanceId` | UUID | oui | ID de l’instance connectée à utiliser |
-| `numbers` | string[] | oui | 1 à 10 000 numéros au format international |
+| `instanceId` | UUID | yes | ID de l’instance connectée à utiliser |
+| `numbers` | string[] | yes | 1 à 10 000 numéros au format international |
 
-## Réponse succès `200` ou `202`
+## Success response `200` ou `202`
 
 ```json
 {
@@ -39,10 +39,10 @@ POST /api/v1/number-lookups
 }
 ```
 
-## Erreurs courantes
+## Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `VALIDATION_ERROR` | 400 | Body invalide |
-| `NOT_FOUND` | 404 | Instance introuvable |
-| `PROVIDER_ERROR` | 502 | Erreur côté fournisseur de vérification |
+| `VALIDATION_ERROR` | 400 | Invalid body |
+| `NOT_FOUND` | 404 | Instance not found |
+| `PROVIDER_ERROR` | 502 | Verification provider error |

@@ -9,13 +9,13 @@ description: Retrieve campaign details.
 GET /api/v1/campaigns/{id}
 ```
 
-## Paramètres path
+## Parameters path
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID de la campagne |
+| `id` | UUID | yes | Campaign ID |
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {
@@ -29,7 +29,7 @@ GET /api/v1/campaigns/{id}
     "body": "Découvrez notre offre",
     "mediaUrl": "https://cdn.example.com/promo.jpg",
     "schedule": "2026-04-02T10:00:00.000Z",
-    "repeat": "none",
+    "repeat": "noe",
     "status": "running",
     "recipients": { "type": "all" },
     "templateVariables": null,
@@ -54,12 +54,12 @@ GET /api/v1/campaigns/{id}
 
 ## Lecture du contenu
 
-- si `templateId` est présent : la campagne est en mode template
-- sinon si `type` est présent : la campagne est en mode message direct
+- if `templateId` is present: the campaign is in template mode
+- otherwise if `type` is present: the campaign is in direct message mode
 - `body` et `mediaUrl` peuvent alors être affichés dans le détail
 
-## Erreurs courantes
+## Common errors
 
-| HTTP | Code | Quand |
+| HTTP | Code | When |
 |---|---|---|
-| `404` | `NOT_FOUND` | Campagne introuvable |
+| `404` | `NOT_FOUND` | Campaign not found |

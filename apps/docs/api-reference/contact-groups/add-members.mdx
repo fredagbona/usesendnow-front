@@ -9,19 +9,19 @@ description: Add multiple contacts to a group.
 POST /api/v1/contacts/groups/{groupId}/members
 ```
 
-## Paramètres path
+## Parameters path
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `groupId` | UUID | oui | ID du groupe |
+| `groupId` | UUID | yes | Group ID |
 
 ## Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `contactIds` | UUID[] | oui | Contacts à ajouter |
+| `contactIds` | UUID[] | yes | Contacts à ajouter |
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {

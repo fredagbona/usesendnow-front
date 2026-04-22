@@ -7,7 +7,7 @@ description: Manage MsgFlash contacts, contact groups, and bulk deletions throug
 
 ### Endpoints
 
-| Méthode | Endpoint |
+| Method | Endpoint |
 |---|---|
 | `GET` | `/api/v1/contacts` |
 | `POST` | `/api/v1/contacts` |
@@ -16,34 +16,34 @@ description: Manage MsgFlash contacts, contact groups, and bulk deletions throug
 | `DELETE` | `/api/v1/contacts/{id}` |
 | `POST` | `/api/v1/contacts/bulk-delete` |
 
-### Paramètres
+### Parameters
 
 #### `POST /api/v1/contacts`
 
-| Champ | Type | Requis | Emplacement | Description |
+| Field | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `name` | string | oui | body | Nom complet |
-| `phone` | string | oui | body | Numéro E.164 |
-| `tags` | string[] | non | body | Tags du contact |
-| `meta` | object | non | body | Métadonnées libres |
+| `name` | string | yes | body | Full name |
+| `phone` | string | yes | body | E.164 number |
+| `tags` | string[] | no | body | Contact tags |
+| `meta` | object | no | body | Free-form metadata |
 
 #### `PUT /api/v1/contacts/{id}`
 
-| Champ | Type | Requis | Emplacement | Description |
+| Field | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `id` | UUID | oui | path | ID du contact |
-| `name` | string | non | body | Nouveau nom |
-| `phone` | string | non | body | Nouveau numéro |
-| `tags` | string[] | non | body | Remplace les tags |
-| `meta` | object | non | body | Remplace les métadonnées |
+| `id` | UUID | yes | path | Contact ID |
+| `name` | string | no | body | New name |
+| `phone` | string | no | body | New number |
+| `tags` | string[] | no | body | Replaces tags |
+| `meta` | object | no | body | Replaces metadata |
 
 #### `POST /api/v1/contacts/bulk-delete`
 
-| Champ | Type | Requis | Emplacement | Description |
+| Field | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `contactIds` | UUID[] | oui | body | 1 à 500 IDs |
+| `contactIds` | UUID[] | yes | body | 1 to 500 IDs |
 
-### Créer un contact
+### Create a contact
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/contacts \
@@ -59,7 +59,7 @@ curl -X POST https://srv.msgflash.com/api/v1/contacts \
   }'
 ```
 
-### Supprimer plusieurs contacts
+### Bulk delete contacts
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/contacts/bulk-delete \
@@ -70,7 +70,7 @@ curl -X POST https://srv.msgflash.com/api/v1/contacts/bulk-delete \
   }'
 ```
 
-Exemple de réponse :
+Response example:
 
 ```json
 {
@@ -82,20 +82,20 @@ Exemple de réponse :
 }
 ```
 
-### Erreurs courantes
+### Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `VALIDATION_ERROR` | 400 | Body invalide |
-| `NOT_FOUND` | 404 | Contact demandé introuvable |
+| `VALIDATION_ERROR` | 400 | Invalid body |
+| `NOT_FOUND` | 404 | Requested contact not found |
 
 ---
 
-## Groupes de contacts
+## Contact groups
 
 ### Endpoints
 
-| Méthode | Endpoint |
+| Method | Endpoint |
 |---|---|
 | `GET` | `/api/v1/contacts/groups` |
 | `POST` | `/api/v1/contacts/groups` |
@@ -107,33 +107,33 @@ Exemple de réponse :
 | `GET` | `/api/v1/contacts/groups/{groupId}/members` |
 | `GET` | `/api/v1/contacts/{id}/groups` |
 
-### Paramètres
+### Parameters
 
 #### `POST /api/v1/contacts/groups`
 
-| Champ | Type | Requis | Emplacement | Description |
+| Field | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `name` | string | oui | body | Nom du groupe |
-| `description` | string | non | body | Description |
-| `color` | string | non | body | Couleur hexadécimale |
+| `name` | string | yes | body | Group name |
+| `description` | string | no | body | Description |
+| `color` | string | no | body | Hex color code |
 
 #### `POST /api/v1/contacts/groups/{groupId}/members`
 
-| Champ | Type | Requis | Emplacement | Description |
+| Field | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `groupId` | UUID | oui | path | ID du groupe |
-| `contactIds` | UUID[] | oui | body | Liste des membres à ajouter |
+| `groupId` | UUID | yes | path | Group ID |
+| `contactIds` | UUID[] | yes | body | List of members to add |
 
 #### `GET /api/v1/contacts/groups/{groupId}/members`
 
-| Paramètre | Type | Requis | Emplacement | Description |
+| Parameter | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `groupId` | UUID | oui | path | ID du groupe |
-| `limit` | integer | non | query | Taille de page |
-| `cursor` | string | non | query | Curseur |
-| `search` | string | non | query | Filtre sur nom ou téléphone |
+| `groupId` | UUID | yes | path | Group ID |
+| `limit` | integer | no | query | Page size |
+| `cursor` | string | no | query | Cursor |
+| `search` | string | no | query | Filter by name or phone |
 
-### Créer un groupe
+### Create a group
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/contacts/groups \
@@ -141,12 +141,12 @@ curl -X POST https://srv.msgflash.com/api/v1/contacts/groups \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Clients VIP",
-    "description": "Clients à forte valeur",
+    "description": "High-value clients",
     "color": "#F59E0B"
   }'
 ```
 
-### Ajouter des membres
+### Add members
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/contacts/groups/GROUP_ID/members \
@@ -157,14 +157,14 @@ curl -X POST https://srv.msgflash.com/api/v1/contacts/groups/GROUP_ID/members \
   }'
 ```
 
-### Lister les membres
+### List members
 
 ```bash
 curl "https://srv.msgflash.com/api/v1/contacts/groups/GROUP_ID/members?limit=20&search=awa" \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-Réponse :
+Response:
 
 ```json
 {
@@ -177,13 +177,13 @@ Réponse :
 ```
 
 <Note>
-Les groupes exposés ici sont les groupes de contacts MsgFlash, pas des groupes WhatsApp natifs.
+The groups exposed here are MsgFlash contact groups, not native WhatsApp groups.
 </Note>
 
-### Erreurs courantes
+### Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `MAX_CONTACT_GROUPS_REACHED` | 403 | Limite de groupes atteinte |
-| `NOT_FOUND` | 404 | Groupe ou contact introuvable |
-| `CONFLICT` | 409 | Groupe avec le même nom déjà existant |
+| `MAX_CONTACT_GROUPS_REACHED` | 403 | Group limit reached |
+| `NOT_FOUND` | 404 | Group or contact not found |
+| `CONFLICT` | 409 | A group with the same name already exists |

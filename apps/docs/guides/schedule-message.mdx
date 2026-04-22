@@ -9,28 +9,28 @@ description: Schedule a future send in direct mode or with a template.
 POST /api/v1/messages/schedule
 ```
 
-Authentification : `x-api-key: <api_key>`
+Authentication: `x-api-key: <api_key>`
 
-La différence avec `/messages/send` est le champ `scheduledAt`.
+The difference from `/messages/send` is the `scheduledAt` field.
 
-## Paramètres
+## Parameters
 
 ### Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `instanceId` | UUID | oui | Instance WhatsApp |
-| `to` | string | oui | Numéro destinataire |
-| `scheduledAt` | ISO 8601 | oui | Date future d'envoi |
-| `type` | enum | oui si pas de `templateId` | Type du message libre |
-| `templateId` | UUID | oui si pas de `type` | Template à rendre |
-| `variables` | object | non | Valeurs `custom.*` |
+| `instanceId` | UUID | yes | Instance WhatsApp |
+| `to` | string | yes | Number destinataire |
+| `scheduledAt` | ISO 8601 | yes | Date future d'envoi |
+| `type` | enum | yes if no `templateId` | Direct message type |
+| `templateId` | UUID | yes if no `type` | Template to render |
+| `variables` | object | no | `custom.*` values |
 
 Pas de path params ni query params.
 
 ---
 
-## Exemple
+## Example
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
@@ -50,40 +50,40 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
 
 ---
 
-Les autres champs suivent les mêmes règles que [Envoyer un message](/guides/send-message).
+Other fields follow the same rules as [Send a message](/guides/send-message).
 
 ---
 
-## Réponse
+## Response
 
 ```json
 {
   "data": {
     "id": "msg_uuid",
     "status": "queued",
-    "body": "Bonjour Awa, votre code PROMO10 est prêt."
+    "body": "Hello Awa, votre code PROMO10 est prêt."
   }
 }
 ```
 
 Le message reste en `queued` jusqu'au traitement effectif.
 
-## Erreurs courantes
+## Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `VALIDATION_ERROR` | 400 | Body invalide |
-| `TEMPLATE_INVALID` | 400 | Template invalide |
-| `TEMPLATE_VARIABLES_MISSING` | 400 | Variables template manquantes |
-| `NOT_FOUND` | 404 | Instance, contact ou template introuvable |
-| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota déjà épuisé au moment de la planification |
+| `VALIDATION_ERROR` | 400 | Invalid body |
+| `TEMPLATE_INVALID` | 400 | Template invalid |
+| `TEMPLATE_VARIABLES_MISSING` | 400 | Variables template missing |
+| `NOT_FOUND` | 404 | Instance, contact, or template not found |
+| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota already exhausted au moment de la planification |
 
 ---
 
-## Règles importantes
+## Important rules
 
 - `scheduledAt` est attendu en UTC
-- une date passée est acceptée et conduit à un envoi immédiat
-- le quota mensuel est vérifié à la planification puis au moment de l'envoi effectif
+- une date passée est acceptée et conduit à un envoi immediat
+- le quota monthly est vérifié à la planification puis au moment de l'envoi effectif
 - si l'instance est déconnectée lors du traitement, le message passe en `failed`
 - les messages planifiés survivent à un redémarrage grâce à BullMQ + Redis

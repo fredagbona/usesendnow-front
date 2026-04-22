@@ -11,15 +11,15 @@ POST /api/v1/statuses
 
 ## Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `instanceId` | UUID | oui | Instance source |
-| `type` | `text` \| `image` | oui | Type du statut |
-| `content` | string | oui | Texte ou URL publique de l'image |
-| `caption` | string | non | Légende si image |
-| `backgroundColor` | string | non | Couleur hex si texte |
+| `instanceId` | UUID | yes | Instance source |
+| `type` | `text` \| `image` | yes | Status type |
+| `content` | string | yes | Texte ou URL publique de l'image |
+| `caption` | string | no | Légende si image |
+| `backgroundColor` | string | no | Color hex si texte |
 
-## Réponse succès `201`
+## Success response `201`
 
 ```json
 {

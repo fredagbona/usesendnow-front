@@ -9,22 +9,22 @@ description: List all active WhatsApp instances for your account.
 GET /api/v1/instances
 ```
 
-## Authentification
+## Authentication
 
 `x-api-key: <api_key>`
 
-## Paramètres
+## Parameters
 
-Aucun paramètre path, query ou body.
+No path, query, or body parameters.
 
-## Exemple de requête
+## Request example
 
 ```bash
 curl https://srv.msgflash.com/api/v1/instances \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {
@@ -44,30 +44,30 @@ curl https://srv.msgflash.com/api/v1/instances \
 }
 ```
 
-## Comment obtenir le bon `instanceId`
+## How to get the correct `instanceId`
 
-Pour tous les endpoints d'envoi MsgFlash, vous devez utiliser `instanceId`.
+For all MsgFlash sending endpoints, you must provide `instanceId`.
 
-Différence entre les champs :
+Field differences:
 
-| Champ | Usage |
+| Field | Usage |
 |---|---|
-| `id` | Identifiant technique à envoyer comme `instanceId` dans l'API |
-| `name` | Nom lisible pour l'utilisateur, utile pour l'UI |
-| `waNumber` | Numéro WhatsApp connecté, utile pour affichage/contrôle |
+| `id` | Technical identifier to send as `instanceId` in the API |
+| `name` | Human-readable name for UI usage |
+| `waNumber` | Connected WhatsApp number, useful for display and checks |
 
-Flow recommandé :
-1. appeler `GET /api/v1/instances`
-2. choisir une instance avec `status = "connected"`
-3. récupérer `data[n].id`
-4. utiliser cette valeur comme `instanceId` dans :
+Recommended flow:
+1. Call `GET /api/v1/instances`.
+2. Choose an instance with `status = "connected"`.
+3. Copy `data[n].id`.
+4. Use this value as `instanceId` in:
    - `POST /api/v1/messages/send`
    - `POST /api/v1/messages/schedule`
    - `POST /api/v1/campaigns`
 
-## Erreurs courantes
+## Common errors
 
-| HTTP | Code | Quand |
+| HTTP | Code | When |
 |---|---|---|
-| `401` | `UNAUTHORIZED` | Clé API absente ou invalide |
-| `429` | `API_RATE_LIMIT_EXCEEDED` | Trop de requêtes par seconde |
+| `401` | `UNAUTHORIZED` | API key missing or invalid |
+| `429` | `API_RATE_LIMIT_EXCEEDED` | Too many requests per second |

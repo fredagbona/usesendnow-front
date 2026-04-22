@@ -9,15 +9,15 @@ description: Create or update MsgFlash contacts from numbers detected on WhatsAp
 POST /api/v1/number-lookups/{id}/import-contacts
 ```
 
-## Paramètres
+## Parameters
 
-| Champ | Type | Requis | Emplacement | Description |
+| Field | Type | Required | Location | Description |
 |---|---|---:|---|---|
-| `id` | UUID | oui | path | ID de la vérification terminée |
-| `groupId` | UUID | non | body | Groupe cible |
-| `tag` | string | non | body | Tag à appliquer aux contacts importés |
+| `id` | UUID | yes | path | ID de la vérification terminée |
+| `groupId` | UUID | no | body | Target group |
+| `tag` | string | no | body | Tag à appliquer aux contacts importés |
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {

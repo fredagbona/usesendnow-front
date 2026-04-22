@@ -9,14 +9,14 @@ description: Schedule a future message in direct mode or with a template.
 POST /api/v1/messages/schedule
 ```
 
-## Important — comment obtenir `instanceId`
+## Important — how to get `instanceId`
 
-`instanceId` est l’identifiant technique requis pour planifier un message.
+`instanceId` is the technical identifier required to schedule a message.
 
-Pour l’obtenir :
-1. appeler `GET /api/v1/instances`
+To get it:
+1. call `GET /api/v1/instances`
 2. choisir l’instance souhaitée
-3. récupérer `data[n].id`
+3. copy `data[n].id`
 4. utiliser cette valeur dans `instanceId`
 
 Ne pas envoyer :
@@ -25,18 +25,18 @@ Ne pas envoyer :
 
 ## Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `instanceId` | UUID | oui | Identifiant technique de l'instance MsgFlash, obtenu via `GET /api/v1/instances` |
-| `to` | string | oui | Numéro E.164 |
-| `scheduledAt` | ISO 8601 | oui | Date/heure d'envoi |
-| `type` | enum | oui si pas de `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact`, `buttons` |
-| `templateId` | UUID | oui si pas de `type` | Template à rendre |
-| `variables` | object | non | Valeurs `custom.*` |
+| `instanceId` | UUID | yes | Technical identifier of the MsgFlash instance, obtained via `GET /api/v1/instances` |
+| `to` | string | yes | E.164 number |
+| `scheduledAt` | ISO 8601 | yes | Date/heure d'envoi |
+| `type` | enum | yes if no `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact`, `buttons` |
+| `templateId` | UUID | yes if no `type` | Template to render |
+| `variables` | object | no | `custom.*` values |
 
 Les autres champs suivent les mêmes règles que `/messages/send`, y compris les champs spécifiques aux boutons (`title`, `description`, `footer`, `buttons`).
 
-## Exemple de requête
+## Request example
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
@@ -46,12 +46,12 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
     "instanceId": "INSTANCE_UUID",
     "to": "+33612345678",
     "type": "text",
-    "text": "Bonjour dans 30 minutes",
+    "text": "Hello dans 30 minutes",
     "scheduledAt": "2026-04-02T08:00:00.000Z"
   }'
 ```
 
-## Exemple avec boutons
+## Example avec boutons
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
@@ -74,7 +74,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
   }'
 ```
 
-## Réponse succès `201`
+## Success response `201`
 
 ```json
 {
@@ -88,7 +88,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
     "type": "text",
     "from": null,
     "to": "+33612345678",
-    "body": "Bonjour dans 30 minutes",
+    "body": "Hello dans 30 minutes",
     "mediaUrl": null,
     "status": "queued",
     "error": null,
@@ -112,11 +112,11 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/schedule \
 Les warnings safety sont informatifs. En V1, ils ne bloquent pas les messages planifiés.
 </Note>
 
-## Erreurs courantes
+## Common errors
 
-| HTTP | Code | Quand |
+| HTTP | Code | When |
 |---|---|---|
-| `400` | `VALIDATION_ERROR` | Body invalide |
-| `400` | `TEMPLATE_INVALID` | Template invalide |
-| `404` | `NOT_FOUND` | Instance, contact ou template introuvable |
-| `429` | `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | Quota déjà épuisé |
+| `400` | `VALIDATION_ERROR` | Invalid body |
+| `400` | `TEMPLATE_INVALID` | Template invalid |
+| `404` | `NOT_FOUND` | Instance, contact, or template not found |
+| `429` | `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | Quota already exhausted |

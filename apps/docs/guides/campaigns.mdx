@@ -9,15 +9,15 @@ description: Create scheduled campaigns, track progress, and control execution.
 POST /api/v1/campaigns
 ```
 
-Authentification : `x-api-key: <api_key>`
+Authentication: `x-api-key: <api_key>`
 
 <Warning>
-Les campagnes nécessitent le plan Starter ou supérieur.
+Campaigns require the Starter plan or higher.
 </Warning>
 
-## Règle métier principale
+## Main business rule
 
-Une campagne doit contenir un vrai contenu à envoyer.
+A campaign must include actual content to send.
 
 Vous devez fournir :
 - `name`
@@ -29,11 +29,11 @@ Et exactement un mode de contenu :
 - soit `templateId`
 - soit un message direct avec `type` + contenu associé
 
-Il est interdit de créer une campagne vide.
+Creating an empty campaign is not allowed.
 
 ---
 
-## Mode 1 — Campagne template
+## Mode 1 — Template campaign
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/campaigns \
@@ -43,7 +43,7 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
     "instanceId": "YOUR_INSTANCE_ID",
     "name": "Promo Black Friday",
     "schedule": "2026-04-02T10:00:00.000Z",
-    "repeat": "none",
+    "repeat": "noe",
     "templateId": "YOUR_TEMPLATE_ID",
     "variables": {
       "campaignName": "Black Friday"
@@ -54,7 +54,7 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
   }'
 ```
 
-## Mode 2 — Campagne message direct texte
+## Mode 2 — Direct text campaign
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/campaigns \
@@ -64,9 +64,9 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
     "instanceId": "YOUR_INSTANCE_ID",
     "name": "Relance panier",
     "schedule": "2026-04-02T10:00:00.000Z",
-    "repeat": "none",
+    "repeat": "noe",
     "type": "text",
-    "body": "Bonjour, votre panier vous attend encore.",
+    "body": "Hello, votre panier vous attend encore.",
     "recipients": {
       "type": "explicit",
       "value": ["CONTACT_UUID_1", "CONTACT_UUID_2"]
@@ -74,7 +74,7 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
   }'
 ```
 
-## Mode 3 — Campagne message direct média
+## Mode 3 — Direct media campaign
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/campaigns \
@@ -84,7 +84,7 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
     "instanceId": "YOUR_INSTANCE_ID",
     "name": "Promo visuelle",
     "schedule": "2026-04-02T10:00:00.000Z",
-    "repeat": "none",
+    "repeat": "noe",
     "type": "image",
     "body": "Découvrez notre offre de la semaine",
     "mediaUrl": "https://cdn.example.com/promo.jpg",
@@ -96,7 +96,7 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
 
 ---
 
-## Destinataires
+## Recipients
 
 <Tabs>
   <Tab title="Tous les contacts">
@@ -118,7 +118,7 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
     }
     ```
   </Tab>
-  <Tab title="Liste explicite">
+  <Tab title="List explicite">
     ```json
     {
       "recipients": {
@@ -131,14 +131,14 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
 </Tabs>
 
 <Note>
-Pour `tags`, au moins un tag est requis. Pour `explicit`, au moins un contact est requis.
+For `tags`, at least one tag is required. For `explicit`, at least one contact is required.
 </Note>
 
 ---
 
 ## Types directs supportés
 
-| Type | Contenu requis |
+| Type | Required content |
 |---|---|
 | `text` | `body` obligatoire |
 | `image` | `mediaUrl` obligatoire, `body` optionnel |
@@ -149,7 +149,7 @@ Pour `tags`, au moins un tag est requis. Pour `explicit`, au moins un contact es
 
 ---
 
-## Réponse à la création
+## Response à la création
 
 ```json
 {
@@ -182,14 +182,14 @@ Pour `tags`, au moins un tag est requis. Pour `explicit`, au moins un contact es
 ```
 
 <Note>
-La réponse peut contenir un bloc `safety` avec `decision`, `riskLevel`, `reasons` et `recommendations`. En V1, cette guidance ne bloque pas la campagne.
+The response can include a `safety` block with `decision`, `riskLevel`, `reasons`, and `recommendations`. In V1, this guidance does not block the campaign.
 </Note>
 
 ---
 
-## Statuts d'une campagne
+## Campaign statuses
 
-| Statut | Description |
+| Status | Description |
 |---|---|
 | `draft` | Réservé à certains flux dashboard |
 | `scheduled` | En attente de la date prévue |
@@ -197,12 +197,12 @@ La réponse peut contenir un bloc `safety` avec `decision`, `riskLevel`, `reason
 | `paused` | Pause manuelle |
 | `paused_quota` | Pause automatique pour quota |
 | `paused_plan` | Pause automatique pour plan/features |
-| `completed` | Campagne terminée |
-| `cancelled` | Campagne annulée |
-| `failed` | Erreur fatale |
+| `completed` | Campaign completed |
+| `cancelled` | Campaign cancelled |
+| `failed` | Fatal error |
 
 <Note>
-Une campagne passe maintenant automatiquement à `completed` quand il ne reste plus de messages `queued`.
+A campaign now automatically moves to `completed` when no `queued` messages remain.
 </Note>
 
 ---
@@ -219,15 +219,15 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/resume \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-Ces actions sont valides uniquement sur les statuts compatibles.
+These actions are valid only for compatible statuses.
 
-Le `resume` peut lui aussi retourner un bloc `safety` si l'instance est encore en warmup ou si l'audience est plus risquée que recommandé.
+`resume` can also return a `safety` block if the instance is still warming up or if the audience is riskier than recommended.
 
-### Paramètres path
+### Parameters path
 
-| Paramètre | Type | Requis | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID de la campagne |
+| `id` | UUID | yes | Campaign ID |
 
 ---
 
@@ -268,17 +268,17 @@ curl https://srv.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/stats \
 }
 ```
 
-### Paramètres path
+### Parameters path
 
-| Paramètre | Type | Requis | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID de la campagne |
+| `id` | UUID | yes | Campaign ID |
 
 ### Sens des compteurs
 
-| Champ | Description |
+| Field | Description |
 |---|---|
-| `planned` | Nombre total de messages générés pour la campagne |
+| `planned` | Total number of messages generated for the campaign |
 | `queued` | Messages encore en file |
 | `sent` | Messages transmis à WhatsApp |
 | `delivered` | Messages confirmés livrés |
@@ -288,24 +288,24 @@ curl https://srv.msgflash.com/api/v1/campaigns/CAMPAIGN_ID/stats \
 
 ---
 
-## Récupérer une campagne
+## Retrieve a campaign
 
 ```bash
 curl https://srv.msgflash.com/api/v1/campaigns/CAMPAIGN_ID \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-### Paramètres path
+### Parameters path
 
-| Paramètre | Type | Requis | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID de la campagne |
+| `id` | UUID | yes | Campaign ID |
 
-## Erreurs courantes
+## Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `VALIDATION_ERROR` | 400 | Campagne sans contenu, body manquant, media manquant ou destinataires invalides |
+| `VALIDATION_ERROR` | 400 | Empty campaign, missing body, missing media, or invalid recipients |
 | `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` | 403 | Plan trop faible |
-| `NOT_FOUND` | 404 | Instance ou template introuvable |
-| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota épuisé |
+| `NOT_FOUND` | 404 | Instance ou template not found |
+| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota exhausted |

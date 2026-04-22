@@ -9,38 +9,38 @@ description: Send any WhatsApp message type in direct mode or using a MsgFlash t
 POST /api/v1/messages/send
 ```
 
-Authentification : `x-api-key: <api_key>`
+Authentication: `x-api-key: <api_key>`
 
-Le message est accepté en `queued`, puis envoyé de façon asynchrone.
+The message is accepted as `queued`, then sent asynchronously.
 
 <Note>
-Depuis la console MsgFlash, les médias peuvent être préparés via un upload temporaire avant l’envoi final. Voir [Uploads média temporaires](/guides/media-uploads).
+From the MsgFlash dashboard, media can be prepared through a temporary upload before final sending. See [Temporary media uploads](/guides/media-uploads).
 </Note>
 
-## Paramètres
+## Parameters
 
 ### Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `instanceId` | UUID | oui | Instance WhatsApp source |
-| `to` | string | oui | Numéro E.164 |
-| `type` | enum | oui si pas de `templateId` | Type du message libre |
-| `templateId` | UUID | oui si pas de `type` | Template MsgFlash à utiliser |
-| `text` | string | selon type | Corps du message libre |
-| `mediaUrl` | string | selon type | URL publique du media |
-| `latitude` | number | si `type=location` | Latitude |
-| `longitude` | number | si `type=location` | Longitude |
-| `locationName` | string | non | Nom du lieu |
-| `locationAddress` | string | non | Adresse du lieu |
-| `contactId` | UUID | non | Contact partagé ou contexte template |
-| `variables` | object | non | Valeurs injectées dans `custom.*` |
+| `instanceId` | UUID | yes | Source WhatsApp instance |
+| `to` | string | yes | E.164 number |
+| `type` | enum | yes if no `templateId` | Direct message type |
+| `templateId` | UUID | yes if no `type` | MsgFlash template to use |
+| `text` | string | depends on type | Direct message body |
+| `mediaUrl` | string | depends on type | Public media URL |
+| `latitude` | number | if `type=location` | Latitude |
+| `longitude` | number | if `type=location` | Longitude |
+| `locationName` | string | no | Location name |
+| `locationAddress` | string | no | Location address |
+| `contactId` | UUID | no | Shared contact or template context |
+| `variables` | object | no | Values injected into `custom.*` |
 
-Il n'y a ni path params ni query params sur cette route.
+This route has no path or query parameters.
 
 ---
 
-## Mode 1 — Message libre
+## Mode 1 — Direct message
 
 ### Texte
 
@@ -52,11 +52,11 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     "instanceId": "YOUR_INSTANCE_ID",
     "to": "+33612345678",
     "type": "text",
-    "text": "Bonjour, votre commande est prête."
+    "text": "Hello, your order is ready."
   }'
 ```
 
-### Media, localisation et contact
+### Media, location, and contact
 
 <Tabs>
   <Tab title="Image">
@@ -138,9 +138,9 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
 
 ---
 
-## Mode 2 — Envoi via template
+## Mode 2 — Send via template
 
-Vous pouvez envoyer un message en fournissant `templateId` à la place de `type`.
+You can send a message by providing `templateId` instead of `type`.
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/messages/send \
@@ -158,31 +158,31 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
   }'
 ```
 
-Le backend :
-- charge le template
-- résout `contact.*`, `user.*`, `instance.*`
-- injecte vos valeurs libres dans `custom.*`
-- enregistre le texte rendu final dans `Message.body`
+The backend:
+- loads the template
+- resolves `contact.*`, `user.*`, `instance.*`
+- injects your custom values into `custom.*`
+- stores the final rendered text in `Message.body`
 
-Exemple de template :
+Template example:
 
 ```txt
-Bonjour {{contact.firstName}}, bienvenue sur {{custom.app}} depuis {{instance.name}}.
+Hello {{contact.firstName}}, bienvenue sur {{custom.app}} depuis {{instance.name}}.
 ```
 
-Variables supportées :
+Supported variables:
 - `contact.*`
 - `user.*`
 - `instance.*`
 - `custom.*`
 
 <Note>
-Pour les variables `contact.*`, fournissez `contactId` si vous voulez un contexte contact enrichi.
+For `contact.*` variables, provide `contactId` if you want enriched contact context.
 </Note>
 
 ---
 
-## Réponse succès
+## Success response
 
 ```json
 {
@@ -193,7 +193,7 @@ Pour les variables `contact.*`, fournissez `contactId` si vous voulez un context
     "campaignId": null,
     "type": "text",
     "to": "+33612345678",
-    "body": "Bonjour Awa, bienvenue sur MsgFlash depuis Boutique Porto-Novo.",
+    "body": "Hello Awa, bienvenue sur MsgFlash depuis Boutique Porto-Novo.",
     "mediaUrl": null,
     "status": "queued",
     "providerMessageId": null,
@@ -203,40 +203,40 @@ Pour les variables `contact.*`, fournissez `contactId` si vous voulez un context
 }
 ```
 
-## Erreurs courantes
+## Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `VALIDATION_ERROR` | 400 | Body invalide |
-| `TEMPLATE_INVALID` | 400 | Placeholder ou template invalide |
-| `TEMPLATE_VARIABLES_MISSING` | 400 | Variables template manquantes |
-| `TEMPLATE_CONTEXT_UNAVAILABLE` | 400 | `contactId` ou `instanceId` de contexte invalide |
-| `NOT_FOUND` | 404 | Instance, contact ou template introuvable |
-| `SUBSCRIPTION_INACTIVE` | 403 | Souscription non exploitable |
-| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota mensuel épuisé |
+| `VALIDATION_ERROR` | 400 | Invalid body |
+| `TEMPLATE_INVALID` | 400 | Invalid placeholder or template |
+| `TEMPLATE_VARIABLES_MISSING` | 400 | Variables template missing |
+| `TEMPLATE_CONTEXT_UNAVAILABLE` | 400 | Invalid `contactId` or `instanceId` context |
+| `NOT_FOUND` | 404 | Instance, contact, or template not found |
+| `SUBSCRIPTION_INACTIVE` | 403 | Subscription not usable |
+| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Monthly quota exhausted |
 
 ---
 
-## Statuts possibles
+## Possible statuses
 
 ```txt
 queued → sent → delivered → read
                    └──────→ failed
 ```
 
-| Statut | Description |
+| Status | Description |
 |---|---|
-| `queued` | Message accepté et mis en file |
-| `sent` | Transmis à WhatsApp |
-| `delivered` | Livré sur l'appareil |
-| `read` | Lu par le destinataire |
-| `failed` | Échec d'envoi |
+| `queued` | Message accepted and queued |
+| `sent` | Sent to WhatsApp |
+| `delivered` | Delivered to the device |
+| `read` | Read by recipient |
+| `failed` | Send failed |
 
 ---
 
-## Suivre le statut
+## Track status
 
 1. `GET /api/v1/messages/{id}`
 2. Webhooks `message.sent`, `message.delivered`, `message.read`, `message.failed`
 
-Voir [Webhooks](/guides/webhooks).
+See [Webhooks](/guides/webhooks).

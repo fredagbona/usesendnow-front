@@ -9,13 +9,13 @@ description: Resume a paused campaign.
 POST /api/v1/campaigns/{id}/resume
 ```
 
-## Paramètres path
+## Parameters path
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID de la campagne |
+| `id` | UUID | yes | Campaign ID |
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {
@@ -26,10 +26,10 @@ POST /api/v1/campaigns/{id}/resume
     "name": "Promo Black Friday",
     "templateId": null,
     "type": "text",
-    "body": "Bonjour, découvrez notre promo.",
+    "body": "Hello, découvrez notre promo.",
     "mediaUrl": null,
     "schedule": "2026-04-02T10:00:00.000Z",
-    "repeat": "none",
+    "repeat": "noe",
     "status": "running",
     "recipients": { "type": "all" },
     "templateVariables": null,

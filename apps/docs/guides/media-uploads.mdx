@@ -3,38 +3,38 @@ title: Temporary media uploads
 description: Prepare temporary media before sending direct messages from the MsgFlash console.
 ---
 
-## À quoi sert cet upload
+## What this upload is for
 
-Dans la console MsgFlash, les messages média et les campagnes média utilisent un upload temporaire avant l’envoi final.
+In the MsgFlash dashboard, media messages and media campaigns use a temporary upload before final sending.
 
-Cas typiques :
+Typical cases:
 - image
-- vidéo
+- video
 - document
 - audio
-- note vocale
+- voice note
 
-Le backend renvoie ensuite une URL temporaire réutilisable dans l’envoi.
+The backend then returns a temporary URL that can be reused for sending.
 
 ---
 
-## Endpoint utilisé par la console
+## Endpoint used by the dashboard
 
 ```txt
 POST /api/media/upload
 ```
 
-Authentification :
+Authentication:
 
 ```txt
 Authorization: Bearer <jwt_console>
 ```
 
-Cette route n’est pas une route `x-api-key` publique.
+This route is not a public `x-api-key` endpoint.
 
 ---
 
-## Réponse utile
+## Useful response
 
 ```json
 {
@@ -51,26 +51,26 @@ Cette route n’est pas une route `x-api-key` publique.
 }
 ```
 
-Champs importants :
-- `url` : URL temporaire à réinjecter dans `mediaUrl`
-- `expiresAt` : date d’expiration
-- `suggestedMessageType` : aide UI pour typer correctement le média
+Important fields:
+- `url`: temporary URL to reuse in `mediaUrl`
+- `expiresAt`: expiration timestamp
+- `suggestedMessageType`: UI hint for the correct media type
 
 ---
 
-## Contraintes produit visibles dans la console
+## Product constraints visible in the dashboard
 
-- le lien généré est temporaire
-- le lien peut être public
-- un média programmé au-delà de `expiresAt` peut échouer à l’envoi
+- the generated link is temporary
+- the link may be publicly accessible
+- media scheduled after `expiresAt` may fail to send
 
-La console doit donc prévenir l’utilisateur quand un message ou une campagne est planifié après la date d’expiration.
+The dashboard should therefore warn users when a message or campaign is scheduled after the expiration date.
 
 ---
 
-## Tailles et formats gérés côté produit
+## Product-supported sizes and formats
 
-| Type | Exemples acceptés |
+| Type | Supported examples |
 |---|---|
 | `image` | JPEG, PNG, WEBP, GIF |
 | `video` | MP4, 3GPP |
@@ -78,19 +78,19 @@ La console doit donc prévenir l’utilisateur quand un message ou une campagne 
 | `audio` | MP3, OGG, MP4 audio, AAC, AMR |
 | `voice_note` | MP3, OGG, WEBM audio, MP4 audio, AAC, AMR |
 
-Limites produit actuelles :
-- image : 5 Mo
-- document : 10 Mo
-- vidéo : 16 Mo
-- audio : 16 Mo
-- note vocale : 16 Mo
+Current product limits:
+- image: 5 MB
+- document: 10 MB
+- video: 16 MB
+- audio: 16 MB
+- voice note: 16 MB
 
 ---
 
-## Où ce flux est utilisé
+## Where this flow is used
 
-- page “Nouveau message”
-- composeur de campagne v2 en mode message direct
-- enregistrement et upload de note vocale
+- "New message" page
+- campaign composer v2 in direct message mode
+- voice note recording and upload
 
-Pour l’API publique, vous pouvez aussi fournir directement votre propre `mediaUrl` si vous hébergez déjà le fichier.
+For the public API, you can also provide your own `mediaUrl` directly if you already host the file.

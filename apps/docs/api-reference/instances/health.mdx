@@ -9,13 +9,13 @@ description: Return an instance warmup and safety state to guide message sends.
 GET /api/v1/instances/{id}/health
 ```
 
-## Paramètres path
+## Parameters path
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID de l'instance |
+| `id` | UUID | yes | ID de l'instance |
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {
@@ -63,8 +63,8 @@ GET /api/v1/instances/{id}/health
 Cette V1 retourne uniquement de la guidance. Elle ne bloque pas directement les envois.
 </Note>
 
-## Erreurs courantes
+## Common errors
 
-| HTTP | Code | Quand |
+| HTTP | Code | When |
 |---|---|---|
-| `404` | `NOT_FOUND` | Instance inexistante ou hors de votre compte |
+| `404` | `NOT_FOUND` | Instance does not exist or is outside your account |

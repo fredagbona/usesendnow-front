@@ -5,7 +5,7 @@ description: Reference of message types supported by MsgFlash, their fields, and
 
 ## Overview
 
-| Type | Description | Champ principal requis |
+| Type | Description | Main required field |
 |---|---|---|
 | `text` | Message texte simple | `text` |
 | `image` | Image avec légende optionnelle | `mediaUrl` |
@@ -16,7 +16,7 @@ description: Reference of message types supported by MsgFlash, their fields, and
 | `location` | Localisation GPS | `latitude`, `longitude` |
 | `contact` | Partage d'un contact du répertoire | `contactId` |
 
-Champs communs :
+Fields communs :
 - `instanceId`
 - `to`
 - `type` ou `templateId`
@@ -40,7 +40,7 @@ Vous fournissez directement `type` et les champs associés.
   "instanceId": "inst_uuid",
   "to": "+33612345678",
   "type": "text",
-  "text": "Bonjour Awa"
+  "text": "Hello Awa"
 }
 ```
 
@@ -71,11 +71,11 @@ Le backend rend alors le message final avant envoi. Le `type` effectif est celui
   "instanceId": "inst_uuid",
   "to": "+33612345678",
   "type": "text",
-  "text": "Bonjour Jean,\n\nVotre commande #1234 est prête."
+  "text": "Hello Jean,\n\nVotre commande #1234 est prête."
 }
 ```
 
-| Champ | Type | Requis | Contraintes |
+| Field | Type | Required | Contraintes |
 |---|---|---|---|
 | `text` | string | ✓ | 1 à 4096 caractères |
 
@@ -93,10 +93,10 @@ Le backend rend alors le message final avant envoi. Le `type` effectif est celui
 }
 ```
 
-| Champ | Type | Requis | Contraintes |
+| Field | Type | Required | Contraintes |
 |---|---|---|---|
 | `mediaUrl` | URL | ✓ | URL publique |
-| `text` | string | non | Légende optionnelle |
+| `text` | string | no | Légende optionnelle |
 
 ---
 
@@ -112,10 +112,10 @@ Le backend rend alors le message final avant envoi. Le `type` effectif est celui
 }
 ```
 
-| Champ | Type | Requis | Contraintes |
+| Field | Type | Required | Contraintes |
 |---|---|---|---|
 | `mediaUrl` | URL | ✓ | URL publique |
-| `text` | string | non | Légende optionnelle |
+| `text` | string | no | Légende optionnelle |
 
 ---
 
@@ -148,7 +148,7 @@ Affiché comme un fichier audio standard dans WhatsApp.
 Affiché comme une note vocale WhatsApp.
 
 <Note>
-La différence entre `audio` et `voice_note` est surtout le mode d'affichage côté WhatsApp.
+The difference between `audio` and `voice_note` is mainly how they are displayed in WhatsApp.
 </Note>
 
 ---
@@ -165,10 +165,10 @@ La différence entre `audio` et `voice_note` est surtout le mode d'affichage cô
 }
 ```
 
-| Champ | Type | Requis | Contraintes |
+| Field | Type | Required | Contraintes |
 |---|---|---|---|
 | `mediaUrl` | URL | ✓ | URL publique |
-| `text` | string | non | Libellé ou légende |
+| `text` | string | no | Label or caption |
 
 ---
 
@@ -186,12 +186,12 @@ La différence entre `audio` et `voice_note` est surtout le mode d'affichage cô
 }
 ```
 
-| Champ | Type | Requis | Contraintes |
+| Field | Type | Required | Contraintes |
 |---|---|---|---|
 | `latitude` | number | ✓ | Latitude décimale |
 | `longitude` | number | ✓ | Longitude décimale |
-| `locationName` | string | non | Nom du lieu |
-| `locationAddress` | string | non | Adresse |
+| `locationName` | string | no | Location name |
+| `locationAddress` | string | no | Address |
 
 ---
 
@@ -212,15 +212,15 @@ Le `contactId` doit appartenir à votre compte MsgFlash.
 
 ## Common fields
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
 | `instanceId` | UUID | ✓ | Instance WhatsApp à utiliser |
-| `to` | string | ✓ | Numéro E.164 |
-| `type` | enum | ✓ si pas de `templateId` | Type du message libre |
-| `templateId` | UUID | ✓ si pas de `type` | Template MsgFlash à utiliser |
-| `contactId` | UUID | non | Contact source ou contexte template |
-| `variables` | object | non | Valeurs pour `custom.*` |
-| `scheduledAt` | ISO 8601 | non | Utilisé uniquement sur `/messages/schedule` |
+| `to` | string | ✓ | E.164 number |
+| `type` | enum | ✓ if no `templateId` | Direct message type |
+| `templateId` | UUID | ✓ if no `type` | MsgFlash template to use |
+| `contactId` | UUID | no | Source contact or template context |
+| `variables` | object | no | Valeurs pour `custom.*` |
+| `scheduledAt` | ISO 8601 | no | Utilisé uniquement sur `/messages/schedule` |
 
 ---
 
@@ -235,13 +235,13 @@ Un template peut être de type :
 
 Pour un template media, `mediaUrl` est obligatoire sur le template lui-même.
 
-Exemple :
+Example:
 
 ```json
 {
   "name": "Brochure PDF",
   "type": "document",
-  "body": "Bonjour {{contact.firstName}}, voici votre brochure.",
+  "body": "Hello {{contact.firstName}}, voici votre brochure.",
   "mediaUrl": "https://cdn.example.com/brochure.pdf"
 }
 ```

@@ -9,23 +9,23 @@ description: List messages with cursor-based pagination.
 GET /api/v1/messages
 ```
 
-## Paramètres query
+## Parameters query
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `limit` | integer | non | Taille de page |
-| `cursor` | string | non | Curseur de pagination |
-| `instanceId` | UUID | non | Filtre par instance |
-| `status` | string | non | Filtre par statut |
+| `limit` | integer | no | Taille de page |
+| `cursor` | string | no | Curseur de pagination |
+| `instanceId` | UUID | no | Filtre par instance |
+| `status` | string | no | Filter by status |
 
-## Exemple de requête
+## Request example
 
 ```bash
 curl "https://srv.msgflash.com/api/v1/messages?limit=20&status=delivered" \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {
@@ -41,7 +41,7 @@ curl "https://srv.msgflash.com/api/v1/messages?limit=20&status=delivered" \
         "type": "text",
         "from": null,
         "to": "+33612345678",
-        "body": "Bonjour",
+        "body": "Hello",
         "mediaUrl": null,
         "status": "delivered",
         "error": null,
@@ -57,8 +57,8 @@ curl "https://srv.msgflash.com/api/v1/messages?limit=20&status=delivered" \
 }
 ```
 
-## Erreurs courantes
+## Common errors
 
-| HTTP | Code | Quand |
+| HTTP | Code | When |
 |---|---|---|
-| `401` | `UNAUTHORIZED` | Clé invalide |
+| `401` | `UNAUTHORIZED` | Invalid API key |

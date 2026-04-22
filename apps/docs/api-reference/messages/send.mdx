@@ -9,66 +9,66 @@ description: Send an immediate message in direct mode or with a template.
 POST /api/v1/messages/send
 ```
 
-## Important — comment obtenir `instanceId`
+## Important — how to get `instanceId`
 
-`instanceId` est obligatoire pour envoyer un message.
+`instanceId` is required to send a message.
 
-Ne pas utiliser à la place :
+Do not use these instead:
 - `name`
 - `waNumber`
 
-Pour obtenir le bon `instanceId` :
-1. appeler `GET /api/v1/instances`
-2. sélectionner l’instance voulue
-3. récupérer `data[n].id`
-4. envoyer cette valeur dans le champ `instanceId`
+To get the correct `instanceId`:
+1. call `GET /api/v1/instances`
+2. select the target instance
+3. copy `data[n].id`
+4. send this value in the `instanceId` field
 
-Exemple :
-- `id` = identifiant technique requis par l’API
-- `name` = libellé lisible
-- `waNumber` = numéro connecté affiché à l’utilisateur
+Example:
+- `id` = technical identifier required by the API
+- `name` = human-readable label
+- `waNumber` = connected number shown to the user
 
 ## Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `instanceId` | UUID | oui | Identifiant technique de l'instance MsgFlash, obtenu via `GET /api/v1/instances` |
-| `to` | string | oui | Numéro E.164 |
-| `type` | enum | oui si pas de `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact`, `buttons` |
-| `templateId` | UUID | oui si pas de `type` | Template à rendre |
-| `text` | string | selon type | Corps du message |
-| `mediaUrl` | string | selon type | URL publique du media |
-| `latitude` | number | si `location` | Latitude |
-| `longitude` | number | si `location` | Longitude |
-| `locationName` | string | non | Nom du lieu |
-| `locationAddress` | string | non | Adresse |
-| `contactId` | UUID | non | Contact partagé ou contexte template |
-| `variables` | object | non | Valeurs `custom.*` |
-| `title` | string | si `buttons` | Titre du message boutons |
-| `description` | string | si `buttons` | Description du message boutons |
-| `footer` | string | non | Pied de page du message boutons |
-| `buttons` | array | si `buttons` | Liste des boutons (max 2) |
+| `instanceId` | UUID | yes | Technical identifier of the MsgFlash instance, obtained via `GET /api/v1/instances` |
+| `to` | string | yes | E.164 number |
+| `type` | enum | yes if no `templateId` | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `location`, `contact`, `buttons` |
+| `templateId` | UUID | yes if no `type` | Template to render |
+| `text` | string | depends on type | Body du message |
+| `mediaUrl` | string | depends on type | Public media URL |
+| `latitude` | number | if `location` | Latitude |
+| `longitude` | number | if `location` | Longitude |
+| `locationName` | string | no | Location name |
+| `locationAddress` | string | no | Address |
+| `contactId` | UUID | no | Shared contact or template context |
+| `variables` | object | no | `custom.*` values |
+| `title` | string | if `buttons` | Button message title |
+| `description` | string | if `buttons` | Button message description |
+| `footer` | string | no | Button message footer |
+| `buttons` | array | if `buttons` | List of buttons (max 2) |
 
-### Boutons
+### Buttons
 
-Chaque bouton doit être structuré ainsi :
+Each button must follow this structure:
 
 ```json
 {
   "title": "reply", // reply | url | call | copy | pix
-  "displayText": "Texte du bouton",
+  "displayText": "Button text",
   "id": "button_id",
-  "url": "https://example.com", // pour type url
-  "phoneNumber": "+5511999999999", // pour type call
-  "copyCode": "dGV4dA==", // pour type copy
-  "currency": "BRL", // pour type pix
-  "name": "John Doe", // pour type pix
-  "keyType": "random", // pour type pix
-  "key": "0ea59ac5-f001-4f0e-9785-c7..." // pour type pix
+  "url": "https://example.com", // for type url
+  "phoneNumber": "+5511999999999", // for type call
+  "copyCode": "dGV4dA==", // for type copy
+  "currency": "BRL", // for type pix
+  "name": "John Doe", // for type pix
+  "keyType": "random", // for type pix
+  "key": "0ea59ac5-f001-4f0e-9785-c7..." // for type pix
 }
 ```
 
-## Exemple de requête
+## Request example
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/messages/send \
@@ -78,25 +78,25 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     "instanceId": "INSTANCE_UUID",
     "to": "+33612345678",
     "type": "text",
-    "text": "Bonjour"
+    "text": "Hello"
   }'
 ```
 
-## Messages avec boutons
+## Messages with buttons
 
-Les messages avec boutons nécessitent un compte WhatsApp Business. Ils permettent d'ajouter jusqu'à 2 boutons interactifs.
+Messages with buttons require a WhatsApp Business account. They let you add up to 2 interactive buttons.
 
-### Types de boutons supportés
+### Supported button types
 
-| Type | Description | Champs requis |
+| Type | Description | Required fields |
 |---|---|---|
-| `reply` | Bouton de réponse rapide | `displayText`, `id` |
-| `copy` | Bouton pour copier du texte | `displayText`, `copyCode` |
-| `url` | Bouton ouvrant une URL | `displayText`, `url` |
-| `call` | Bouton pour appeler | `displayText`, `phoneNumber` |
-| `pix` | Bouton de paiement Pix (Brésil) | `displayText`, `currency`, `name`, `keyType`, `key` |
+| `reply` | Quick reply button | `displayText`, `id` |
+| `copy` | Button to copy text | `displayText`, `copyCode` |
+| `url` | Button that opens a URL | `displayText`, `url` |
+| `call` | Button to call | `displayText`, `phoneNumber` |
+| `pix` | Pix payment button (Brazil) | `displayText`, `currency`, `name`, `keyType`, `key` |
 
-### Exemple de message avec boutons
+### Button message example
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/messages/send \
@@ -106,25 +106,25 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     "instanceId": "INSTANCE_UUID",
     "to": "+33612345678",
     "type": "buttons",
-    "title": "Choisissez une option",
-    "description": "Que souhaitez-vous faire ?",
-    "footer": "Répondez rapidement",
+    "title": "Choose an option",
+    "description": "What would you like to do?",
+    "footer": "Reply quickly",
     "buttons": [
       {
         "title": "reply",
-        "displayText": "Voir le menu",
+        "displayText": "View menu",
         "id": "menu_option"
       },
       {
         "title": "url",
-        "displayText": "Visiter le site",
+        "displayText": "Visit website",
         "url": "https://example.com"
       }
     ]
   }'
 ```
 
-## Réponse succès `201`
+## Success response `201`
 
 ```json
 {
@@ -135,7 +135,7 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
     "campaignId": null,
     "type": "text",
     "to": "+33612345678",
-    "body": "Bonjour",
+    "body": "Hello",
     "mediaUrl": null,
     "status": "queued",
     "warnings": [
@@ -162,18 +162,18 @@ curl -X POST https://srv.msgflash.com/api/v1/messages/send \
 ```
 
 <Note>
-En V1, les warnings safety n'empêchent pas l'envoi. Ils servent uniquement de guidance.
+In V1, safety warnings do not block sending. They are informational only.
 </Note>
 
-## Erreurs courantes
+## Common errors
 
-| HTTP | Code | Quand |
+| HTTP | Code | When |
 |---|---|---|
-| `400` | `VALIDATION_ERROR` | Body invalide |
-| `400` | `TEMPLATE_INVALID` | Template invalide |
-| `400` | `TEMPLATE_VARIABLES_MISSING` | Variables requises manquantes |
-| `400` | `TEMPLATE_CONTEXT_UNAVAILABLE` | Contact ou instance de contexte invalide |
-| `403` | `SUBSCRIPTION_INACTIVE` | Souscription non exploitable |
-| `403` | `UNSUPPORTED_FEATURE` | Fonctionnalité non supportée (boutons sans WhatsApp Business) |
-| `404` | `NOT_FOUND` | Instance, contact ou template introuvable |
-| `429` | `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | Quota d'envoi épuisé |
+| `400` | `VALIDATION_ERROR` | Invalid body |
+| `400` | `TEMPLATE_INVALID` | Template invalid |
+| `400` | `TEMPLATE_VARIABLES_MISSING` | Required variables missing |
+| `400` | `TEMPLATE_CONTEXT_UNAVAILABLE` | Invalid contact or instance context |
+| `403` | `SUBSCRIPTION_INACTIVE` | Subscription not usable |
+| `403` | `UNSUPPORTED_FEATURE` | Unsupported feature (buttons without WhatsApp Business) |
+| `404` | `NOT_FOUND` | Instance, contact, or template not found |
+| `429` | `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | Sending quota exhausted |

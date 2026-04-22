@@ -9,21 +9,21 @@ description: Update an existing template and recalculate its variables.
 PUT /api/v1/templates/{id}
 ```
 
-## Paramètres path
+## Parameters path
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID du template |
+| `id` | UUID | yes | ID du template |
 
 ## Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | non | Nouveau nom |
-| `body` | string | non | Nouveau body |
-| `mediaUrl` | string | non | Nouvelle URL media |
+| `name` | string | no | Nouveau nom |
+| `body` | string | no | Nouveau body |
+| `mediaUrl` | string | no | Nouvelle URL media |
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {

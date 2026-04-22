@@ -9,20 +9,20 @@ description: Retrieve instance details by ID.
 GET /api/v1/instances/{id}
 ```
 
-## Paramètres path
+## Parameters path
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID de l'instance |
+| `id` | UUID | yes | ID de l'instance |
 
-## Exemple de requête
+## Request example
 
 ```bash
 curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {
@@ -40,9 +40,9 @@ curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID \
 }
 ```
 
-## Erreurs courantes
+## Common errors
 
-| HTTP | Code | Quand |
+| HTTP | Code | When |
 |---|---|---|
-| `401` | `UNAUTHORIZED` | Clé API absente ou invalide |
-| `404` | `NOT_FOUND` | Instance inexistante ou hors de votre compte |
+| `401` | `UNAUTHORIZED` | API key missing or invalid |
+| `404` | `NOT_FOUND` | Instance does not exist or is outside your account |

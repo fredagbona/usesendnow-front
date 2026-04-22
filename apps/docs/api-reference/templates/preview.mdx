@@ -9,26 +9,26 @@ description: Render a template with the provided context without sending a messa
 POST /api/v1/templates/{id}/preview
 ```
 
-## Paramètres path
+## Parameters path
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID du template |
+| `id` | UUID | yes | ID du template |
 
 ## Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `instanceId` | UUID | non | Contexte `instance.*` |
-| `contactId` | UUID | non | Contexte `contact.*` |
-| `variables` | object | non | Valeurs `custom.*` |
+| `instanceId` | UUID | no | `instance.*` context |
+| `contactId` | UUID | no | `contact.*` context |
+| `variables` | object | no | `custom.*` values |
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {
   "data": {
-    "rendered": "Bonjour Awa, utilisez PROMO10.",
+    "rendered": "Hello Awa, utilisez PROMO10.",
     "variables": ["contact.firstName", "custom.code"],
     "missingVariables": [],
     "valid": true

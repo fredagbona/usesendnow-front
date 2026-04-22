@@ -9,13 +9,13 @@ description: Retrieve message details by message ID.
 GET /api/v1/messages/{id}
 ```
 
-## Paramètres path
+## Parameters path
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID du message |
+| `id` | UUID | yes | ID du message |
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {
@@ -29,7 +29,7 @@ GET /api/v1/messages/{id}
     "type": "text",
     "from": null,
     "to": "+33612345678",
-    "body": "Bonjour",
+    "body": "Hello",
     "mediaUrl": null,
     "status": "delivered",
     "error": null,
@@ -49,8 +49,8 @@ GET /api/v1/messages/{id}
 }
 ```
 
-## Erreurs courantes
+## Common errors
 
-| HTTP | Code | Quand |
+| HTTP | Code | When |
 |---|---|---|
-| `404` | `NOT_FOUND` | Message introuvable |
+| `404` | `NOT_FOUND` | Message not found |

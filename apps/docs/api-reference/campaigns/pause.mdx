@@ -9,15 +9,15 @@ description: Pause a campaign when its status allows it.
 POST /api/v1/campaigns/{id}/pause
 ```
 
-## Paramètres path
+## Parameters path
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID de la campagne |
+| `id` | UUID | yes | Campaign ID |
 
 Pas de body.
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {
@@ -28,10 +28,10 @@ Pas de body.
     "name": "Promo Black Friday",
     "templateId": null,
     "type": "text",
-    "body": "Bonjour, découvrez notre promo.",
+    "body": "Hello, découvrez notre promo.",
     "mediaUrl": null,
     "schedule": "2026-04-02T10:00:00.000Z",
-    "repeat": "none",
+    "repeat": "noe",
     "status": "paused",
     "recipients": { "type": "all" },
     "templateVariables": null,
@@ -50,9 +50,9 @@ Pas de body.
 }
 ```
 
-## Erreurs courantes
+## Common errors
 
-| HTTP | Code | Quand |
+| HTTP | Code | When |
 |---|---|---|
-| `400` | `BAD_REQUEST` | Statut incompatible avec la pause |
-| `404` | `NOT_FOUND` | Campagne introuvable |
+| `400` | `BAD_REQUEST` | Status incompatible avec la pause |
+| `404` | `NOT_FOUND` | Campaign not found |

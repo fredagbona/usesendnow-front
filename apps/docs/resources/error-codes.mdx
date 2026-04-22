@@ -21,11 +21,11 @@ description: Main error codes returned by the MsgFlash public API.
 
 | Code | HTTP | Description |
 |---|---|---|
-| `UNAUTHORIZED` | 401 | Clé API manquante, invalide ou révoquée. Vérifiez `x-api-key`. |
-| `FORBIDDEN` | 403 | Ressource non accessible avec cette clé |
-| `SUBSCRIPTION_INACTIVE` | 403 | Le compte n'a pas de souscription exploitable pour cette action |
-| `API_RATE_LIMIT_EXCEEDED` | 429 | Plus de 10 requêtes/seconde sur la même clé |
-| `MONTHLY_API_REQUEST_QUOTA_EXCEEDED` | 429 | Quota mensuel de requêtes API épuisé |
+| `UNAUTHORIZED` | 401 | API key missing, invalid, or revoked. Check `x-api-key`. |
+| `FORBIDDEN` | 403 | Resource not accessible with this key |
+| `SUBSCRIPTION_INACTIVE` | 403 | The account has no usable subscription for this action |
+| `API_RATE_LIMIT_EXCEEDED` | 429 | More than 10 requests/second on the same key |
+| `MONTHLY_API_REQUEST_QUOTA_EXCEEDED` | 429 | Monthly API request quota exhausted |
 
 ---
 
@@ -33,15 +33,15 @@ description: Main error codes returned by the MsgFlash public API.
 
 | Code | HTTP | Description |
 |---|---|---|
-| `MAX_INSTANCES_REACHED` | 403 | Limite d'instances atteinte |
-| `API_KEYS_NOT_AVAILABLE_ON_PLAN` | 403 | Clés API indisponibles sur le plan actuel |
-| `MAX_API_KEYS_REACHED` | 403 | Limite de clés API atteinte |
-| `WEBHOOKS_NOT_AVAILABLE_ON_PLAN` | 403 | Webhooks indisponibles sur le plan actuel |
-| `MAX_WEBHOOK_ENDPOINTS_REACHED` | 403 | Limite d'endpoints webhook atteinte |
-| `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` | 403 | Campagnes indisponibles sur le plan actuel |
-| `STATUSES_NOT_AVAILABLE_ON_PLAN` | 403 | Statuts WhatsApp indisponibles sur le plan actuel |
-| `MAX_CONTACT_GROUPS_REACHED` | 403 | Limite de groupes de contacts atteinte |
-| `FEATURE_NOT_AVAILABLE_ON_PLAN` | 403 | Feature indisponible sur le plan courant |
+| `MAX_INSTANCES_REACHED` | 403 | Instance limit reached |
+| `API_KEYS_NOT_AVAILABLE_ON_PLAN` | 403 | API keys unavailable on the current plan |
+| `MAX_API_KEYS_REACHED` | 403 | API key limit reached |
+| `WEBHOOKS_NOT_AVAILABLE_ON_PLAN` | 403 | Webhooks unavailable on the current plan |
+| `MAX_WEBHOOK_ENDPOINTS_REACHED` | 403 | Webhook endpoint limit reached |
+| `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` | 403 | Campaigns unavailable on the current plan |
+| `STATUSES_NOT_AVAILABLE_ON_PLAN` | 403 | WhatsApp statuses indisponibles sur le plan actuel |
+| `MAX_CONTACT_GROUPS_REACHED` | 403 | Contact group limit reached |
+| `FEATURE_NOT_AVAILABLE_ON_PLAN` | 403 | Feature unavailable on the current plan |
 
 ---
 
@@ -49,12 +49,12 @@ description: Main error codes returned by the MsgFlash public API.
 
 | Code | HTTP | Description |
 |---|---|---|
-| `VALIDATION_ERROR` | 400 | Le body ne respecte pas le schéma attendu |
-| `BAD_REQUEST` | 400 | Requête invalide |
-| `TEMPLATE_INVALID` | 400 | Placeholder invalide ou template incohérent |
-| `TEMPLATE_VARIABLES_MISSING` | 400 | Une ou plusieurs variables requises n'ont pas pu être résolues |
-| `TEMPLATE_CONTEXT_UNAVAILABLE` | 400 | Le contexte demandé n'est pas disponible (`instance` ou `contact`) |
-| `INVALID_DESTINATION` | 422 | Numéro destinataire invalide |
+| `VALIDATION_ERROR` | 400 | Body does not match the expected schema |
+| `BAD_REQUEST` | 400 | Invalid request |
+| `TEMPLATE_INVALID` | 400 | Placeholder invalid ou template incohérent |
+| `TEMPLATE_VARIABLES_MISSING` | 400 | One or more required variables could not be resolved |
+| `TEMPLATE_CONTEXT_UNAVAILABLE` | 400 | Requested context is not available (`instance` or `contact`) |
+| `INVALID_DESTINATION` | 422 | Invalid recipient number |
 
 ---
 
@@ -62,9 +62,9 @@ description: Main error codes returned by the MsgFlash public API.
 
 | Code | HTTP | Description |
 |---|---|---|
-| `NOT_FOUND` | 404 | Ressource inexistante ou hors de votre compte |
-| `CONFLICT` | 409 | Conflit d'unicité |
-| `INTERNAL_ERROR` | 500 | Erreur serveur |
-| `PROVIDER_TIMEOUT` | 502 | Timeout côté provider WhatsApp |
-| `PROVIDER_UNAVAILABLE` | 502 | Provider temporairement indisponible |
-| `PROVIDER_ERROR` | 502 | Erreur générique côté provider |
+| `NOT_FOUND` | 404 | Resource does not exist or is outside your account |
+| `CONFLICT` | 409 | Uniqueness conflict |
+| `INTERNAL_ERROR` | 500 | Server error |
+| `PROVIDER_TIMEOUT` | 502 | WhatsApp provider timeout |
+| `PROVIDER_UNAVAILABLE` | 502 | Provider temporarily unavailable |
+| `PROVIDER_ERROR` | 502 | Generic provider error |

@@ -9,16 +9,16 @@ description: List group members with pagination and search.
 GET /api/v1/contacts/groups/{groupId}/members
 ```
 
-## Paramètres
+## Parameters
 
-| Nom | Type | Requis | Emplacement | Description |
+| Nom | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `groupId` | UUID | oui | path | ID du groupe |
-| `limit` | integer | non | query | Taille de page |
-| `cursor` | string | non | query | Curseur |
-| `search` | string | non | query | Recherche sur nom ou téléphone |
+| `groupId` | UUID | yes | path | Group ID |
+| `limit` | integer | no | query | Taille de page |
+| `cursor` | string | no | query | Curseur |
+| `search` | string | no | query | Recherche sur nom ou téléphone |
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {

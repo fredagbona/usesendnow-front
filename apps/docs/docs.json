@@ -71,7 +71,7 @@
             "icon": "message-square"
           },
           {
-            "group": "API Reference · Campagnes",
+            "group": "API Reference · Campaigns",
             "pages": [
               "api-reference/campaigns/create",
               "api-reference/campaigns/get",
@@ -106,7 +106,7 @@
             "icon": "users"
           },
           {
-            "group": "API Reference · Groupes",
+            "group": "API Reference · Groups",
             "pages": [
               "api-reference/contact-groups/list",
               "api-reference/contact-groups/create",
@@ -140,7 +140,7 @@
             "icon": "webhook"
           },
           {
-            "group": "API Reference · Statuts",
+            "group": "API Reference · Statuses",
             "pages": [
               "api-reference/statuses/create"
             ],

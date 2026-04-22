@@ -11,14 +11,14 @@ POST /api/v1/contacts
 
 ## Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | oui | Nom complet |
-| `phone` | string | oui | Numéro E.164 |
-| `tags` | string[] | non | Tags |
-| `meta` | object | non | Métadonnées |
+| `name` | string | yes | Nom complet |
+| `phone` | string | yes | E.164 number |
+| `tags` | string[] | no | Tags |
+| `meta` | object | no | Métadonnées |
 
-## Réponse succès `201`
+## Success response `201`
 
 ```json
 {

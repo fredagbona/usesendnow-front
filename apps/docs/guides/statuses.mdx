@@ -9,27 +9,27 @@ description: Publish text or image WhatsApp statuses from a connected instance.
 POST /api/v1/statuses
 ```
 
-Authentification : `x-api-key: <api_key>`
+Authentication: `x-api-key: <api_key>`
 
 <Warning>
-Les statuts nécessitent le plan Starter ou supérieur.
+Statuses require the Starter plan or higher.
 </Warning>
 
-## Paramètres
+## Parameters
 
 ### Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `instanceId` | UUID | oui | Instance source |
-| `type` | `text` \| `image` | oui | Type du statut |
-| `content` | string | oui | Texte ou URL publique de l'image |
-| `caption` | string | non | Légende si image |
-| `backgroundColor` | string | non | Couleur hex si texte |
+| `instanceId` | UUID | yes | Instance source |
+| `type` | `text` \| `image` | yes | Status type |
+| `content` | string | yes | Texte ou URL publique de l'image |
+| `caption` | string | no | Légende si image |
+| `backgroundColor` | string | no | Color hex si texte |
 
 ---
 
-## Statut texte
+## Status texte
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/statuses \
@@ -43,7 +43,7 @@ curl -X POST https://srv.msgflash.com/api/v1/statuses \
   }'
 ```
 
-## Statut image
+## Status image
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/statuses \
@@ -59,7 +59,7 @@ curl -X POST https://srv.msgflash.com/api/v1/statuses \
 
 ---
 
-## Réponse
+## Response
 
 ```json
 {
@@ -70,12 +70,12 @@ curl -X POST https://srv.msgflash.com/api/v1/statuses \
 }
 ```
 
-Les statuts consomment le même quota mensuel que les messages.
+Statuses consume the same monthly quota as messages.
 
-## Erreurs courantes
+## Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
 | `STATUSES_NOT_AVAILABLE_ON_PLAN` | 403 | Plan trop faible |
-| `NOT_FOUND` | 404 | Instance introuvable |
-| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Quota mensuel épuisé |
+| `NOT_FOUND` | 404 | Instance not found |
+| `MONTHLY_OUTBOUND_QUOTA_EXCEEDED` | 429 | Monthly quota exhausted |

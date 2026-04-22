@@ -9,42 +9,42 @@ description: Create and schedule a messaging campaign.
 POST /api/v1/campaigns
 ```
 
-## Important — comment obtenir `instanceId`
+## Important — how to get `instanceId`
 
-`instanceId` est obligatoire pour créer une campagne.
+`instanceId` is required to create a campaign.
 
-Pour l’obtenir :
-1. appeler `GET /api/v1/instances`
-2. choisir une instance avec `status = "connected"` si possible
-3. récupérer `data[n].id`
-4. envoyer cette valeur dans `instanceId`
+To get it:
+1. call `GET /api/v1/instances`
+2. choose an instance with `status = "connected"` when possible
+3. copy `data[n].id`
+4. send this value in `instanceId`
 
-Ne pas utiliser à la place :
+Do not use these instead:
 - `name`
 - `waNumber`
 
 ## Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `instanceId` | UUID | oui | Identifiant technique de l'instance MsgFlash, obtenu via `GET /api/v1/instances` |
-| `name` | string | oui | Nom interne |
-| `schedule` | ISO 8601 | oui | Date de démarrage |
-| `repeat` | string | non | `none`, `daily`, `weekly` |
-| `recipients` | object | oui | Sélecteur de destinataires |
-| `templateId` | UUID | oui si mode template | Template utilisé |
-| `variables` | object | non | Variables `custom.*` globales |
-| `type` | enum | oui si mode direct | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `buttons` |
-| `body` | string | selon type | Obligatoire pour `text`, optionnel pour certains médias |
-| `mediaUrl` | string | selon type | Obligatoire pour les types média |
-| `title` | string | si `buttons` | Titre du message boutons |
-| `description` | string | si `buttons` | Description du message boutons |
-| `footer` | string | non | Pied de page du message boutons |
-| `buttons` | array | si `buttons` | Liste des boutons (max 2) |
+| `instanceId` | UUID | yes | Technical identifier of the MsgFlash instance, obtained via `GET /api/v1/instances` |
+| `name` | string | yes | Nom interne |
+| `schedule` | ISO 8601 | yes | Date de démarrage |
+| `repeat` | string | no | `noe`, `daily`, `weekly` |
+| `recipients` | object | yes | Recipient selector |
+| `templateId` | UUID | yes si mode template | Template used |
+| `variables` | object | no | Variables `custom.*` globales |
+| `type` | enum | yes si mode direct | `text`, `image`, `video`, `audio`, `document`, `voice_note`, `buttons` |
+| `body` | string | depends on type | Obligatoire pour `text`, optionnel pour certains medias |
+| `mediaUrl` | string | depends on type | Obligatoire pour les types media |
+| `title` | string | if `buttons` | Button message title |
+| `description` | string | if `buttons` | Button message description |
+| `footer` | string | no | Button message footer |
+| `buttons` | array | if `buttons` | List of buttons (max 2) |
 
-## Règle de contenu
+## Content rule
 
-Une campagne doit avoir exactement un mode de contenu :
+A campaign must have exactly one content mode:
 - soit `templateId`
 - soit `type` + contenu direct
 
@@ -52,13 +52,13 @@ Ne pas envoyer les deux en même temps.
 
 ### `recipients`
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `type` | enum | oui | `all`, `tags`, `explicit`, `group` |
-| `value` | string[] | selon type | Tags ou IDs de contacts |
-| `groupId` | UUID | si `type=group` | Groupe cible |
+| `type` | enum | yes | `all`, `tags`, `explicit`, `group` |
+| `value` | string[] | depends on type | Tags ou IDs de contacts |
+| `groupId` | UUID | if `type=group` | Target group |
 
-## Réponse succès `201`
+## Success response `201`
 
 ```json
 {
@@ -66,14 +66,14 @@ Ne pas envoyer les deux en même temps.
     "id": "cmp_uuid",
     "userId": "user_uuid",
     "instanceId": "inst_uuid",
-    "name": "Newsletter Avril",
+    "name": "April Newsletter",
     "status": "scheduled",
     "templateId": "tmpl_uuid",
     "type": null,
     "body": null,
     "mediaUrl": null,
     "schedule": "2026-04-15T09:00:00.000Z",
-    "repeat": "none",
+    "repeat": "noe",
     "recipients": {
       "type": "all"
     },
@@ -113,21 +113,21 @@ Ne pas envoyer les deux en même temps.
 ```
 
 <Note>
-En V1, `safety.decision` vaut `allow` ou `warn`. Un warning n'empêche pas la création de la campagne.
+In V1, `safety.decision` is `allow` or `warn`. A warning does not prevent campaign creation.
 </Note>
 
-## Erreurs courantes
+## Common errors
 
-| HTTP | Code | Quand |
+| HTTP | Code | When |
 |---|---|---|
-| `400` | `VALIDATION_ERROR` | Campagne vide, body manquant, media manquant, destinataires invalides |
+| `400` | `VALIDATION_ERROR` | Empty campaign, missing body, missing media, invalid recipients |
 | `403` | `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` | Plan trop faible |
-| `403` | `UNSUPPORTED_FEATURE` | Fonctionnalité non supportée (boutons sans WhatsApp Business) |
-| `404` | `NOT_FOUND` | Instance ou template introuvable |
+| `403` | `UNSUPPORTED_FEATURE` | Unsupported feature (buttons without WhatsApp Business) |
+| `404` | `NOT_FOUND` | Instance ou template not found |
 
-## Exemples
+## Examples
 
-### Campagne texte simple
+### Simple text campaign
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/campaigns \
@@ -135,17 +135,17 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "INSTANCE_UUID",
-    "name": "Newsletter Avril",
+    "name": "April Newsletter",
     "schedule": "2026-04-15T09:00:00.000Z",
     "recipients": {
       "type": "all"
     },
     "type": "text",
-    "body": "Découvrez nos nouvelles offres !"
+    "body": "Discover our latest offers!"
   }'
 ```
 
-### Campagne avec boutons
+### Campaign with buttons
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/campaigns \
@@ -153,25 +153,25 @@ curl -X POST https://srv.msgflash.com/api/v1/campaigns \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "INSTANCE_UUID",
-    "name": "Sondage satisfaction",
+    "name": "Satisfaction survey",
     "schedule": "2026-04-15T10:00:00.000Z",
     "recipients": {
       "type": "tags",
       "value": ["client"]
     },
     "type": "buttons",
-    "title": "Votre avis compte !",
-    "description": "Êtes-vous satisfait de nos services ?",
-    "footer": "Répondez avant demain",
+    "title": "Your opinion matters!",
+    "description": "Are you satisfied with our services?",
+    "footer": "Reply before tomorrow",
     "buttons": [
       {
         "type": "reply",
-        "displayText": "Très satisfait",
+        "displayText": "Very satisfied",
         "id": "satisfied"
       },
       {
         "type": "reply",
-        "displayText": "À améliorer",
+        "displayText": "Needs improvement",
         "id": "needs_improvement"
       }
     ]

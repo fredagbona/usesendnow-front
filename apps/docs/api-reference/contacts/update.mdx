@@ -9,22 +9,22 @@ description: Update an existing contact.
 PUT /api/v1/contacts/{id}
 ```
 
-## Paramètres path
+## Parameters path
 
-| Nom | Type | Requis | Description |
+| Nom | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID du contact |
+| `id` | UUID | yes | ID du contact |
 
 ## Body
 
-| Champ | Type | Requis | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | non | Nouveau nom |
-| `phone` | string | non | Nouveau téléphone |
-| `tags` | string[] | non | Remplace les tags |
-| `meta` | object | non | Remplace les métadonnées |
+| `name` | string | no | Nouveau nom |
+| `phone` | string | no | Nouveau téléphone |
+| `tags` | string[] | no | Remplace les tags |
+| `meta` | object | no | Remplace les métadonnées |
 
-## Réponse succès `200`
+## Success response `200`
 
 ```json
 {

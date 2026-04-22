@@ -5,45 +5,45 @@ description: Understand WhatsApp instances and query their state through the pub
 
 ## Endpoints
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/v1/instances` | Lister les instances de votre compte |
-| `GET` | `/api/v1/instances/{id}` | Détail d'une instance |
+| `GET` | `/api/v1/instances` | Listr les instances de votre compte |
+| `GET` | `/api/v1/instances/{id}` | Details d'une instance |
 | `GET` | `/api/v1/instances/{id}/state` | État live depuis le provider |
 | `GET` | `/api/v1/instances/{id}/health` | Warmup / santé d'envoi de l'instance |
 
-Authentification : `x-api-key: <api_key>`
+Authentication: `x-api-key: <api_key>`
 
 ## Qu'est-ce qu'une instance ?
 
-Une instance est un numéro WhatsApp connecté à MsgFlash.
+An instance is a WhatsApp number connected to MsgFlash.
 
-Vous créez et connectez les instances depuis le dashboard. L'API publique permet ensuite de lire leur détail et leur état live.
+You create and connect instances from the dashboard. The public API then lets you read their details and live state.
 
 ---
 
 ## États possibles
 
-| Statut | Description |
+| Status | Description |
 |---|---|
-| `disconnected` | Instance existante mais non connectée |
+| `disconnected` | Instance existante mais no connectée |
 | `connecting` | Connexion en cours |
 | `connected` | Instance prête à envoyer |
 
 ---
 
-## Lister les instances
+## Listr les instances
 
 ```bash
 curl https://srv.msgflash.com/api/v1/instances \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-### Paramètres
+### Parameters
 
 Cette route n'accepte ni query params ni body.
 
-### Réponse succès
+### Success response
 
 ```json
 {
@@ -68,34 +68,34 @@ Utilisez `data[].id` comme vraie valeur `instanceId` dans `/api/v1/messages/send
 </Tip>
 
 <Warning>
-`name` et `waNumber` ne remplacent pas `instanceId`.
+`name` and `waNumber` do not replace `instanceId`.
 
-- `id` = identifiant technique à envoyer à MsgFlash
-- `name` = libellé lisible pour l'utilisateur
-- `waNumber` = numéro connecté affiché à l'écran
+- `id` = technical identifier to send to MsgFlash
+- `name` = human-readable label for the user
+- `waNumber` = connected number shown on screen
 </Warning>
 
-### Erreurs courantes
+### Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `UNAUTHORIZED` | 401 | Clé API manquante ou invalide |
-| `API_RATE_LIMIT_EXCEEDED` | 429 | Plus de 10 req/s sur la même clé |
+| `UNAUTHORIZED` | 401 | API key missing or invalid |
+| `API_RATE_LIMIT_EXCEEDED` | 429 | More than 10 req/s on the same API key |
 
 ---
 
-## Détail d'une instance
+## Instance details
 
 ```bash
 curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-### Paramètres path
+### Parameters path
 
-| Paramètre | Type | Requis | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID de l'instance |
+| `id` | UUID | yes | ID de l'instance |
 
 ```json
 {
@@ -110,11 +110,11 @@ curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID \
 }
 ```
 
-### Erreurs courantes
+### Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `NOT_FOUND` | 404 | Instance inexistante ou hors de votre compte |
+| `NOT_FOUND` | 404 | Instance does not exist or is outside your account |
 
 ## État live
 
@@ -123,11 +123,11 @@ curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID/state \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-### Paramètres path
+### Parameters path
 
-| Paramètre | Type | Requis | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `id` | UUID | oui | ID de l'instance |
+| `id` | UUID | yes | ID de l'instance |
 
 ```json
 {
@@ -139,13 +139,13 @@ curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID/state \
 }
 ```
 
-### Erreurs courantes
+### Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `NOT_FOUND` | 404 | Instance inexistante ou hors de votre compte |
+| `NOT_FOUND` | 404 | Instance does not exist or is outside your account |
 
-## Santé d'instance
+## Instance health
 
 ```bash
 curl https://srv.msgflash.com/api/v1/instances/INSTANCE_ID/health \
@@ -160,5 +160,5 @@ Cette route retourne :
 - `recommendations`
 
 <Note>
-La V1 du warmup renvoie de la guidance uniquement. Elle ne bloque pas encore directement les envois via cette route.
+Warmup V1 returns guidance only. It does not yet directly block sends through this endpoint.
 </Note>

@@ -5,7 +5,7 @@ description: Manage MsgFlash templates and preview their rendered output with va
 
 ## Endpoints
 
-| Méthode | Endpoint |
+| Method | Endpoint |
 |---|---|
 | `GET` | `/api/v1/templates` |
 | `POST` | `/api/v1/templates` |
@@ -14,34 +14,34 @@ description: Manage MsgFlash templates and preview their rendered output with va
 | `DELETE` | `/api/v1/templates/{id}` |
 | `POST` | `/api/v1/templates/{id}/preview` |
 
-Authentification : `x-api-key: <api_key>`
+Authentication: `x-api-key: <api_key>`
 
-## Modèles de paramètres
+## Parameter models
 
 ### `GET /api/v1/templates`
 
-| Paramètre | Type | Requis | Emplacement | Description |
+| Parameter | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `page` | integer | non | query | Page, défaut `1` |
-| `limit` | integer | non | query | Taille, défaut `20`, max `100` |
+| `page` | integer | no | query | Page, défaut `1` |
+| `limit` | integer | no | query | Taille, défaut `20`, max `100` |
 
 ### `POST /api/v1/templates`
 
-| Champ | Type | Requis | Emplacement | Description |
+| Field | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `name` | string | oui | body | Nom du template |
-| `type` | enum | oui | body | `text`, `image`, `video`, `audio`, `document` |
-| `body` | string | oui si `type=text` | body | Corps avec placeholders |
-| `mediaUrl` | string | oui si template media | body | URL publique du media |
+| `name` | string | yes | body | Name of the template |
+| `type` | enum | yes | body | `text`, `image`, `video`, `audio`, `document` |
+| `body` | string | yes if `type=text` | body | Body avec placeholders |
+| `mediaUrl` | string | yes si template media | body | Public media URL |
 
 ### `POST /api/v1/templates/{id}/preview`
 
-| Champ | Type | Requis | Emplacement | Description |
+| Field | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `id` | UUID | oui | path | ID du template |
-| `instanceId` | UUID | non | body | Contexte `instance.*` |
-| `contactId` | UUID | non | body | Contexte `contact.*` |
-| `variables` | object | non | body | Valeurs `custom.*` |
+| `id` | UUID | yes | path | ID du template |
+| `instanceId` | UUID | no | body | `instance.*` context |
+| `contactId` | UUID | no | body | `contact.*` context |
+| `variables` | object | no | body | `custom.*` values |
 
 ---
 
@@ -59,19 +59,19 @@ Namespaces supportés :
 - `instance.*`
 - `custom.*`
 
-Exemple :
+Example:
 
 ```txt
-Bonjour {{contact.firstName}}, votre code {{custom.code}} est prêt sur {{instance.name}}.
+Hello {{contact.firstName}}, votre code {{custom.code}} est prêt sur {{instance.name}}.
 ```
 
 <Note>
-Les variables sont détectées et recalculées automatiquement par le backend à partir du `body`. Vous n'avez pas à maintenir manuellement la liste `variables`.
+Variables are automatically detected and recomputed by the backend from `body`. You do not need to maintain the `variables` list manually.
 </Note>
 
 ---
 
-## Créer un template
+## Create un template
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/templates \
@@ -80,11 +80,11 @@ curl -X POST https://srv.msgflash.com/api/v1/templates \
   -d '{
     "name": "Relance panier",
     "type": "text",
-    "body": "Bonjour {{contact.firstName}}, utilisez {{custom.code}} aujourd''hui."
+    "body": "Hello {{contact.firstName}}, utilisez {{custom.code}} aujourd''hui."
   }'
 ```
 
-Réponse :
+Response:
 
 ```json
 {
@@ -92,19 +92,19 @@ Réponse :
     "id": "tmpl_uuid",
     "name": "Relance panier",
     "type": "text",
-    "body": "Bonjour {{contact.firstName}}, utilisez {{custom.code}} aujourd'hui.",
+    "body": "Hello {{contact.firstName}}, utilisez {{custom.code}} aujourd'hui.",
     "mediaUrl": null,
     "variables": ["contact.firstName", "custom.code"]
   }
 }
 ```
 
-### Erreurs courantes
+### Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `VALIDATION_ERROR` | 400 | Body invalide |
-| `TEMPLATE_INVALID` | 400 | Placeholder invalide |
+| `VALIDATION_ERROR` | 400 | Invalid body |
+| `TEMPLATE_INVALID` | 400 | Placeholder invalid |
 
 ---
 
@@ -126,7 +126,7 @@ curl -X POST https://srv.msgflash.com/api/v1/templates/TEMPLATE_ID/preview \
 ```json
 {
   "data": {
-    "rendered": "Bonjour Awa, utilisez PROMO10 aujourd'hui.",
+    "rendered": "Hello Awa, utilisez PROMO10 aujourd'hui.",
     "variables": ["contact.firstName", "custom.code"],
     "missingVariables": [],
     "valid": true
@@ -136,14 +136,14 @@ curl -X POST https://srv.msgflash.com/api/v1/templates/TEMPLATE_ID/preview \
 
 Si une variable ne peut pas être résolue :
 - `valid` devient `false`
-- `missingVariables` liste les chemins manquants
+- `missingVariables` liste les chemins missings
 
-### Erreurs courantes
+### Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `NOT_FOUND` | 404 | Template introuvable |
-| `TEMPLATE_CONTEXT_UNAVAILABLE` | 400 | Contact ou instance de contexte manquant |
+| `NOT_FOUND` | 404 | Template not found |
+| `TEMPLATE_CONTEXT_UNAVAILABLE` | 400 | Missing contact or instance context |
 
 ---
 
@@ -151,7 +151,7 @@ Si une variable ne peut pas être résolue :
 
 Pour `image`, `video`, `audio` ou `document`, le backend exige `mediaUrl`.
 
-Exemple :
+Example:
 
 ```json
 {

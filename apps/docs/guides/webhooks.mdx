@@ -5,7 +5,7 @@ description: Manage webhook endpoints and verify signed events sent by MsgFlash.
 
 ## À quoi servent les webhooks ?
 
-MsgFlash peut envoyer des requêtes HTTP signées à votre application à chaque événement important :
+MsgFlash can send signed HTTP requests to your application for each important event:
 - `instance.connected`
 - `instance.disconnected`
 - `message.sent`
@@ -16,31 +16,31 @@ MsgFlash peut envoyer des requêtes HTTP signées à votre application à chaque
 
 ---
 
-## Gérer vos endpoints via l'API publique
+## Manage your endpoints through the public API
 
-### Paramètres
+### Parameters
 
 #### `POST /api/v1/webhooks`
 
-| Champ | Type | Requis | Emplacement | Description |
+| Field | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `url` | string | oui | body | URL HTTPS de réception |
-| `events` | string[] | oui | body | 1 à 50 événements |
+| `url` | string | yes | body | URL HTTPS de réception |
+| `events` | string[] | yes | body | 1 à 50 événements |
 
 #### `DELETE /api/v1/webhooks/{id}`
 
-| Paramètre | Type | Requis | Emplacement | Description |
+| Parameter | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `id` | UUID | oui | path | ID du webhook |
+| `id` | UUID | yes | path | ID du webhook |
 
-### Lister
+### Listr
 
 ```bash
 curl https://srv.msgflash.com/api/v1/webhooks \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-### Créer
+### Create
 
 ```bash
 curl -X POST https://srv.msgflash.com/api/v1/webhooks \
@@ -52,7 +52,7 @@ curl -X POST https://srv.msgflash.com/api/v1/webhooks \
   }'
 ```
 
-Réponse :
+Response:
 
 ```json
 {
@@ -67,37 +67,37 @@ Réponse :
 ```
 
 <Warning>
-Le secret doit être conservé immédiatement. Il sert à vérifier la signature HMAC.
+Save the secret immediately. It is required to verify the HMAC signature.
 </Warning>
 
-### Supprimer
+### Delete
 
 ```bash
 curl -X DELETE https://srv.msgflash.com/api/v1/webhooks/WEBHOOK_ID \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-### Erreurs courantes
+### Common errors
 
-| Code | HTTP | Quand |
+| Code | HTTP | When |
 |---|---|---|
-| `WEBHOOKS_NOT_AVAILABLE_ON_PLAN` | 403 | Feature non disponible |
-| `MAX_WEBHOOK_ENDPOINTS_REACHED` | 403 | Limite atteinte |
-| `NOT_FOUND` | 404 | Webhook introuvable |
+| `WEBHOOKS_NOT_AVAILABLE_ON_PLAN` | 403 | Feature no disponible |
+| `MAX_WEBHOOK_ENDPOINTS_REACHED` | 403 | Limit reached |
+| `NOT_FOUND` | 404 | Webhook not found |
 
 ---
 
-## Headers envoyés par MsgFlash
+## Headers sent by MsgFlash
 
 | Header | Description |
 |---|---|
 | `Content-Type: application/json` | Payload JSON |
 | `X-MsgFlash-Signature` | Signature `sha256=<hex>` |
-| `X-MsgFlash-Event` | Nom de l'événement |
+| `X-MsgFlash-Event` | Name of l'événement |
 
 ---
 
-## Exemple de payload
+## Example de payload
 
 ```json
 {
@@ -113,7 +113,7 @@ curl -X DELETE https://srv.msgflash.com/api/v1/webhooks/WEBHOOK_ID \
 
 ---
 
-## Vérifier la signature
+## Verify the signature
 
 Algorithme : `HMAC-SHA256(secret, rawBody)`
 
@@ -167,6 +167,6 @@ Algorithme : `HMAC-SHA256(secret, rawBody)`
 
 - 5 tentatives
 - backoff exponentiel
-- toute réponse non-2xx déclenche un retry
+- any no-2xx response triggers a retry
 
 Répondez `200` rapidement puis traitez en asynchrone.

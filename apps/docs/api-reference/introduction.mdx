@@ -9,9 +9,9 @@ description: Base URL, authentication, rate limiting, response format, and compl
 https://srv.msgflash.com
 ```
 
-Tous les endpoints publics sont préfixés par `/api/v1/`.
+All public endpoints are prefixed with `/api/v1/`.
 
-Exemples :
+Examples:
 
 ```txt
 https://srv.msgflash.com/api/v1/messages/send
@@ -22,28 +22,28 @@ https://srv.msgflash.com/api/v1/billing/usage
 
 ---
 
-## Authentification
+## Authentication
 
-Toutes les requêtes vers `/api/v1/*` nécessitent une clé API MsgFlash envoyée dans le header `x-api-key`.
+All requests to `/api/v1/*` require a MsgFlash API key in the `x-api-key` header.
 
 ```bash
 curl https://srv.msgflash.com/api/v1/usage \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 
-Voir [Authentification](/authentication) pour le format exact et les règles de sécurité.
+See [Authentication](/authentication) for exact header format and security requirements.
 
 ---
 
 ## Rate limiting
 
-| Limite | Valeur |
+| Limit | Value |
 |---|---|
-| Requêtes par seconde | 10 req/s |
-| Scope | Par clé API |
-| Code d'erreur | `API_RATE_LIMIT_EXCEEDED` |
+| Requests per second | 10 req/s |
+| Scope | Per API key |
+| Error code | `API_RATE_LIMIT_EXCEEDED` |
 
-En cas de dépassement :
+If the limit is exceeded:
 
 ```json
 {
@@ -55,16 +55,16 @@ En cas de dépassement :
 ```
 
 <Note>
-Le rate limit temps réel est distinct du quota mensuel `monthlyApiRequestQuota`. Vous pouvez être sous votre quota mensuel et tout de même recevoir un `429` si vous dépassez 10 req/s.
+The real-time rate limit is separate from the monthly `monthlyApiRequestQuota`. You can stay under your monthly quota and still receive `429` if you exceed 10 req/s.
 </Note>
 
 ---
 
-## Format des réponses
+## Response format
 
-### Succès
+### Success
 
-Toutes les réponses réussies sont enveloppées dans `data`.
+All successful responses are wrapped in `data`.
 
 ```json
 {
@@ -75,7 +75,7 @@ Toutes les réponses réussies sont enveloppées dans `data`.
 }
 ```
 
-Pour les listes simples :
+For simple lists:
 
 ```json
 {
@@ -86,7 +86,7 @@ Pour les listes simples :
 }
 ```
 
-Pour les listes paginées :
+For paginated lists:
 
 ```json
 {
@@ -98,7 +98,7 @@ Pour les listes paginées :
 }
 ```
 
-### Erreur
+### Error
 
 ```json
 {
@@ -109,97 +109,97 @@ Pour les listes paginées :
 }
 ```
 
-Voir [Codes d'erreur](/resources/error-codes) pour les principaux codes.
+See [Error codes](/resources/error-codes) for the main codes.
 
 ---
 
-## Endpoints disponibles
+## Available endpoints
 
 ### Messages
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/messages/send` | Envoyer un message immédiat |
-| `POST` | `/api/v1/messages/schedule` | Planifier un message |
-| `GET` | `/api/v1/messages` | Lister les messages |
-| `GET` | `/api/v1/messages/{id}` | Détail d'un message |
+| `POST` | `/api/v1/messages/send` | Send an instant message |
+| `POST` | `/api/v1/messages/schedule` | Schedule a message |
+| `GET` | `/api/v1/messages` | List messages |
+| `GET` | `/api/v1/messages/{id}` | Message details |
 
-### Campagnes
+### Campaigns
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/campaigns` | Créer une campagne |
-| `GET` | `/api/v1/campaigns/{id}` | Détail d'une campagne |
-| `GET` | `/api/v1/campaigns/{id}/stats` | Statistiques d'exécution |
-| `POST` | `/api/v1/campaigns/{id}/pause` | Pauser une campagne |
-| `POST` | `/api/v1/campaigns/{id}/resume` | Reprendre une campagne |
+| `POST` | `/api/v1/campaigns` | Create a campaign |
+| `GET` | `/api/v1/campaigns/{id}` | Campaign details |
+| `GET` | `/api/v1/campaigns/{id}/stats` | Delivery statistics |
+| `POST` | `/api/v1/campaigns/{id}/pause` | Pause a campaign |
+| `POST` | `/api/v1/campaigns/{id}/resume` | Resume a campaign |
 
 ### Templates
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/v1/templates` | Lister les templates |
-| `POST` | `/api/v1/templates` | Créer un template |
-| `GET` | `/api/v1/templates/{id}` | Détail d'un template |
-| `PUT` | `/api/v1/templates/{id}` | Mettre à jour un template |
-| `DELETE` | `/api/v1/templates/{id}` | Supprimer un template |
-| `POST` | `/api/v1/templates/{id}/preview` | Prévisualiser le rendu d'un template |
+| `GET` | `/api/v1/templates` | List templates |
+| `POST` | `/api/v1/templates` | Create a template |
+| `GET` | `/api/v1/templates/{id}` | Template details |
+| `PUT` | `/api/v1/templates/{id}` | Update a template |
+| `DELETE` | `/api/v1/templates/{id}` | Delete a template |
+| `POST` | `/api/v1/templates/{id}/preview` | Preview a template render |
 
 ### Contacts
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/v1/contacts` | Lister les contacts |
-| `POST` | `/api/v1/contacts` | Créer un contact |
-| `GET` | `/api/v1/contacts/{id}` | Détail d'un contact |
-| `PUT` | `/api/v1/contacts/{id}` | Mettre à jour un contact |
-| `DELETE` | `/api/v1/contacts/{id}` | Supprimer un contact |
-| `POST` | `/api/v1/contacts/bulk-delete` | Supprimer plusieurs contacts |
+| `GET` | `/api/v1/contacts` | List contacts |
+| `POST` | `/api/v1/contacts` | Create a contact |
+| `GET` | `/api/v1/contacts/{id}` | Contact details |
+| `PUT` | `/api/v1/contacts/{id}` | Update a contact |
+| `DELETE` | `/api/v1/contacts/{id}` | Delete a contact |
+| `POST` | `/api/v1/contacts/bulk-delete` | Bulk delete contacts |
 
-### Groupes de contacts
+### Contact groups
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/v1/contacts/groups` | Lister les groupes |
-| `POST` | `/api/v1/contacts/groups` | Créer un groupe |
-| `GET` | `/api/v1/contacts/groups/{groupId}` | Détail d'un groupe |
-| `PUT` | `/api/v1/contacts/groups/{groupId}` | Mettre à jour un groupe |
-| `DELETE` | `/api/v1/contacts/groups/{groupId}` | Supprimer un groupe |
-| `POST` | `/api/v1/contacts/groups/{groupId}/members` | Ajouter des membres |
-| `DELETE` | `/api/v1/contacts/groups/{groupId}/members` | Retirer des membres |
-| `GET` | `/api/v1/contacts/groups/{groupId}/members` | Lister les membres |
-| `GET` | `/api/v1/contacts/{id}/groups` | Lister les groupes d'un contact |
+| `GET` | `/api/v1/contacts/groups` | List groups |
+| `POST` | `/api/v1/contacts/groups` | Create a group |
+| `GET` | `/api/v1/contacts/groups/{groupId}` | Group details |
+| `PUT` | `/api/v1/contacts/groups/{groupId}` | Update a group |
+| `DELETE` | `/api/v1/contacts/groups/{groupId}` | Delete a group |
+| `POST` | `/api/v1/contacts/groups/{groupId}/members` | Add members |
+| `DELETE` | `/api/v1/contacts/groups/{groupId}/members` | Remove members |
+| `GET` | `/api/v1/contacts/groups/{groupId}/members` | List members |
+| `GET` | `/api/v1/contacts/{id}/groups` | List groups for a contact |
 
 ### Webhooks
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/v1/webhooks` | Lister vos endpoints webhook |
-| `POST` | `/api/v1/webhooks` | Créer un endpoint webhook |
-| `DELETE` | `/api/v1/webhooks/{id}` | Supprimer un endpoint webhook |
+| `GET` | `/api/v1/webhooks` | List your webhook endpoints |
+| `POST` | `/api/v1/webhooks` | Create a webhook endpoint |
+| `DELETE` | `/api/v1/webhooks/{id}` | Delete a webhook endpoint |
 
-### Statuts WhatsApp
+### WhatsApp statuses
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/statuses` | Publier un statut WhatsApp |
+| `POST` | `/api/v1/statuses` | Publish a WhatsApp status |
 
 ### Instances
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/v1/instances` | Lister les instances |
-| `GET` | `/api/v1/instances/{id}` | Détail d'une instance |
-| `GET` | `/api/v1/instances/{id}/state` | État live d'une instance |
+| `GET` | `/api/v1/instances` | List instances |
+| `GET` | `/api/v1/instances/{id}` | Instance details |
+| `GET` | `/api/v1/instances/{id}/state` | Live instance state |
 
 ### Billing public read-only
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/v1/usage` | Vue usage compacte compatible |
-| `GET` | `/api/v1/billing/plans` | Catalogue des plans |
-| `GET` | `/api/v1/billing/subscription` | Souscription et période courante |
-| `GET` | `/api/v1/billing/usage` | Usage, limites et features |
-| `GET` | `/api/v1/billing/payments` | Historique des paiements |
+| `GET` | `/api/v1/usage` | Compact usage summary |
+| `GET` | `/api/v1/billing/plans` | Plan catalog |
+| `GET` | `/api/v1/billing/subscription` | Current subscription and billing period |
+| `GET` | `/api/v1/billing/usage` | Usage, limits, and features |
+| `GET` | `/api/v1/billing/payments` | Payment history |
 
 
