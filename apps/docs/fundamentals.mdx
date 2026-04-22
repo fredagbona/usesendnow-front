@@ -1,138 +1,69 @@
 ---
-title: Concepts fondamentaux
-description: Le glossaire essentiel pour comprendre comment fonctionne MsgFlash avant d'intégrer l'API.
+title: Fundamentals
+description: Core concepts to understand MsgFlash before integrating the API.
 ---
 
-## Pourquoi cette page existe
+## Why this page exists
 
-Beaucoup de problèmes d'intégration ne viennent pas du code.
+Most integration issues are not coding issues.
 
-Ils viennent d'une confusion sur les mots :
-- qu'est-ce qu'une instance ?
-- quelle différence entre `instanceId`, `name` et `waNumber` ?
-- qu'est-ce qu'une clé API ?
-- qu'est-ce qu'un webhook ?
-- qu'est-ce qu'un payload ?
+They usually come from unclear terms:
+- what is an instance?
+- what is the difference between `instanceId`, `name`, and `waNumber`?
+- what is an API key?
+- what is a webhook?
+- what is a payload?
 
-Cette page sert de référence simple et permanente pour comprendre l'univers MsgFlash.
-
----
-
-## Vue d'ensemble
-
-MsgFlash relie trois mondes :
-- votre compte MsgFlash
-- votre ou vos numéros WhatsApp connectés
-- vos intégrations techniques comme votre backend, WordPress, Zapier ou d'autres outils
-
-En pratique :
-1. vous créez une **instance WhatsApp**
-2. vous connectez un vrai numéro WhatsApp à cette instance
-3. vous créez une **clé API**
-4. votre code utilise cette clé pour appeler l'API MsgFlash
-5. MsgFlash envoie le message via l'instance choisie
+This page is a compact glossary you can keep open while integrating.
 
 ---
 
-## Instance WhatsApp
+## System overview
 
-### Définition simple
+MsgFlash connects three layers:
+- your MsgFlash account
+- one or more connected WhatsApp numbers
+- your technical integrations (backend, WordPress, Zapier, etc.)
 
-Une **instance WhatsApp** est un numéro WhatsApp connecté à MsgFlash.
-
-Pensez-y comme :
-- brancher un téléphone à la plateforme
-- ou connecter WhatsApp Web à un outil d'automatisation
-
-Chaque instance représente un canal d'envoi distinct.
-
-### Exemple concret
-
-Vous avez deux activités :
-- votre boutique e-commerce
-- votre support client
-
-Vous pouvez avoir :
-- une instance `Boutique principale`
-- une instance `Support`
-
-Chaque instance peut envoyer des messages avec son propre numéro.
-
-### Ce qu'une instance n'est pas
-
-Une instance n'est pas :
-- un utilisateur
-- une clé API
-- un template
-- une campagne
-
-C'est vraiment le numéro WhatsApp connecté.
+Typical flow:
+1. Create a WhatsApp instance
+2. Connect a real WhatsApp number to it
+3. Generate an API key
+4. Call MsgFlash API from your backend
+5. MsgFlash sends through the selected instance
 
 ---
 
-## `instanceId`, `name` et `waNumber`
+## WhatsApp instance
 
-C'est la confusion la plus fréquente.
+A **WhatsApp instance** is a WhatsApp number connected to MsgFlash.
 
-### `instanceId`
+It is **not**:
+- a user
+- an API key
+- a template
+- a campaign
 
-`instanceId` est l'identifiant technique unique d'une instance dans MsgFlash.
+Think of it as an independent sending channel.
 
-C'est cette valeur qu'il faut envoyer dans l'API pour :
-- envoyer un message
-- planifier un message
-- créer une campagne
-- publier un statut
-- lancer certaines opérations comme les number lookups
+---
 
-Exemple :
+## `instanceId` vs `name` vs `waNumber`
 
-```txt
-d6f66e76-9e59-41a5-bba8-a45c7fb72bfc
-```
-
-### `name`
-
-`name` est le nom lisible de l'instance dans le dashboard.
-
-Exemple :
-
-```txt
-Boutique principale
-```
-
-Ce champ sert surtout à l'affichage.
-
-### `waNumber`
-
-`waNumber` est le numéro WhatsApp effectivement connecté à l'instance.
-
-Exemple :
-
-```txt
-2250715516311
-```
-
-Ce champ sert à vérifier quel numéro est branché, mais ce n'est pas lui qu'on envoie comme `instanceId`.
-
-### Règle essentielle
-
-| Champ | Sert à quoi |
+| Field | Meaning |
 |---|---|
-| `instanceId` | valeur technique à envoyer dans l'API |
-| `name` | libellé lisible pour l'interface |
-| `waNumber` | numéro connecté affiché à l'utilisateur |
+| `instanceId` | technical identifier used in API calls |
+| `name` | human-readable label in the dashboard |
+| `waNumber` | connected WhatsApp number |
 
-### Exemple réel
-
-Réponse de `GET /api/v1/instances` :
+Example from `GET /api/v1/instances`:
 
 ```json
 {
   "data": [
     {
       "id": "d6f66e76-9e59-41a5-bba8-a45c7fb72bfc",
-      "name": "Boutique principale",
+      "name": "Main Store",
       "waNumber": "2250715516311",
       "status": "connected"
     }
@@ -140,253 +71,101 @@ Réponse de `GET /api/v1/instances` :
 }
 ```
 
-Dans cet exemple :
-- `id` = la valeur à utiliser comme `instanceId`
-- `name` = le nom affiché à l'écran
-- `waNumber` = le numéro WhatsApp relié à cette instance
-
-### Comment obtenir le bon `instanceId`
-
-1. appelez `GET /api/v1/instances`
-2. choisissez l'instance voulue
-3. récupérez `data[n].id`
-4. utilisez cette valeur dans vos appels
-
-Exemple d'envoi :
-
-```json
-{
-  "instanceId": "d6f66e76-9e59-41a5-bba8-a45c7fb72bfc",
-  "to": "+2250715516311",
-  "type": "text",
-  "text": "Bonjour"
-}
-```
-
-### Erreur classique à éviter
-
-Ne faites pas ceci :
-
-```json
-{
-  "instanceId": "Boutique principale"
-}
-```
-
-ou ceci :
-
-```json
-{
-  "instanceId": "2250715516311"
-}
-```
-
-Dans les deux cas, ce n'est pas un `instanceId`.
+When sending a message, always use `id` as `instanceId`.
 
 ---
 
-## Clé API
+## API key
 
-### Définition simple
+An **API key** is the secret used to authenticate your requests.
 
-Une **clé API** est votre secret pour autoriser un outil ou du code à parler à MsgFlash.
-
-On peut la voir comme :
-- un mot de passe machine-à-machine
-- une carte d'accès pour vos appels API
-
-### Exemple
+Example:
 
 ```txt
 msgf_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-### À quoi elle sert
-
-Elle permet de :
-- authentifier vos requêtes
-- savoir à quel compte elles appartiennent
-- appliquer vos quotas et limites
-
-### Où elle s'utilise
-
-Dans l'header :
+Use it in request headers:
 
 ```txt
 x-api-key: msgf_live_...
 ```
 
-### Ce qu'il ne faut jamais faire
-
-- ne pas l'exposer dans du JavaScript public côté navigateur
-- ne pas la committer dans Git
-- ne pas l'envoyer dans un frontend non sécurisé
-
-Elle doit vivre côté serveur ou dans un backend maîtrisé.
+Never expose it in public browser JavaScript or commit it to git.
 
 ---
 
 ## Webhook
 
-### Définition simple
+A **webhook** is an endpoint in your system that MsgFlash calls automatically when events happen.
 
-Un **webhook** est une URL de votre système que MsgFlash appelle automatiquement quand un événement se produit.
-
-Exemples d'événements :
-- message délivré
-- message lu
-- message reçu
-- statut d'instance modifié
-
-### Image mentale
-
-Sans webhook :
-- votre système doit demander en boucle “est-ce qu'il s'est passé quelque chose ?”
-
-Avec webhook :
-- MsgFlash vous prévient directement
-
-### Exemple
-
-Votre backend expose :
+Example endpoint:
 
 ```txt
-https://mon-app.com/webhooks/msgflash
+https://my-app.com/webhooks/msgflash
 ```
 
-Quand un message est livré, MsgFlash peut envoyer un `POST` à cette URL.
+This replaces polling loops for delivery/read/status events.
 
 ---
 
-## Campagne
+## Campaign vs scheduled message
 
-### Définition simple
+- **Scheduled message**: one recipient, sent later
+- **Campaign**: same message pattern to many recipients
 
-Une **campagne** permet d'envoyer le même message, souvent personnalisé, à plusieurs contacts.
-
-C'est utile pour :
-- une promo
-- une relance
-- une newsletter WhatsApp
-- une communication segmentée
-
-### Important
-
-Une campagne n'est pas juste “une liste de messages”.
-
-Dans MsgFlash, une campagne contient notamment :
-- une instance
-- une date/heure
-- une audience
-- un contenu
-
-### Exemple
-
-Vous envoyez :
-- “Bonjour {{contact.name}}, votre panier vous attend encore.”
-
-à :
-- tous les contacts tagués `panier-abandonne`
-
-Ce n'est qu'une seule campagne, même si 300 messages partent ensuite.
+Campaigns include an instance, audience, content, and timing rules.
 
 ---
 
-## Scheduled message
+## QR code
 
-### Définition simple
+The QR code is used only to connect WhatsApp (like WhatsApp Web).
 
-Un **scheduled message** est un message programmé pour partir plus tard.
+Flow:
+1. Create instance
+2. Scan QR code from phone
+3. Instance becomes connected
 
-Exemple :
-- vous créez un message à 9h
-- vous demandez qu'il parte à 18h
-
-Le message est stocké en file d'attente, puis envoyé plus tard.
-
-### Différence avec une campagne
-
-- message planifié : un seul destinataire
-- campagne : plusieurs destinataires
+It is not a sending method by itself.
 
 ---
 
-## QR Code
+## Quotas
 
-### Définition simple
+A **quota** is a limit from your plan.
 
-Le **QR Code** sert à connecter votre WhatsApp à MsgFlash, comme avec WhatsApp Web.
+Examples:
+- monthly messages
+- monthly API requests
+- max instances
+- max API keys
 
-### Comment ça marche
+Two quota families:
 
-1. vous créez une instance
-2. MsgFlash affiche un QR code
-3. vous le scannez avec WhatsApp sur votre téléphone
-4. le numéro est connecté à la plateforme
-
-### Ce que ça ne fait pas
-
-Le QR code n'est pas un moyen d'envoyer des messages.
-
-C'est uniquement la phase de connexion.
-
----
-
-## Quota
-
-### Définition simple
-
-Le **quota** est la limite d'utilisation autorisée par votre plan.
-
-Exemples de quotas :
-- nombre de messages par mois
-- nombre de requêtes API par mois
-- nombre d'instances
-- nombre de clés API
-
-### Exemple concret
-
-Si votre plan autorise :
-- `20` messages mensuels
-
-et que vous avez déjà envoyé :
-- `12`
-
-il vous reste :
-- `8`
-
-### Important
-
-Les quotas ne sont pas tous de la même nature :
-
-| Type | Exemple |
+| Type | Example |
 |---|---|
-| quota mensuel | messages, statuts, requêtes API |
-| limite de capacité | nombre d'instances, clés API, webhooks |
+| monthly quotas | messages, statuses, API requests |
+| capacity limits | instances, API keys, webhooks |
 
 ---
 
 ## Payload
 
-### Définition simple
+A **payload** is the JSON body sent to or returned by the API.
 
-Le **payload** est le contenu exact que vous envoyez à l'API, ou que vous recevez d'elle.
-
-En d'autres termes :
-- c'est le corps JSON d'une requête ou d'une notification
-
-### Exemple de payload d'envoi
+Example send payload:
 
 ```json
 {
   "instanceId": "d6f66e76-9e59-41a5-bba8-a45c7fb72bfc",
   "to": "+2250715516311",
   "type": "text",
-  "text": "Bonjour"
+  "text": "Hello"
 }
 ```
 
-### Exemple de payload webhook
+Example webhook payload:
 
 ```json
 {
@@ -400,131 +179,22 @@ En d'autres termes :
 
 ---
 
-## Template
+## Quick glossary
 
-### Définition simple
-
-Un **template** est un modèle de message réutilisable.
-
-Il peut contenir :
-- du texte
-- parfois un média
-- des variables dynamiques
-
-### Exemple
-
-```txt
-Bonjour {{contact.name}}, votre commande {{custom.orderId}} a été validée.
-```
-
-Le template est stocké une fois, puis réutilisé dans plusieurs envois.
+- **Instance**: connected WhatsApp number
+- **instanceId**: technical ID to send in API calls
+- **API key**: secret used for auth
+- **Webhook**: URL called by MsgFlash on events
+- **Campaign**: one operation targeting many contacts
+- **Scheduled message**: delayed single-recipient message
+- **Quota**: allowed usage limits
+- **Payload**: JSON body in requests/responses
 
 ---
 
-## Contact
+## Go further
 
-### Définition simple
-
-Un **contact** est une personne ou un numéro enregistré dans votre espace MsgFlash.
-
-Il peut avoir :
-- un nom
-- un téléphone
-- des tags
-- des groupes
-
-Les contacts servent beaucoup pour :
-- les campagnes
-- les segments
-- les imports CSV
-
----
-
-## Groupe de contacts
-
-### Définition simple
-
-Un **groupe de contacts** est une liste organisée de contacts.
-
-Exemple :
-- Clients VIP
-- Panier abandonné
-- Support premium
-
-Cela permet de cibler facilement une audience dans les campagnes.
-
----
-
-## Différence entre API publique et dashboard
-
-### Dashboard
-
-Le **dashboard** sert à :
-- connecter WhatsApp
-- créer les instances
-- gérer la facturation
-- gérer les clés API
-- gérer les contacts, templates et campagnes
-
-### API publique
-
-L’**API publique** sert à :
-- envoyer des messages depuis votre code
-- lire vos ressources
-- créer des campagnes
-- automatiser votre intégration
-
-En pratique :
-- dashboard = configuration et pilotage
-- API = automatisation
-
----
-
-## Scénario complet simple
-
-Voici le cycle normal d'un nouvel utilisateur :
-
-1. créer un compte MsgFlash
-2. créer une instance WhatsApp
-3. connecter le numéro via QR code
-4. générer une clé API
-5. appeler `GET /api/v1/instances`
-6. récupérer `data[0].id`
-7. utiliser cette valeur comme `instanceId`
-8. envoyer un message avec `POST /api/v1/messages/send`
-
----
-
-## Résumé ultra-court
-
-Si tu ne retiens que ça :
-
-- **instance WhatsApp** = un numéro connecté à MsgFlash
-- **instanceId** = l'identifiant technique à envoyer à l'API
-- **name** = le nom lisible de l'instance
-- **waNumber** = le vrai numéro connecté
-- **clé API** = le secret pour appeler l'API
-- **webhook** = l'URL que MsgFlash appelle pour te notifier
-- **campagne** = un envoi à plusieurs contacts
-- **scheduled message** = un message prévu pour plus tard
-- **quota** = ta limite d'usage
-- **payload** = le JSON envoyé ou reçu
-
----
-
-## Aller plus loin
-
-<CardGroup cols={2}>
-  <Card title="Démarrage rapide" icon="rocket" href="/quickstart">
-    Lancez votre première intégration en quelques minutes.
-  </Card>
-  <Card title="Instances WhatsApp" icon="message" href="/guides/instances">
-    Comprendre comment récupérer et utiliser la bonne instance.
-  </Card>
-  <Card title="Envoyer un message" icon="paper-plane" href="/guides/send-message">
-    Voir les vrais payloads d'envoi les plus courants.
-  </Card>
-  <Card title="Webhooks" icon="webhook" href="/guides/webhooks">
-    Recevoir les événements MsgFlash dans votre système.
-  </Card>
-</CardGroup>
+- [Quickstart](/quickstart)
+- [Guide: Instances](/guides/instances)
+- [Guide: Send message](/guides/send-message)
+- [Guide: Webhooks](/guides/webhooks)
