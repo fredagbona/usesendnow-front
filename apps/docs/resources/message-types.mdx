@@ -1,9 +1,9 @@
 ---
-title: Types de messages
-description: Référence des types de messages supportés par MsgFlash, de leurs champs et de leur usage avec les templates.
+title: Message types
+description: Reference of message types supported by MsgFlash, their fields, and how they are used with templates.
 ---
 
-## Vue d'ensemble
+## Overview
 
 | Type | Description | Champ principal requis |
 |---|---|---|
@@ -29,9 +29,9 @@ Les endpoints `POST /api/v1/messages/send` et `POST /api/v1/messages/schedule` s
 
 ---
 
-## Envoi libre vs envoi via template
+## Direct send vs template send
 
-### Mode libre
+### Direct mode
 
 Vous fournissez directement `type` et les champs associés.
 
@@ -44,7 +44,7 @@ Vous fournissez directement `type` et les champs associés.
 }
 ```
 
-### Mode template
+### Template mode
 
 Vous fournissez `templateId` et, si nécessaire, des variables `custom.*`.
 
@@ -210,7 +210,7 @@ Le `contactId` doit appartenir à votre compte MsgFlash.
 
 ---
 
-## Champs communs
+## Common fields
 
 | Champ | Type | Requis | Description |
 |---|---|---|---|
@@ -224,7 +224,7 @@ Le `contactId` doit appartenir à votre compte MsgFlash.
 
 ---
 
-## Templates media
+## Media templates
 
 Un template peut être de type :
 - `text`
