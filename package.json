@@ -8,8 +8,16 @@
     "dev:admin": "turbo dev --filter=admin",
     "build": "turbo build --filter=!docs",
     "build:portal": "turbo build --filter=portal",
+    "build:admin": "turbo build --filter=admin", 
+    "build:landing": "turbo build --filter=landing",
     "lint": "turbo lint --filter=!docs",
-    "type-check": "turbo type-check --filter=!docs"
+    "lint:landing": "turbo lint --filter=landing",
+    "lint:portal": "turbo lint --filter=portal",
+    "lint:admin": "turbo lint --filter=admin",
+    "type-check": "turbo type-check --filter=!docs",
+    "type-check:landing": "turbo type-check --filter=landing",
+    "type-check:portal": "turbo type-check --filter=portal",
+    "type-check:admin": "turbo type-check --filter=admin"
   },
   "devDependencies": {
     "turbo": "latest"

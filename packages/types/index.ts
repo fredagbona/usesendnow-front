@@ -802,3 +802,122 @@ export interface ApiResponse<T> {
   data?: T
   error?: ApiError
 }
+
+// ─── Admin ───────────────────────────────────────────────────────────────────
+
+export interface AdminIdentity {
+  id: string
+  fullName: string
+  email: string
+  role: "super_admin" | "operator" | string
+  status: "active" | "suspended" | string
+  lastLoginAt?: string | null
+}
+
+export interface AdminOverviewSummary {
+  totalUsers: number
+  newUsers: number
+  activeUsers: number
+  connectedInstances: number
+  activeApiKeys: number
+  totalRequests: number
+  publicApiRequests: number
+  dashboardRequests: number
+  adminRequests: number
+  outboundMessages: number
+  failedMessages: number
+  campaignsCreated: number
+}
+
+export interface AdminSeriesPoint {
+  timestamp: string
+  value: number
+}
+
+export interface AdminOverviewResponse {
+  summary: AdminOverviewSummary
+  series: {
+    requests: AdminSeriesPoint[]
+    messages: AdminSeriesPoint[]
+    campaigns: AdminSeriesPoint[]
+  }
+  breakdowns?: {
+    planDistribution?: Array<{ key: string; count: number }>
+    subscriptionStatusDistribution?: Array<{ key: string; count: number }>
+  }
+}
+
+export interface AdminUserRow {
+  id: string
+  fullName: string
+  email: string
+  status: string
+  emailVerified: boolean
+  planCode: string
+  planName: string
+  subscriptionStatus: string
+  instanceCount: number
+  activeApiKeyCount: number
+  messagesThisMonth: number
+  apiRequestsThisMonth: number
+  createdAt: string
+  lastActivityAt: string | null
+}
+
+export interface AdminPaginatedRows<T> {
+  rows: T[]
+  total: number
+}
+
+export interface AdminRequestLogRow {
+  requestAt: string
+  source: "publicApi" | "dashboard" | "admin" | string
+  method: string
+  path: string
+  statusCode: number
+  latencyMs: number
+  ipAddress: string | null
+  userId: string | null
+  adminUserId: string | null
+  apiKeyId: string | null
+  apiKeyName: string | null
+  errorCode: string | null
+}
+
+export interface AdminApiKeyRow {
+  id: string
+  userId: string
+  name: string
+  keyPrefix: string
+  requestCount: number
+  lastRequestAt: string | null
+  revokedAt: string | null
+  createdAt: string
+}
+
+export interface AdminAnalyticsSummary {
+  [key: string]: number
+}
+
+export interface AdminAnalyticsResponse {
+  summary: AdminAnalyticsSummary
+  series?: Array<{ timestamp: string; value: number }>
+  breakdowns?: Record<string, Array<{ key: string; count: number }>>
+  rows: Record<string, unknown>[]
+}
+
+export interface AdminActionLogRow {
+  id: string
+  createdAt: string
+  adminUserId: string
+  action: string
+  targetType: string
+  targetId: string
+  reason: string
+  note?: string | null
+}
+
+export interface AdminActionPayload {
+  reason: string
+  note?: string
+}

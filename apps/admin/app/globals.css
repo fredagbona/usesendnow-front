@@ -1,18 +1,101 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f5f5;
-  --foreground: #0a0a0a;
+  --portal-primary: #ffd600;
+  --portal-primary-hover: #e0bc00;
+  --portal-primary-subtle: #fff8cc;
+  --portal-primary-text: #5c4c00;
+  --portal-primary-ink: #7a5d00;
+
+  --portal-secondary: #0a0a0a;
+  --portal-secondary-hover: #1a1a1a;
+  --portal-secondary-subtle: #f5f5f5;
+  --portal-secondary-text: #0a0a0a;
+
+  --portal-bg: #ffffff;
+  --portal-bg-subtle: #f8f8f6;
+  --portal-bg-muted: #f2f2ee;
+  --portal-border: #e3e1d7;
+  --portal-border-strong: #c7c4b8;
+  --portal-text: #0a0a0a;
+  --portal-text-body: #1a1a1a;
+  --portal-text-secondary: #666666;
+  --portal-text-muted: #8a8a8a;
+  --portal-error: #ef4444;
+  --portal-error-subtle: #fef2f2;
+  --portal-warning: #f59e0b;
+  --portal-warning-subtle: #fffbeb;
+  --portal-warning-text: #b45309;
+  --background: var(--portal-bg-subtle);
+  --foreground: var(--portal-text);
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+html[data-theme="dark"] {
+  --portal-primary: #ffd600;
+  --portal-primary-hover: #ffe14d;
+  --portal-primary-subtle: #2b2400;
+  --portal-primary-text: #ffe14d;
+  --portal-primary-ink: #ffe14d;
+  --portal-secondary: #f5f5f5;
+  --portal-secondary-hover: #ffffff;
+  --portal-secondary-subtle: #151515;
+  --portal-secondary-text: #f5f5f5;
+  --portal-bg: #0a0a0a;
+  --portal-bg-subtle: #111111;
+  --portal-bg-muted: #1a1a1a;
+  --portal-border: #2a2a2a;
+  --portal-border-strong: #3b3b3b;
+  --portal-text: #f5f5f5;
+  --portal-text-body: #ececec;
+  --portal-text-secondary: #b5b5b5;
+  --portal-text-muted: #8d8d8d;
+  --portal-error: #ef4444;
+  --portal-error-subtle: #261313;
+  --portal-warning: #f59e0b;
+  --portal-warning-subtle: #231a05;
+  --portal-warning-text: #fbbf24;
+  --background: var(--portal-bg-subtle);
+  --foreground: var(--portal-text);
+  color-scheme: dark;
+}
+
+@theme {
+  --color-primary: var(--portal-primary);
+  --color-primary-hover: var(--portal-primary-hover);
+  --color-primary-subtle: var(--portal-primary-subtle);
+  --color-primary-text: var(--portal-primary-text);
+  --color-primary-ink: var(--portal-primary-ink);
+  --color-secondary: var(--portal-secondary);
+  --color-secondary-subtle: var(--portal-secondary-subtle);
+  --color-secondary-text: var(--portal-secondary-text);
+  --color-bg: var(--portal-bg);
+  --color-bg-subtle: var(--portal-bg-subtle);
+  --color-bg-muted: var(--portal-bg-muted);
+  --color-border: var(--portal-border);
+  --color-border-strong: var(--portal-border-strong);
+  --color-text: var(--portal-text);
+  --color-text-body: var(--portal-text-body);
+  --color-text-secondary: var(--portal-text-secondary);
+  --color-text-muted: var(--portal-text-muted);
+  --color-error: var(--portal-error);
+  --color-error-subtle: var(--portal-error-subtle);
+  --color-warning: var(--portal-warning);
+  --color-warning-subtle: var(--portal-warning-subtle);
+  --color-warning-text: var(--portal-warning-text);
+  --font-display: var(--font-geist-sans), "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-poppins), "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-poppins), Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
 }
