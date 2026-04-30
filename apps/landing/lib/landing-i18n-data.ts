@@ -3,6 +3,7 @@ export type LandingLocale = "fr" | "en"
 type LandingMessages = {
   nav: {
     features: string
+    campaigns: string
     pricing: string
     faq: string
     docs: string
@@ -34,7 +35,8 @@ type LandingMessages = {
     title: string
     subtitle: string
     primaryCta: string
-    hook: string
+    h1: string
+    heroAccent: string
     description: string
     statsBoutiques: string
     statsMessages: string
@@ -45,6 +47,26 @@ type LandingMessages = {
     tipQuote: string
     pillarsTitle: string
     pillars: Array<{ eyebrow: string; title: string; description: string; result: string }>
+    h2AbandonedTitle: string
+    h2AbandonedBody: string
+    h2OrdersTitle: string
+    h2OrdersBody: string
+  }
+  homeSeo: {
+    developerH2: string
+    integrationH2: string
+    integrationBody: string
+  }
+  campaigns: {
+    metaTitle: string
+    metaDescription: string
+    eyebrow: string
+    heroTitle: string
+    heroLead: string
+    primaryCta: string
+    secondaryCta: string
+    blocks: Array<{ title: string; body: string }>
+    closingTitle: string
   }
   pricing: {
     useCasesTitle: string
@@ -82,6 +104,7 @@ type LandingMessages = {
     designCredit: string
     links: {
       automations: string
+      campaigns: string
       wordpress: string
       pricing: string
       api: string
@@ -141,6 +164,7 @@ type LandingMessages = {
 const FR: LandingMessages = {
   nav: {
     features: "Fonctionnalités",
+    campaigns: "Campagnes",
     pricing: "Tarifs",
     faq: "FAQ",
     docs: "Documentation",
@@ -150,26 +174,27 @@ const FR: LandingMessages = {
     language: "Langue",
   },
   hero: {
-    title: "L’API WHATSAPP LA PLUS SIMPLE POUR LANCER VOS AUTOMATISATIONS",
-    description: "Connectez un numéro WhatsApp, envoyez des messages, lancez des campagnes et intégrez vos outils favoris en quelques minutes.",
+    title: "API WHATSAPP POUR DÉVELOPPEURS — REST, WEBHOOKS, SANS APPROBATION META",
+    description:
+      "Envoyez des messages WhatsApp via une API REST, sans parcours BSP. Webhooks fiables, connexion par QR code, intégration n8n, Zapier et Make — pour une automatisation WhatsApp orientée produit.",
     primaryCta: "Commencer",
     secondaryCta: "Voir la documentation",
   },
-  logos: ["API REST simple", "Webhook events", "Messages texte + médias", "Connexion rapide"],
+  logos: ["API REST WhatsApp", "Webhooks & événements", "Messages texte + médias", "QR code & intégration rapide"],
   features: {
-    title: "Construisez rapidement vos automatisations WhatsApp",
+    title: "Automatisation WhatsApp par API — pensée pour les développeurs",
     cards: [
-      { title: "Envoyer des messages", description: "Un point unique pour vos messages textuels, médias et réponses simples." },
-      { title: "Planifier des envois", description: "Déclenchez vos campagnes et vos rappels depuis une API claire et rapide." },
-      { title: "Lancer des campagnes", description: "Gérez vos listes de diffusion et suivez les performances en temps réel." },
-      { title: "Recevoir des événements", description: "Récupérez vos webhooks pour chaque livraison ou réponse utilisateur." },
-      { title: "Connecter vos outils", description: "Branchez votre backend, n8n, Zapier, Make ou vos workflows internes sans friction." },
+      { title: "Envoyer des messages", description: "Un seul endpoint REST pour texte, médias et réponses — idéal pour envoyer des messages WhatsApp depuis votre backend." },
+      { title: "Planifier des envois", description: "Déclenchez campagnes et rappels depuis une API prévisible, sans couche BSP inutile." },
+      { title: "Lancer des campagnes", description: "Listes de diffusion, suivi d’envoi et pilotage depuis l’API ou le portail." },
+      { title: "Intégration webhooks WhatsApp", description: "Recevez livraisons, réponses et erreurs en temps réel pour orchestrer vos workflows." },
+      { title: "n8n, Zapier, Make & backend", description: "Branchez n8n, Zapier, Make ou votre code : la même API REST pour tous vos scénarios." },
     ],
-    reasonsTitle: "Pourquoi utiliser notre plateforme plutôt que bricoler ?",
+    reasonsTitle: "Pourquoi les équipes tech choisissent msgflash",
     reasons: [
-      { title: "API simple", text: "Une documentation claire et des endpoints directs, sans détour." },
-      { title: "Connexion rapide", text: "Scannez le QR Code et mettez votre intégration en ligne rapidement." },
-      { title: "Webhooks utiles", text: "Recevez les livraisons, réponses et erreurs dès qu'elles arrivent." },
+      { title: "API simple", text: "Documentation claire, endpoints REST directs — moins de friction qu’avec une plateforme BSP classique." },
+      { title: "QR code & instance", text: "Connectez un numéro via QR code et passez en production sans attendre une validation Meta complexe." },
+      { title: "Webhooks utiles", text: "Intégration webhook WhatsApp pour livraisons, réponses et statuts — branchée sur votre observabilité." },
       { title: "Pensé pour les makers", text: "Compatible avec vos outils backend, no-code et automatisations." },
       { title: "Tarification lisible", text: "Pas de licence cachée, pas de surcoût de plateforme surprise." },
       { title: "Trajectoire solide", text: "Pour un bot simple, une campagne ou un orchestrateur plus complet." },
@@ -190,8 +215,11 @@ const FR: LandingMessages = {
     title: "WordPress x msgflash",
     subtitle: "Le plugin WordPress qui transforme WooCommerce en canal WhatsApp piloté par revenu.",
     primaryCta: "Télécharger le Plugin (Gratuit)",
-    hook: "L'ancien marketing WooCommerce est mort. Récupérez 15% de votre CA via WhatsApp.",
-    description: "Ne laissez plus vos paniers abandonnés au hasard des emails. Connectez msgflash à votre boutique en 4 minutes 27 secondes.",
+    h1: "Extension WooCommerce WhatsApp gratuite — relance panier abandonné & notifications de commande",
+    heroAccent:
+      "Récupérez jusqu’à 15% du chiffre d’affaires : relance panier, suivi commande et coupons — le tout sur WhatsApp, sans dépendre seul de l’email.",
+    description:
+      "Plugin WooCommerce WhatsApp gratuit : récupérez les paniers abandonnés, envoyez le suivi de commande et multipliez l’usage des coupons. Installation en moins de 5 minutes.",
     statsBoutiques: "Déjà 1 237 boutiques",
     statsMessages: "41 237 messages / 24h",
     license: "GPL v2 Licensed • WordPress Official Partner",
@@ -205,6 +233,48 @@ const FR: LandingMessages = {
       { eyebrow: "Suivi expédition", title: "Suivi de commande instantané", description: "Dès qu'une commande passe en expédiée, le client reçoit son numéro de suivi cliquable sur WhatsApp.", result: "-40% de tickets support" },
       { eyebrow: "Coupon bienvenue", title: "Lead magnet WhatsApp", description: "À chaque nouvelle inscription client, envoyez automatiquement un coupon de bienvenue directement dans WhatsApp.", result: "3x plus d'utilisation qu'un coupon email" },
     ],
+    h2AbandonedTitle: "Récupérez les paniers abandonnés sur WhatsApp — automatiquement",
+    h2AbandonedBody:
+      "Les boutiques cherchent une solution WooCommerce panier abandonné WhatsApp : msgflash envoie la relance au bon moment, avec un message lu presque instantanément — idéal pour augmenter le taux de récupération sans spammer l’email.",
+    h2OrdersTitle: "Notifications de commande WooCommerce via WhatsApp",
+    h2OrdersBody:
+      "Prévenez vos clients quand la commande est confirmée, expédiée ou livrée : notifications de commande WooCommerce claires, traçables et moins coûteuses en support que l’email seul.",
+  },
+  homeSeo: {
+    developerH2: "API WhatsApp sans parcours BSP classique — pour développeurs & makers",
+    integrationH2: "Webhooks WhatsApp & envoi via API REST",
+    integrationBody:
+      "Construisez votre intégration webhook WhatsApp, recevez les accusés et réponses, et déclenchez vos scénarios (CRM, helpdesk, data) depuis une API REST documentée — compatible n8n, Zapier et Make.",
+  },
+  campaigns: {
+    metaTitle: "Outil campagnes & diffusion WhatsApp | msgflash",
+    metaDescription:
+      "Campagnes WhatsApp, envois groupés et pilotage marketing : msgflash pour les équipes growth qui veulent des broadcasts sans se perdre dans une stack BSP. Essayez gratuitement.",
+    eyebrow: "Marketing & growth",
+    heroTitle: "Campagnes WhatsApp, diffusions et automation marketing",
+    heroLead:
+      "Pensez msgflash comme votre outil de campagnes WhatsApp : listes, envois, suivi — sans abandonner une API propre pour vos équipes produit quand elles en ont besoin.",
+    primaryCta: "Créer un compte",
+    secondaryCta: "Documentation",
+    blocks: [
+      {
+        title: "Outil de campagne broadcast WhatsApp",
+        body: "Ciblez une liste, lancez une campagne et suivez les retours : conçu pour les équipes qui cherchent un outil campagne broadcast WhatsApp sans friction opérationnelle.",
+      },
+      {
+        title: "Envoyer des campagnes sans parcours Meta lourd",
+        body: "Même angle que pour l’API : démarrez vite, connectez votre numéro et pilotez vos envois — pour ceux qui veulent envoyer des campagnes WhatsApp sans Meta bloquant le quotidien.",
+      },
+      {
+        title: "Messaging de masse & automation marketing",
+        body: "Du message unitaire à la série programmée : une base unique pour le messaging de masse WhatsApp et l’automation marketing reliée à vos événements métier.",
+      },
+      {
+        title: "Analytique des campagnes",
+        body: "Livraisons, lectures et erreurs remontent dans le portail et via webhooks pour alimenter vos tableaux de bord — des métriques utiles pour ajuster vos campagnes.",
+      },
+    ],
+    closingTitle: "Prêt à lancer votre prochaine campagne WhatsApp ?",
   },
   pricing: {
     useCasesTitle: "Cas d’usage concrets",
@@ -253,6 +323,7 @@ const FR: LandingMessages = {
     designCredit: "Designed by Website24h",
     links: {
       automations: "Automations",
+      campaigns: "Campagnes",
       wordpress: "WordPress",
       pricing: "Tarifs",
       api: "API",
@@ -312,6 +383,7 @@ const FR: LandingMessages = {
 const EN: LandingMessages = {
   nav: {
     features: "Features",
+    campaigns: "Campaigns",
     pricing: "Pricing",
     faq: "FAQ",
     docs: "Documentation",
@@ -321,26 +393,27 @@ const EN: LandingMessages = {
     language: "Language",
   },
   hero: {
-    title: "THE EASIEST WHATSAPP API TO LAUNCH YOUR AUTOMATIONS",
-    description: "Connect a WhatsApp number, send messages, launch campaigns, and plug into your favorite tools in minutes.",
+    title: "WHATSAPP API FOR DEVELOPERS — REST, WEBHOOKS, NO META APPROVAL HASSLE",
+    description:
+      "Send WhatsApp messages via a REST API without a heavy BSP workflow. Reliable webhooks, QR code onboarding, and native fits for n8n, Zapier, and Make — built for product-minded automation.",
     primaryCta: "Get started",
     secondaryCta: "View documentation",
   },
-  logos: ["Simple REST API", "Webhook events", "Text + media messages", "Fast connection"],
+  logos: ["WhatsApp REST API", "Webhooks & events", "Text + media messages", "QR code & fast connect"],
   features: {
-    title: "Build WhatsApp automations quickly",
+    title: "WhatsApp automation API built for developers",
     cards: [
-      { title: "Send messages", description: "A single place for text messages, media, and simple replies." },
-      { title: "Schedule sends", description: "Trigger campaigns and reminders through a clear and fast API." },
-      { title: "Launch campaigns", description: "Manage broadcast lists and monitor performance in real time." },
-      { title: "Receive events", description: "Capture webhooks for every delivery or user reply." },
-      { title: "Connect your tools", description: "Plug in your backend, n8n, Zapier, Make, or internal workflows without friction." },
+      { title: "Send messages", description: "One REST surface for text, media, and replies — the straightforward way to send WhatsApp messages from your backend." },
+      { title: "Schedule sends", description: "Trigger campaigns and reminders through a predictable API without a bulky BSP layer." },
+      { title: "Launch campaigns", description: "Manage broadcast lists, track sends, and operate from the API or the console." },
+      { title: "WhatsApp webhook integration", description: "Stream deliveries, replies, and failures in real time to orchestrate your own workflows." },
+      { title: "n8n, Zapier, Make & your stack", description: "Wire n8n, Zapier, Make, or custom code to the same REST API and webhook events." },
     ],
-    reasonsTitle: "Why use our platform instead of hacking it together?",
+    reasonsTitle: "Why engineering teams pick msgflash",
     reasons: [
-      { title: "Simple API", text: "Clear docs and direct endpoints, no detours." },
-      { title: "Fast setup", text: "Scan the QR Code and get your integration live quickly." },
-      { title: "Useful webhooks", text: "Receive deliveries, replies, and errors as soon as they happen." },
+      { title: "Simple API", text: "Readable docs and direct REST endpoints — less ceremony than a classic BSP platform." },
+      { title: "QR code onboarding", text: "Connect a number with a QR code flow and ship without waiting on a drawn-out Meta approval path." },
+      { title: "Useful webhooks", text: "WhatsApp webhook integration for deliveries, replies, and statuses, ready for your observability stack." },
       { title: "Built for makers", text: "Compatible with backend, no-code, and automation tools." },
       { title: "Clear pricing", text: "No hidden license, no surprise platform surcharge." },
       { title: "Solid path", text: "For a simple bot, a campaign, or a more complete orchestrator." },
@@ -361,8 +434,11 @@ const EN: LandingMessages = {
     title: "WordPress x msgflash",
     subtitle: "The WordPress plugin that turns WooCommerce into a revenue-driven WhatsApp channel.",
     primaryCta: "Download the plugin (Free)",
-    hook: "The old WooCommerce marketing playbook is dead. Recover 15% of your revenue via WhatsApp.",
-    description: "Stop leaving abandoned carts to email alone. Connect msgflash to your store in 4 minutes 27 seconds.",
+    h1: "The Free WooCommerce WhatsApp Plugin for Abandoned Cart Recovery & Order Notifications",
+    heroAccent:
+      "Recover up to 15% of revenue: cart recovery, order tracking, and coupons — all on WhatsApp instead of relying on email alone.",
+    description:
+      "Free WooCommerce WhatsApp plugin: recover abandoned carts, send order tracking messages, and boost coupon usage up to 3x. Set up in under 5 minutes.",
     statsBoutiques: "Already 1,237 stores",
     statsMessages: "41,237 messages / 24h",
     license: "GPL v2 Licensed • WordPress Official Partner",
@@ -376,6 +452,48 @@ const EN: LandingMessages = {
       { eyebrow: "Shipping follow-up", title: "Instant order tracking", description: "When an order is marked shipped, the customer receives a clickable tracking number on WhatsApp.", result: "-40% support tickets" },
       { eyebrow: "Lead magnet", title: "WhatsApp lead magnet", description: "On every new customer signup, send a welcome coupon directly through WhatsApp.", result: "3x higher coupon use than email" },
     ],
+    h2AbandonedTitle: "Recover Abandoned Carts on WhatsApp — Automatically",
+    h2AbandonedBody:
+      "Store owners search for WooCommerce abandoned cart WhatsApp solutions: msgflash sends the nudge when it matters, on a channel people actually read — higher recovery without spamming inboxes.",
+    h2OrdersTitle: "Send WooCommerce Order Notifications via WhatsApp",
+    h2OrdersBody:
+      "Confirmations, shipped, and delivery updates become clear WhatsApp order notifications for WooCommerce — fewer “where is my order?” tickets than email-only workflows.",
+  },
+  homeSeo: {
+    developerH2: "WhatsApp API without a classic BSP approval maze — built for developers",
+    integrationH2: "WhatsApp webhook integration & REST sends",
+    integrationBody:
+      "Ship WhatsApp webhook integration for deliveries and replies, trigger automations from REST, and plug into n8n, Zapier, or Make — one documented API for builders and operators.",
+  },
+  campaigns: {
+    metaTitle: "WhatsApp broadcast & campaign tool for marketing teams | msgflash",
+    metaDescription:
+      "Run WhatsApp broadcast campaigns, bulk sends, and marketing automation with delivery analytics — without giving up a clean API when your product team needs it. Start free.",
+    eyebrow: "Marketing & growth",
+    heroTitle: "WhatsApp broadcast campaigns, bulk sends, and marketing automation",
+    heroLead:
+      "msgflash is your WhatsApp broadcast campaign tool: lists, sends, and reporting — while staying API-first when engineering wants control.",
+    primaryCta: "Create an account",
+    secondaryCta: "Documentation",
+    blocks: [
+      {
+        title: "WhatsApp broadcast campaign tool",
+        body: "Target a list, launch a broadcast, and watch results roll in — built for teams searching for a WhatsApp broadcast campaign tool that still fits a modern stack.",
+      },
+      {
+        title: "Send WhatsApp campaigns without Meta friction",
+        body: "Same philosophy as our developer API: connect fast, operate your sends, and avoid getting stuck in heavyweight BSP processes for day-to-day campaigns.",
+      },
+      {
+        title: "Bulk messaging & marketing automation",
+        body: "From one-off promos to sequenced follow-ups — one foundation for WhatsApp bulk messaging and marketing automation tied to real business events.",
+      },
+      {
+        title: "WhatsApp campaign analytics",
+        body: "Deliveries, reads, and failures surface in the console and webhooks so you can feed dashboards — practical WhatsApp campaign analytics for iterating fast.",
+      },
+    ],
+    closingTitle: "Ready to launch your next WhatsApp campaign?",
   },
   pricing: {
     useCasesTitle: "Concrete use cases",
@@ -424,6 +542,7 @@ const EN: LandingMessages = {
     designCredit: "Designed by Website24h",
     links: {
       automations: "Automations",
+      campaigns: "Campaigns",
       wordpress: "WordPress",
       pricing: "Pricing",
       api: "API",

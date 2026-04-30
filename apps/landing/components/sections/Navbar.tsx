@@ -15,9 +15,10 @@ export function Navbar({}: NavbarProps) {
   const { locale, setLocale, messages } = useLandingI18n()
 
   const navLinks = [
-    { label: messages.nav.features, href: "#fonctionnalites" },
-    { label: messages.nav.pricing, href: "#tarifs" },
-    { label: messages.nav.faq, href: "#faq" },
+    { label: messages.nav.features, href: landingBrand.homeAnchors.features },
+    { label: messages.nav.campaigns, href: landingBrand.campaignsUrl },
+    { label: messages.nav.pricing, href: landingBrand.homeAnchors.pricing },
+    { label: messages.nav.faq, href: landingBrand.homeAnchors.faq },
     { label: messages.nav.docs, href: landingBrand.docsUrl },
   ]
 

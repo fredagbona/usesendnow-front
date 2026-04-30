@@ -17,7 +17,7 @@ import { useLandingI18n } from "../../lib/landing-i18n"
 interface ConfigurationStepsProps {}
 
 export function ConfigurationSteps({}: ConfigurationStepsProps) {
-  const { messages } = useLandingI18n()
+  const { messages, locale } = useLandingI18n()
   const steps = [
     {
       number: messages.howItWorks.steps[0].number,
@@ -25,11 +25,15 @@ export function ConfigurationSteps({}: ConfigurationStepsProps) {
       icon: Link01Icon,
       description: (
         <>
-          Téléchargez le plugin msgflash depuis le répertoire officiel WordPress ou{" "}
+          {locale === "en"
+            ? "Download the msgflash plugin from the official WordPress directory or "
+            : "Téléchargez le plugin msgflash depuis le répertoire officiel WordPress ou "}
           <a href="/msgflash-v1.0.0.zip" className="text-[#FFD600] underline underline-offset-2 hover:text-[#FFE044]">
-            ici
+            {locale === "en" ? "here" : "ici"}
           </a>
-          . Une fois activé, collez votre Clé API unique (disponible depuis votre dashboard msgflash) pour lier votre instance WhatsApp à votre site.
+          {locale === "en"
+            ? ". Once activated, paste your unique API key (available in your msgflash dashboard) to connect your WhatsApp instance to your store."
+            : ". Une fois activé, collez votre Clé API unique (disponible depuis votre dashboard msgflash) pour lier votre instance WhatsApp à votre site."}
         </>
       ),
     },
@@ -38,34 +42,42 @@ export function ConfigurationSteps({}: ConfigurationStepsProps) {
       title: messages.howItWorks.steps[1].title,
       icon: ShoppingCart02Icon,
       description:
-        "Pour garantir la livraison de vos messages, assurez-vous que vos clients renseignent leur numéro :",
+        locale === "en"
+          ? "To guarantee message delivery, make sure your customers provide a phone number:"
+          : "Pour garantir la livraison de vos messages, assurez-vous que vos clients renseignent leur numéro :",
       checklist: [
-        "Allez dans Apparence > Personnaliser.",
-        "Section WooCommerce > Validation de la commande ou Commander.",
-        "Réglez le champ Téléphone sur \"Obligatoire\".",
-        "Le plugin msgflash ajoutera automatiquement la mention \"(WhatsApp)\" pour rassurer vos clients.",
+        locale === "en" ? "Go to Appearance > Customize." : "Allez dans Apparence > Personnaliser.",
+        locale === "en"
+          ? "Open WooCommerce > Checkout validation (or Place order)."
+          : "Section WooCommerce > Validation de la commande ou Commander.",
+        locale === "en"
+          ? "Set the Phone field to \"Required\"."
+          : "Réglez le champ Téléphone sur \"Obligatoire\".",
+        locale === "en"
+          ? "The msgflash plugin automatically adds the \"(WhatsApp)\" label to reassure your customers."
+          : "Le plugin msgflash ajoutera automatiquement la mention \"(WhatsApp)\" pour rassurer vos clients.",
       ],
-      badge: "Recommandé",
+      badge: locale === "en" ? "Recommended" : "Recommandé",
     },
     {
       number: messages.howItWorks.steps[2].number,
       title: messages.howItWorks.steps[2].title,
       icon: Settings02Icon,
-      description: "Choisissez quels événements déclenchent un message :",
+      description: locale === "en" ? "Choose which events trigger a message:" : "Choisissez quels événements déclenchent un message :",
       triggers: [
         {
-          label: "Panier abandonné",
-          detail: "Relance automatique après 45 min.",
+          label: locale === "en" ? "Abandoned cart" : "Panier abandonné",
+          detail: locale === "en" ? "Automatic follow-up after 45 minutes." : "Relance automatique après 45 min.",
           icon: SmartPhone01Icon,
         },
         {
-          label: "Nouvelle commande",
-          detail: "Confirmation instantanée avec récapitulatif.",
+          label: locale === "en" ? "New order" : "Nouvelle commande",
+          detail: locale === "en" ? "Instant confirmation with order summary." : "Confirmation instantanée avec récapitulatif.",
           icon: CheckmarkCircle01Icon,
         },
         {
-          label: "Expédition",
-          detail: "Envoi du lien de suivi de colis en temps réel.",
+          label: locale === "en" ? "Shipment" : "Expédition",
+          detail: locale === "en" ? "Send the parcel tracking link in real time." : "Envoi du lien de suivi de colis en temps réel.",
           icon: Rocket01Icon,
         },
       ],
@@ -79,7 +91,7 @@ export function ConfigurationSteps({}: ConfigurationStepsProps) {
           <div className="inline-flex items-center gap-2 border border-[#FFD600]/25 bg-[#FFD600]/6 px-3 py-1.5">
             <ZapIcon className="h-4 w-4 text-[#FFD600]" />
             <span className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.14em] text-[#FFD600]">
-              Configuration rapide
+              {locale === "en" ? "Quick setup" : "Configuration rapide"}
             </span>
           </div>
           <h2 className="mt-4 font-(family-name:--font-geist-sans) text-[1.9rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.5rem]">

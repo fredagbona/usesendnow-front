@@ -10,11 +10,16 @@ import { getLandingMessages } from "../../lib/landing-i18n-data"
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await detectLandingLocaleFromHeaders()
-  const messages = getLandingMessages(locale)
 
   return {
-    title: `${messages.wordpress.title} - MsgFlash`,
-    description: messages.wordpress.subtitle,
+    title:
+      locale === "en"
+        ? "Free WooCommerce WhatsApp Plugin - Cart Recovery, Order Tracking & Lead Magnets | msgflash"
+        : "Extension WooCommerce WhatsApp gratuite — Relance panier, suivi commande & lead magnets | msgflash",
+    description:
+      locale === "en"
+        ? "Recover abandoned carts, send order tracking messages, and boost coupon usage 3x — all via WhatsApp. Free WooCommerce plugin by msgflash. Setup in under 5 minutes."
+        : "Récupérez les paniers abandonnés, envoyez le suivi de commande et multipliez l’usage des coupons par 3 — le tout via WhatsApp. Extension WooCommerce gratuite msgflash. Mise en route en moins de 5 minutes.",
   }
 }
 
@@ -62,7 +67,7 @@ export default async function WordPressPage() {
 
             <div className="mt-8 mx-auto max-w-4xl text-center">
               <h1 className="font-(family-name:--font-geist-sans) text-[2.4rem] font-black uppercase leading-[0.92] tracking-[-0.05em] text-[#F0F0F0] sm:text-[3.6rem] lg:text-[4.4rem]">
-                {messages.wordpress.hook}
+                {messages.wordpress.h1}
               </h1>
               <p className="mx-auto mt-6 max-w-2xl font-(family-name:--font-poppins) text-base leading-7 text-[#A7A7A7]">
                 {messages.wordpress.description}
@@ -76,7 +81,7 @@ export default async function WordPressPage() {
 
               <div className="mt-10 border border-white/8 bg-[#111111] p-5 text-left">
                 <p className="font-(family-name:--font-poppins) text-lg leading-8 text-[#D6D6D6]">
-                  {messages.wordpress.hook}
+                  {messages.wordpress.heroAccent}
                 </p>
               </div>
 
@@ -109,6 +114,29 @@ export default async function WordPressPage() {
                     WordPress Official Partner.
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="mx-auto max-w-6xl space-y-12">
+            <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
+              <div>
+                <h2 className="font-(family-name:--font-geist-sans) text-[1.5rem] font-black uppercase leading-[0.95] tracking-[-0.04em] text-[#F0F0F0] sm:text-[1.9rem]">
+                  {messages.wordpress.h2AbandonedTitle}
+                </h2>
+                <p className="mt-4 font-(family-name:--font-poppins) text-sm leading-7 text-[#A6A6A6] sm:text-base">
+                  {messages.wordpress.h2AbandonedBody}
+                </p>
+              </div>
+              <div>
+                <h2 className="font-(family-name:--font-geist-sans) text-[1.5rem] font-black uppercase leading-[0.95] tracking-[-0.04em] text-[#F0F0F0] sm:text-[1.9rem]">
+                  {messages.wordpress.h2OrdersTitle}
+                </h2>
+                <p className="mt-4 font-(family-name:--font-poppins) text-sm leading-7 text-[#A6A6A6] sm:text-base">
+                  {messages.wordpress.h2OrdersBody}
+                </p>
               </div>
             </div>
           </div>

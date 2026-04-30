@@ -8,18 +8,10 @@ import { Button } from "../ui/Button"
 import { landingBrand } from "../../lib/brand"
 import { useLandingI18n } from "../../lib/landing-i18n"
 
-const CODE_SAMPLE = `POST ${landingBrand.apiUrl}/messages/send
-{
-  "to": "+33612345000",
-  "type": "text",
-  "message": "Votre commande #123 est prête.",
-  "instanceId": "main"
-}`
-
 interface PricingProps {}
 
 export function Pricing({}: PricingProps) {
-  const { messages } = useLandingI18n()
+  const { messages, locale } = useLandingI18n()
   const useCases = messages.pricing.useCases.map((item, index) => ({
     ...item,
     image: index === 0 ? "/relance.png" : "/notifs.png",
@@ -28,6 +20,7 @@ export function Pricing({}: PricingProps) {
     ...plan,
     featured: index === 2,
   }))
+  const pricePerMonth = locale === "fr" ? "/ mois" : "/ month"
 
   return (
     <section className="border-t border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
@@ -69,18 +62,17 @@ export function Pricing({}: PricingProps) {
         <div className="mt-14 grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-stretch">
           <div className="border border-white/8 bg-[#121212] p-6 sm:p-8">
             <h3 className="max-w-xl font-(family-name:--font-geist-sans) text-[1.8rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.3rem]">
-              Pensé pour l’intégration dès le départ
+              {messages.pricing.integrationTitle}
             </h3>
             <p className="mt-4 max-w-xl font-(family-name:--font-poppins) text-sm leading-6 text-[#9D9D9D]">
-              Une API REST lisible, sécurisée et performante. Stable à brancher avec vos backends,
-              votre CRM, votre bot ou votre orchestrateur.
+              {messages.pricing.integrationText}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button href={landingBrand.docsUrl} size="sm">
-                Lire la documentation
+                {messages.pricing.docsCta}
               </Button>
               <Button href={landingBrand.appUrl} variant="secondary" size="sm">
-                Tester l’API
+                {messages.pricing.apiCta}
               </Button>
             </div>
           </div>
@@ -92,7 +84,7 @@ export function Pricing({}: PricingProps) {
               <span className="h-2 w-2 rounded-full bg-[#4B4B4B]" />
             </div>
             <pre className="overflow-x-auto px-4 py-5 font-mono text-xs leading-6 text-[#FFD600] sm:px-5">
-              <code>{CODE_SAMPLE}</code>
+              <code>{messages.pricing.codeSample}</code>
             </pre>
           </div>
         </div>
@@ -133,7 +125,7 @@ export function Pricing({}: PricingProps) {
                         {plan.price}
                       </span>
                       <span className={plan.featured ? "pb-1 font-(family-name:--font-poppins) text-xs text-[#3A3100]" : "pb-1 font-(family-name:--font-poppins) text-xs text-[#8D8D8D]"}>
-                        / mois
+                        {pricePerMonth}
                       </span>
                     </div>
                     <p className={plan.featured ? "mt-2 font-(family-name:--font-poppins) text-sm text-[#3A3100]" : "mt-2 font-(family-name:--font-poppins) text-sm text-[#9D9D9D]"}>

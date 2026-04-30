@@ -12,9 +12,10 @@ export function Footer({}: FooterProps) {
     {
       title: messages.footer.product,
       links: [
-        { label: messages.footer.links.automations, href: "#fonctionnalites" },
+        { label: messages.footer.links.automations, href: landingBrand.homeAnchors.features },
+        { label: messages.footer.links.campaigns, href: landingBrand.campaignsUrl },
         { label: messages.footer.links.wordpress, href: landingBrand.wordpressUrl },
-        { label: messages.footer.links.pricing, href: "#tarifs" },
+        { label: messages.footer.links.pricing, href: landingBrand.homeAnchors.pricing },
         { label: messages.footer.links.api, href: landingBrand.docsUrl },
       ],
     },
