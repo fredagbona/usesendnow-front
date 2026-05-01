@@ -16,10 +16,21 @@ function toIsoBoundary(date: string, boundary: "start" | "end") {
 }
 
 function toBars(series: AdminSeriesPoint[] | undefined) {
-  return (series ?? []).slice(-12).map((point) => ({
-    label: new Date(point.timestamp).toLocaleDateString(),
-    value: point.value,
-  }))
+  return (series ?? []).slice(-12).map((point) => {
+    if (point.date !== undefined && typeof point.count === "number") {
+      return {
+        label: new Date(`${point.date}T12:00:00.000Z`).toLocaleDateString(),
+        value: point.count,
+      }
+    }
+    if (point.timestamp) {
+      return {
+        label: new Date(point.timestamp).toLocaleDateString(),
+        value: point.value ?? 0,
+      }
+    }
+    return { label: "—", value: point.value ?? point.count ?? 0 }
+  })
 }
 
 export default function OverviewPage() {

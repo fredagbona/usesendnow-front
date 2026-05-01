@@ -829,9 +829,12 @@ export interface AdminOverviewSummary {
   campaignsCreated: number
 }
 
+/** Time-series bucket; overview API uses `date` + `count`, some analytics may use `timestamp` + `value`. */
 export interface AdminSeriesPoint {
-  timestamp: string
-  value: number
+  date?: string
+  count?: number
+  timestamp?: string
+  value?: number
 }
 
 export interface AdminOverviewResponse {
