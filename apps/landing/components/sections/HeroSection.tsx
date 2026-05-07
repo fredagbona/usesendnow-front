@@ -22,14 +22,14 @@ export function HeroSection({}: HeroSectionProps) {
         >
           <motion.h1
             variants={fadeUp}
-            className="max-w-4xl font-(family-name:--font-geist-sans) text-[2.2rem] font-black uppercase leading-[0.92] tracking-[-0.05em] text-[#F0F0F0] sm:text-[3.4rem] lg:text-[4.4rem]"
+            className="max-w-4xl font-(family-name:--font-geist-sans) text-[2.35rem] font-black uppercase leading-[0.92] tracking-[-0.05em] text-[#F0F0F0] sm:text-[3.5rem] lg:text-[4.6rem]"
           >
             {messages.hero.title}
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
-            className="mt-6 max-w-2xl font-(family-name:--font-poppins) text-sm leading-6 text-[#A9A9A9] sm:text-base"
+            className="mt-6 max-w-2xl font-(family-name:--font-poppins) text-sm leading-7 text-[#A9A9A9] sm:text-base"
           >
             {messages.hero.description}
           </motion.p>

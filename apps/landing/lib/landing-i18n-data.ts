@@ -17,6 +17,14 @@ type LandingMessages = {
     description: string
     primaryCta: string
     secondaryCta: string
+    proof: string[]
+    problemTitle: string
+    problemBullets: string[]
+    solutionTitle: string
+    solutionBullets: string[]
+    codeTitle: string
+    codeSample: string
+    codeCaption: string
   }
   logos: string[]
   features: {
@@ -239,11 +247,25 @@ const FR: LandingMessages = {
     language: "Langue",
   },
   hero: {
-    title: "API WHATSAPP POUR DÉVELOPPEURS — REST, WEBHOOKS, SANS APPROBATION META",
+    title: "WhatsApp API pour les makers qui n'attendent pas Meta.",
     description:
-      "Envoyez des messages WhatsApp via une API REST, sans parcours BSP. Webhooks fiables, connexion par QR code, intégration n8n, Zapier et Make — pour une automatisation WhatsApp orientée produit.",
-    primaryCta: "Commencer",
+      "Connectez votre numéro en 2 minutes. Envoyez vos premiers messages via API en 5 minutes. Sans validation BSP. Sans frais cachés. À partir de 9€/mois.",
+    primaryCta: "Tester gratuitement — 20 messages offerts",
     secondaryCta: "Voir la documentation",
+    proof: ["2.4M+ messages envoyés ce mois", "99.2% taux de délivrabilité", "Temps moyen premier message : 4 min 30s"],
+    problemTitle: "Obtenir l'API WhatsApp officielle, c'est :",
+    problemBullets: ["2 semaines d'attente", "500€/mois minimum", "Une validation Meta arbitraire", "Des templates à approuver un par un"],
+    solutionTitle: "MsgFlash, c'est :",
+    solutionBullets: ["QR code → numéro connecté → API prête", "9€/mois, pas de surprise", "Pas de validation externe", "Vos messages, vos règles"],
+    codeTitle: "Preuve technique",
+    codeSample: `curl -X POST https://api.msgflash.com/v1/messages \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -d '{
+    "to": "+33612345678",
+    "body": "Votre commande #123 est expédiée.",
+    "type": "text"
+  }'`,
+    codeCaption: "Un seul endpoint. Pas de SDK obese. Pas de configuration XML.",
   },
   logos: ["API REST WhatsApp", "Webhooks & événements", "Messages texte + médias", "QR code & intégration rapide"],
   features: {
@@ -644,11 +666,25 @@ const EN: LandingMessages = {
     language: "Language",
   },
   hero: {
-    title: "WHATSAPP API FOR DEVELOPERS — REST, WEBHOOKS, NO META APPROVAL HASSLE",
+    title: "WhatsApp API for makers who do not wait on Meta.",
     description:
-      "Send WhatsApp messages via a REST API without a heavy BSP workflow. Reliable webhooks, QR code onboarding, and native fits for n8n, Zapier, and Make — built for product-minded automation.",
-    primaryCta: "Get started",
+      "Connect your number in 2 minutes. Send your first messages via API in 5 minutes. No BSP approval. No hidden fees. Starting at $9/month.",
+    primaryCta: "Start free — 20 messages included",
     secondaryCta: "View documentation",
+    proof: ["2.4M+ messages sent this month", "99.2% delivery rate", "Average time to first message: 4 min 30s"],
+    problemTitle: "Getting the official WhatsApp API means:",
+    problemBullets: ["2 weeks of waiting", "$500/month minimum", "Arbitrary Meta validation", "Templates approved one by one"],
+    solutionTitle: "MsgFlash means:",
+    solutionBullets: ["QR code → connected number → API ready", "$9/month, no surprises", "No external validation", "Your messages, your rules"],
+    codeTitle: "Technical proof",
+    codeSample: `curl -X POST https://api.msgflash.com/v1/messages \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -d '{
+    "to": "+33612345678",
+    "body": "Your order #123 has shipped.",
+    "type": "text"
+  }'`,
+    codeCaption: "One endpoint. No obese SDK. No XML configuration.",
   },
   logos: ["WhatsApp REST API", "Webhooks & events", "Text + media messages", "QR code & fast connect"],
   features: {
