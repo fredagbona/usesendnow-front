@@ -45,7 +45,7 @@ export default function NewCampaignPage() {
   const [planBlocked, setPlanBlocked] = useState(false)
   const [creating, setCreating] = useState(false)
   const [customVariables, setCustomVariables] = useState<CustomVariableEntry[]>([])
-  const [contentMode, setContentMode] = useState<"template" | "direct">("template")
+  const [contentMode, setContentMode] = useState<"template" | "direct">("direct")
   const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
