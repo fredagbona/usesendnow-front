@@ -24,7 +24,8 @@ export function Footer({}: FooterProps) {
       links: [
         { label: messages.footer.links.docs, href: landingBrand.docsUrl },
         { label: messages.footer.links.webhook, href: `${landingBrand.docsUrl}/webhooks` },
-        { label: messages.footer.links.status, href: landingBrand.appUrl },
+        { label: messages.footer.links.status, href: "https://msgflash.instatus.com/" },
+        { label: messages.footer.links.blog, href: "https://blog.msgflash.com/" },
       ],
     },
     {

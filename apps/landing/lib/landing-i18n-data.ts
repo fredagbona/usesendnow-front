@@ -111,6 +111,7 @@ type LandingMessages = {
       docs: string
       webhook: string
       status: string
+      blog: string
       privacy: string
       terms: string
       contact: string
@@ -330,6 +331,7 @@ const FR: LandingMessages = {
       docs: "Documentation",
       webhook: "Webhook",
       status: "Statut",
+      blog: "Blog",
       privacy: "Confidentialité",
       terms: "Conditions",
       contact: "Contact",
@@ -549,6 +551,7 @@ const EN: LandingMessages = {
       docs: "Documentation",
       webhook: "Webhook",
       status: "Status",
+      blog: "Blog",
       privacy: "Privacy",
       terms: "Terms",
       contact: "Contact",
