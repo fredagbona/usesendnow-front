@@ -209,7 +209,7 @@ export default async function UseCasesPage() {
         <section className="border-b border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2">
             {page.cases.map((item) => (
-              <article key={item.title} className="border border-white/8 bg-[#121212] p-6 sm:p-8">
+              <article key={item.title} className="border border-white/8 bg-[#121212] p-5 sm:p-6 lg:p-8">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#FFD600]">
@@ -233,7 +233,7 @@ export default async function UseCasesPage() {
                     <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#BDBDBD]">
                       {locale === "en" ? "Solution" : "La solution MsgFlash"}
                     </p>
-                    <pre className="mt-2 overflow-x-auto rounded-2xl border border-white/8 bg-black/40 p-4 font-mono text-xs leading-6 text-[#E6E6E6]">
+                    <pre className="mt-2 overflow-x-auto rounded-2xl border border-white/8 bg-black/40 p-4 font-mono text-xs leading-6 whitespace-pre-wrap break-words text-[#E6E6E6]">
                       {item.solution}
                     </pre>
                   </div>
@@ -271,7 +271,7 @@ export default async function UseCasesPage() {
               </h2>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
+              <table className="min-w-[640px] sm:min-w-full text-left text-sm">
                 <thead className="bg-white/5 text-[#F0F0F0]">
                   <tr>
                     <th className="px-4 py-4 font-(family-name:--font-geist-sans) text-xs uppercase tracking-[0.08em]">
@@ -300,10 +300,10 @@ export default async function UseCasesPage() {
         </section>
 
         <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <div className="mx-auto max-w-6xl border border-white/8 bg-[#121212] p-6 sm:p-8">
+          <div className="mx-auto max-w-6xl border border-white/8 bg-[#121212] p-5 sm:p-6 lg:p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-3xl">
-                <h2 className="font-(family-name:--font-geist-sans) text-[1.7rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.1rem]">
+                <h2 className="font-(family-name:--font-geist-sans) text-[1.45rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-[#F0F0F0] sm:text-[2.1rem]">
                   {page.subtitle}
                 </h2>
                 <p className="mt-3 font-(family-name:--font-poppins) text-sm leading-7 text-[#A7A7A7]">
