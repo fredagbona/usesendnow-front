@@ -120,13 +120,12 @@ function getPlanFeatures(plan: Plan, locale: "fr" | "en", billingCopy: ReturnTyp
 
   return [
     `${limits.maxInstances} ${limits.maxInstances > 1 ? billingCopy.instances : billingCopy.instance}`,
-    `${displayedMonthlyOutboundQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.messagesPerMonth}`,
+    `${displayedMonthlyOutboundQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${locale === "fr" ? "messages / mois" : "messages / month"}`,
     `${limits.monthlyApiRequestQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.apiRequests}`,
     `${limits.maxApiKeys} ${limits.maxApiKeys > 1 ? billingCopy.apiKeys : billingCopy.apiKey}`,
     `${limits.maxWebhookEndpoints} ${limits.maxWebhookEndpoints > 1 ? billingCopy.webhookEndpoints : billingCopy.webhookEndpoint}`,
     contactGroups,
     `${billingCopy.features.campaigns} : ${features.campaigns ? billingCopy.yes : billingCopy.no}`,
-    `${billingCopy.features.statuses} : ${features.statuses ? billingCopy.yes : billingCopy.no}`,
     `${billingCopy.features.webhooks} : ${features.webhooks ? billingCopy.yes : billingCopy.no}`,
     `${billingCopy.features.voiceNotes} : ${features.voiceNotes ? billingCopy.yes : billingCopy.no}`,
   ].filter((feature): feature is string => Boolean(feature))
