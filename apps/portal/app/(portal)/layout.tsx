@@ -6,6 +6,7 @@ import { isAuthenticated } from "@/lib/auth"
 import Sidebar, { MobileDrawer } from "@/components/layout/Sidebar"
 import PortalTitleManager from "@/components/layout/PortalTitleManager"
 import TopNav from "@/components/layout/TopNav"
+import { WorkspaceProvider } from "@/components/workspace/WorkspaceContext"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { apiClient } from "@usesendnow/api-client"
 import type { Plan, SubscriptionResponse, User } from "@usesendnow/types"
@@ -43,14 +44,19 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       return
     }
     setChecked(true)
-    Promise.all([
-      apiClient.billing.getSubscription(),
-      apiClient.auth.me(),
-    ]).then(([sub, me]) => {
-      setSubscription(sub)
-      setUser(me)
-    }).catch(() => {})
+    void apiClient.billing.getSubscription().then(setSubscription).catch(() => {})
+    void apiClient.auth.me().then(setUser).catch(() => {})
   }, [router])
+
+  useEffect(() => {
+    if (!checked || typeof window === "undefined") return
+    const onWorkspaceChanged = () => {
+      void apiClient.billing.getSubscription().then(setSubscription).catch(() => {})
+      void apiClient.auth.me().then(setUser).catch(() => {})
+    }
+    window.addEventListener("msgflash:workspace-changed", onWorkspaceChanged)
+    return () => window.removeEventListener("msgflash:workspace-changed", onWorkspaceChanged)
+  }, [checked])
 
   if (!checked) {
     return null
@@ -63,6 +69,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const outboundTotal = plan.monthlyOutboundQuota ?? plan.limits?.monthlyOutboundQuota
 
   return (
+    <WorkspaceProvider>
     <div className="flex min-h-screen bg-bg-subtle overflow-x-hidden">
       <PortalTitleManager />
       {/* Desktop sidebar */}
@@ -100,5 +107,6 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         </main>
       </div>
     </div>
+    </WorkspaceProvider>
   )
 }

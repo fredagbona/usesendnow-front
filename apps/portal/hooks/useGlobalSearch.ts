@@ -25,7 +25,7 @@ interface SearchDataset {
   groups: ContactGroup[]
 }
 
-type LocaleCopy = (typeof portalCopy)["fr"]
+type LocaleCopy = (typeof portalCopy)[PortalLocale]
 
 function normalize(value: string) {
   return value

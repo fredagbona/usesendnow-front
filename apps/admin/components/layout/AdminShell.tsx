@@ -16,6 +16,7 @@ import {
   Moon02Icon,
   Sun01Icon,
   UserGroupIcon,
+  UserMultiple02Icon,
 } from "hugeicons-react"
 import { Button } from "@usesendnow/ui"
 import { clearAdminToken } from "@/lib/admin-auth"
@@ -35,6 +36,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: "/overview", label: "Overview", icon: Home01Icon },
   { href: "/users", label: "Users", icon: UserGroupIcon },
+  { href: "/teams", label: "Teams", icon: UserMultiple02Icon },
   { href: "/request-logs", label: "Request Logs", icon: Clock01Icon },
   { href: "/api-usage", label: "API Usage", icon: Key01Icon },
   { href: "/analytics/messages", label: "Messages Analytics", icon: Analytics01Icon },

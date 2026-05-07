@@ -33,6 +33,10 @@ curl https://srv.msgflash.com/api/v1/usage \
 
 See [Authentication](/authentication) for exact header format and security requirements.
 
+### Team workspace (`msgf_team_…`)
+
+Team API keys require **`X-Team-Id`** matching the key’s team; workspace **`/api/v1/*`** routes then use the team’s shared data and the team owner’s plan. Personal keys must not send `X-Team-Id` (`TEAM_KEY_REQUIRED`). Account, compact usage, and most billing reads require a personal key (`TEAM_KEY_NOT_ALLOWED` with a team key). Full rules: [Team context](/api-reference/teams/team-context).
+
 ---
 
 ## Rate limiting

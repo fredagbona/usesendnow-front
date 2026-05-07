@@ -1,4 +1,5 @@
 # SPEC — Portal / Billing
+
 App: portal
 Route: /billing
 Auth: required
@@ -7,25 +8,42 @@ Status: ready
 ---
 
 ## Purpose
+
 Vue complète de la facturation : plan actuel, consommation du mois, comparatif des plans, et gestion de l'abonnement (upgrade, annulation).
 Les prix sont affichés en FCFA (principal) et EUR (secondaire).
 
 ---
 
 ## Backend endpoints utilisés
-| Method | Endpoint | Auth | Usage |
-|---|---|---|---|
-| GET | /api/billing/subscription | JWT | Plan actuel + usage + période |
-| GET | /api/billing/plans | public | Catalogue de tous les plans |
-| POST | /api/billing/checkout | JWT | Créer une session de paiement |
-| POST | /api/billing/cancel | JWT | Annuler l'abonnement |
+
+| Method | Endpoint                            | Auth   | Usage                                        |
+| ------ | ----------------------------------- | ------ | -------------------------------------------- |
+| GET    | /api/billing/subscription           | JWT    | Plan actuel + usage + période                |
+| GET    | /api/billing/usage                | JWT    | Usage + période (subset)                     |
+| GET    | /api/billing/payments             | JWT    | Historique des paiements (paginé)            |
+| GET    | /api/billing/plans                | public | Catalogue de tous les plans                |
+| POST   | /api/billing/checkout             | JWT    | Créer une session de paiement                |
+| POST   | /api/billing/cancel               | JWT    | Annuler l'abonnement                         |
+| POST   | /api/billing/downgrade            | JWT    | Planifier un downgrade                       |
+| POST   | /api/billing/cancel-scheduled-change | JWT | Annuler un changement de plan planifié    |
+
+### Workspace (`X-Team-Id`)
+
+Optionnel sur les routes JWT ci-dessus **sauf** `GET /api/billing/plans` (catalogue global, sans workspace).
+
+- **Sans `X-Team-Id`** : données de facturation du **compte connecté** (espace personnel).
+- **Avec `X-Team-Id`** (membre actif) : **`GET /subscription`** et **`GET /usage`** ciblent l’abonnement et l’usage du **propriétaire d’équipe** (même ancrage que les quotas de l’espace équipe).
+- **`GET /payments`** : en espace équipe, **réservé au propriétaire d’équipe** ; admin/collaborateur → **`403`** `BILLING_PAYMENTS_TEAM_OWNER_ONLY`.
+- **POST** `checkout`, `cancel`, `downgrade`, `cancel-scheduled-change` : en espace équipe, **uniquement** si l’utilisateur connecté **est** le propriétaire d’équipe ; sinon **`403`** `BILLING_TEAM_MUTATION_FORBIDDEN`.
 
 ---
 
 ## Layout de la page
+
 Layout standard portal.
 
 ### Zones principales
+
 - **Header** : titre "Billing & Plans"
 - **CurrentPlanCard** : résumé du plan actif + usage
 - **UsageMetrics** : barres de progression pour chaque quota
@@ -38,21 +56,27 @@ Layout standard portal.
 ## Composants de la page
 
 ### CurrentPlanCard
+
 Props :
+
 ```ts
 {
-  subscription: Subscription
+  subscription: Subscription;
   usage: {
-    effectiveOutboundUsage: number
-    apiRequestsCount: number
-    activeInstancesCount: number
-    activeApiKeysCount: number
+    effectiveOutboundUsage: number;
+    apiRequestsCount: number;
+    activeInstancesCount: number;
+    activeApiKeysCount: number;
   }
-  period: { start: string; end: string }
+  period: {
+    start: string;
+    end: string;
+  }
 }
 ```
 
 Affiche :
+
 - Badge plan (code + nom, ex: "Pro Plan")
 - Statut abonnement : `active`, `trialing`, `past_due`, `cancelled`, `expired`
 - Période de facturation actuelle (ex: "March 1 – March 31, 2026")
@@ -60,24 +84,29 @@ Affiche :
 - Prix mensuel : "{priceFcfa} FCFA / month (€{priceEur})"
 
 ### UsageMetrics
+
 Props : `usage: UsageData; limits: PlanLimits`
 
 3 barres de progression :
+
 1. **Messages & Statuses** : `effectiveOutboundUsage / monthlyOutboundQuota`
 2. **API Requests** : `apiRequestsCount / monthlyApiRequestQuota`
 3. **Instances** : `activeInstancesCount / maxInstances`
 
 Chaque barre :
+
 - Label + compteur (ex: "12 / 20")
 - Couleur : green < 70%, orange 70–90%, red > 90%
 - Si quota illimité (`monthlyOutboundQuota: -1` ou très grand) → afficher "Unlimited"
 
 ### PlansComparison
+
 Props : `plans: Plan[]; currentPlanCode: string`
 
 Grille 4 colonnes (ou 2x2 sur mobile) pour les plans : free, starter, pro, plus.
 
 Pour chaque plan :
+
 - Nom du plan
 - Prix : **{priceFcfa} FCFA/mois** + (€{priceEur})
 - Liste des limites et features :
@@ -95,24 +124,29 @@ Pour chaque plan :
   - Free → "Downgrade to Free" ou pas de bouton si déjà free
 
 ### CancelSubscriptionSection
+
 Affiché uniquement si `billingProvider !== 'none'` (plan payant actif).
 Props : `cancelAtPeriodEnd: boolean; periodEnd: string`
 
 Si `cancelAtPeriodEnd: false` :
+
 - Message : "Cancel your subscription — you'll retain access until {periodEnd}"
 - Bouton "Cancel Subscription" (rouge outline)
 
 Si `cancelAtPeriodEnd: true` :
+
 - Message : "Your plan is scheduled to cancel on {periodEnd}."
 - Bouton désactivé "Cancellation scheduled"
 
 ### CancelConfirmationModal
+
 Props : `periodEnd: string; onConfirm: () => void; onCancel: () => void`
 Message : "Your subscription will be cancelled at the end of the current period ({periodEnd}). You'll retain access until then."
 
 ---
 
 ## États à gérer
+
 - `loading` : skeletons sur CurrentPlanCard et UsageMetrics pendant les fetches
 - `upgrading` : loading sur le bouton "Upgrade" du plan sélectionné
 - `cancelling` : loading sur "Cancel Subscription"
@@ -125,6 +159,7 @@ Message : "Your subscription will be cancelled at the end of the current period 
 ## Actions utilisateur
 
 ### Upgrader / Changer de plan
+
 - Déclencheur : bouton "Upgrade" sur un plan
 - Appel API : `POST /api/billing/checkout` — `{ planCode: "pro" }`
 - Succès si `checkoutUrl` non-null : `window.location.href = checkoutUrl` (redirection Paystack)
@@ -132,6 +167,7 @@ Message : "Your subscription will be cancelled at the end of the current period 
 - Erreur 404 : "Plan not found."
 
 ### Annuler l'abonnement
+
 - Déclencheur : bouton "Cancel Subscription" → CancelConfirmationModal → "Confirm"
 - Appel API : `POST /api/billing/cancel`
 - Succès : rafraîchir les données (recharger GET /billing/subscription) + toast "Subscription cancelled at period end"
@@ -140,6 +176,7 @@ Message : "Your subscription will be cancelled at the end of the current period 
 ---
 
 ## Règles métier
+
 - Plan `free` : pas de bouton annulation (pas d'abonnement à annuler).
 - Le plan `free` inclut désormais `1` clé API pour les tests.
 - Cette ouverture ne change pas le quota outbound du plan `free` : `20` messages + statuts par mois.
@@ -149,6 +186,7 @@ Message : "Your subscription will be cancelled at the end of the current period 
 - Le plan actuel dans la grille doit être visuellement mis en avant (border colorée, badge "Current").
 
 ### Message frontend à afficher partout où l’on explique le Free
+
 - `Le plan Free inclut 1 clé API pour tester l'intégration. Les autres limites ne changent pas: 20 messages + statuts par mois, 1 instance, 0 webhook et 2 groupes de contacts.`
 
 ---
@@ -156,6 +194,7 @@ Message : "Your subscription will be cancelled at the end of the current period 
 ## Payloads de référence
 
 Response GET /api/billing/subscription:
+
 ```json
 {
   "data": {
@@ -204,6 +243,7 @@ Response GET /api/billing/subscription:
 ```
 
 Response GET /api/billing/plans:
+
 ```json
 {
   "data": [
@@ -214,7 +254,13 @@ Response GET /api/billing/plans:
       "priceEur": 0,
       "priceFcfa": 0,
       "isActive": true,
-      "limits": { "maxInstances": 1, "maxApiKeys": 1, "maxWebhookEndpoints": 0, "monthlyOutboundQuota": 20, "monthlyApiRequestQuota": 1000 },
+      "limits": {
+        "maxInstances": 1,
+        "maxApiKeys": 1,
+        "maxWebhookEndpoints": 0,
+        "monthlyOutboundQuota": 20,
+        "monthlyApiRequestQuota": 1000
+      },
       "features": { "campaigns": false, "statuses": false, "voiceNotes": true, "webhooks": false }
     },
     {
@@ -222,7 +268,13 @@ Response GET /api/billing/plans:
       "name": "Starter",
       "priceEur": 9,
       "priceFcfa": 5500,
-      "limits": { "maxInstances": 2, "maxApiKeys": 3, "maxWebhookEndpoints": 3, "monthlyOutboundQuota": 500, "monthlyApiRequestQuota": 10000 },
+      "limits": {
+        "maxInstances": 2,
+        "maxApiKeys": 3,
+        "maxWebhookEndpoints": 3,
+        "monthlyOutboundQuota": 500,
+        "monthlyApiRequestQuota": 10000
+      },
       "features": { "campaigns": true, "statuses": false, "voiceNotes": true, "webhooks": true }
     }
   ]
@@ -230,11 +282,13 @@ Response GET /api/billing/plans:
 ```
 
 Request POST /api/billing/checkout:
+
 ```json
 { "planCode": "pro" }
 ```
 
 Response POST /api/billing/checkout:
+
 ```json
 {
   "data": {
@@ -246,6 +300,7 @@ Response POST /api/billing/checkout:
 ```
 
 Response POST /api/billing/cancel:
+
 ```json
 {
   "data": { "cancelled": true }
@@ -255,6 +310,7 @@ Response POST /api/billing/cancel:
 ---
 
 ## Out of scope
+
 - Historique des factures / invoices
 - Méthodes de paiement sauvegardées
 - Codes promo / réduction

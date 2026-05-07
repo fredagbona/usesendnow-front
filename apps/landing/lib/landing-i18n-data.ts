@@ -73,6 +73,7 @@ type LandingMessages = {
     useCases: Array<{ title: string; text: string; imageAlt: string }>
     title: string
     subtitle: string
+    teamsFootnote: string
     plans: Array<{
       name: string
       price: string
@@ -283,12 +284,14 @@ const FR: LandingMessages = {
       { title: "Notifications commande", text: "Tenez vos clients au courant de chaque étape avec messages et réponses en temps réel.", imageAlt: "Aperçu du cas d'usage de notifications de commande sur WhatsApp" },
     ],
     title: "Des plans simples pour démarrer et évoluer",
-    subtitle: "Choisissez le volume qui correspond à votre croissance.",
+    subtitle: "Choisissez le volume qui correspond à votre croissance — avec équipes partagées sur Pro et Plus.",
+    teamsFootnote:
+      "Gratuit & Starter : pas de création d’équipe — vous pouvez rejoindre une équipe existante sur invitation. Pro : 2 équipes × 4 sièges. Plus : 4 équipes × 8 sièges (en tant que propriétaire). Les quotas WhatsApp restent ceux du propriétaire de l’équipe.",
     plans: [
-      { name: "Gratuit", price: "0 €", secondaryPrice: "", desc: "Pour tester l’infrastructure et brancher un premier numéro.", cta: "Commencer", features: ["1 instance", "20 messages / statuts par mois", "1 000 requêtes API / mois", "1 clé API", "0 endpoint webhook", "2 groupes de contacts", "Campagnes : non", "Statuts WhatsApp : non", "Webhooks : non", "Notes vocales : oui"] },
-      { name: "Starter", price: "9 €", secondaryPrice: "", desc: "Pour lancer vos premiers automatismes en production.", cta: "Commencer", features: ["2 instances", "5 000 messages / statuts par mois", "10 000 requêtes API / mois", "3 clés API", "3 endpoints webhook", "10 groupes de contacts", "Campagnes : oui", "Statuts WhatsApp : non", "Webhooks : oui", "Notes vocales : oui"] },
-      { name: "Pro", price: "19 €", secondaryPrice: "", desc: "Pour les équipes qui envoient plus, automatisent plus et monitorent mieux.", cta: "S’abonner", features: ["5 instances", "5 000 messages / statuts par mois", "50 000 requêtes API / mois", "10 clés API", "10 endpoints webhook", "50 groupes de contacts", "Campagnes : oui", "Statuts WhatsApp : oui", "Webhooks : oui", "Notes vocales : oui"] },
-      { name: "Plus", price: "39 €", secondaryPrice: "", desc: "Pour les volumes élevés, les workflows avancés et les opérations multi-numéros.", cta: "Contacter", features: ["20 instances", "150 000 messages / statuts par mois", "500 000 requêtes API / mois", "10 clés API", "50 endpoints webhook", "Groupes de contacts illimités", "Campagnes : oui", "Statuts WhatsApp : oui", "Webhooks : oui", "Notes vocales : oui"] },
+      { name: "Gratuit", price: "0 €", secondaryPrice: "", desc: "Pour tester l’infrastructure et brancher un premier numéro.", cta: "Commencer", features: ["1 instance", "20 messages / statuts par mois", "1 000 requêtes API / mois", "1 clé API", "0 endpoint webhook", "2 groupes de contacts", "Campagnes : non", "Statuts WhatsApp : non", "Webhooks : non", "Notes vocales : oui", "Équipes : pas de création — rejoignez une équipe sur invitation"] },
+      { name: "Starter", price: "9 €", secondaryPrice: "", desc: "Pour lancer vos premiers automatismes en production.", cta: "Commencer", features: ["2 instances", "5 000 messages / statuts par mois", "10 000 requêtes API / mois", "3 clés API", "3 endpoints webhook", "10 groupes de contacts", "Campagnes : oui", "Statuts WhatsApp : non", "Webhooks : oui", "Notes vocales : oui", "Équipes : pas de création — rejoignez une équipe sur invitation"] },
+      { name: "Pro", price: "19 €", secondaryPrice: "", desc: "Pour les équipes qui envoient plus, automatisent plus et monitorent mieux.", cta: "S’abonner", features: ["5 instances", "5 000 messages / statuts par mois", "50 000 requêtes API / mois", "10 clés API", "10 endpoints webhook", "50 groupes de contacts", "Campagnes : oui", "Statuts WhatsApp : oui", "Webhooks : oui", "Notes vocales : oui", "Équipes : jusqu’à 2 espaces dont vous êtes propriétaire, 4 sièges par équipe"] },
+      { name: "Plus", price: "39 €", secondaryPrice: "", desc: "Pour les volumes élevés, les workflows avancés et les opérations multi-numéros.", cta: "Contacter", features: ["20 instances", "150 000 messages / statuts par mois", "500 000 requêtes API / mois", "10 clés API", "50 endpoints webhook", "Groupes de contacts illimités", "Campagnes : oui", "Statuts WhatsApp : oui", "Webhooks : oui", "Notes vocales : oui", "Équipes : jusqu’à 4 espaces dont vous êtes propriétaire, 8 sièges par équipe"] },
     ],
     integrationTitle: "Pensé pour l’intégration dès le départ",
     integrationText: "Une API REST lisible, sécurisée et performante. Stable à brancher avec vos backends, votre CRM, votre bot ou votre orchestrateur.",
@@ -502,12 +505,14 @@ const EN: LandingMessages = {
       { title: "Order notifications", text: "Keep customers informed at every step with real-time messages and replies.", imageAlt: "Preview of the order notification use case on WhatsApp" },
     ],
     title: "Simple plans to start and grow",
-    subtitle: "Choose the volume that matches your growth.",
+    subtitle: "Pick the volume that fits your growth — shared teams included on Pro and Plus.",
+    teamsFootnote:
+      "Free & Starter: you cannot create a team workspace — you can still join one when invited. Pro: 2 teams × 4 seats. Plus: 4 teams × 8 seats (as owner). WhatsApp quotas follow the team owner’s plan.",
     plans: [
-      { name: "Free", price: "0 €", secondaryPrice: "", desc: "Test the infrastructure and connect a first number.", cta: "Get started", features: ["1 instance", "20 messages / statuses per month", "1,000 API requests / month", "1 API key", "0 webhook endpoints", "2 contact groups", "Campaigns: no", "WhatsApp statuses: no", "Webhooks: no", "Voice notes: yes"] },
-      { name: "Starter", price: "9 €", secondaryPrice: "", desc: "Launch your first automations in production.", cta: "Get started", features: ["2 instances", "5,000 messages / statuses per month", "10,000 API requests / month", "3 API keys", "3 webhook endpoints", "10 contact groups", "Campaigns: yes", "WhatsApp statuses: no", "Webhooks: yes", "Voice notes: yes"] },
-      { name: "Pro", price: "19 €", secondaryPrice: "", desc: "For teams sending more, automating more, and monitoring better.", cta: "Subscribe", features: ["5 instances", "5,000 messages / statuses per month", "50,000 API requests / month", "10 API keys", "10 webhook endpoints", "50 contact groups", "Campaigns: yes", "WhatsApp statuses: yes", "Webhooks: yes", "Voice notes: yes"] },
-      { name: "Plus", price: "39 €", secondaryPrice: "", desc: "For high volume, advanced workflows, and multi-number operations.", cta: "Contact us", features: ["20 instances", "150,000 messages / statuses per month", "500,000 API requests / month", "10 API keys", "50 webhook endpoints", "Unlimited contact groups", "Campaigns: yes", "WhatsApp statuses: yes", "Webhooks: yes", "Voice notes: yes"] },
+      { name: "Free", price: "0 €", secondaryPrice: "", desc: "Test the infrastructure and connect a first number.", cta: "Get started", features: ["1 instance", "20 messages / statuses per month", "1,000 API requests / month", "1 API key", "0 webhook endpoints", "2 contact groups", "Campaigns: no", "WhatsApp statuses: no", "Webhooks: no", "Voice notes: yes", "Teams: no workspace creation — join a team when invited"] },
+      { name: "Starter", price: "9 €", secondaryPrice: "", desc: "Launch your first automations in production.", cta: "Get started", features: ["2 instances", "5,000 messages / statuses per month", "10,000 API requests / month", "3 API keys", "3 webhook endpoints", "10 contact groups", "Campaigns: yes", "WhatsApp statuses: no", "Webhooks: yes", "Voice notes: yes", "Teams: no workspace creation — join a team when invited"] },
+      { name: "Pro", price: "19 €", secondaryPrice: "", desc: "For teams sending more, automating more, and monitoring better.", cta: "Subscribe", features: ["5 instances", "5,000 messages / statuses per month", "50,000 API requests / month", "10 API keys", "10 webhook endpoints", "50 contact groups", "Campaigns: yes", "WhatsApp statuses: yes", "Webhooks: yes", "Voice notes: yes", "Teams: up to 2 workspaces you own, 4 seats each"] },
+      { name: "Plus", price: "39 €", secondaryPrice: "", desc: "For high volume, advanced workflows, and multi-number operations.", cta: "Contact us", features: ["20 instances", "150,000 messages / statuses per month", "500,000 API requests / month", "10 API keys", "50 webhook endpoints", "Unlimited contact groups", "Campaigns: yes", "WhatsApp statuses: yes", "Webhooks: yes", "Voice notes: yes", "Teams: up to 4 workspaces you own, 8 seats each"] },
     ],
     integrationTitle: "Designed for integration from day one",
     integrationText: "A readable, secure, and performant REST API. Easy to plug into your backend, CRM, bot, or orchestrator.",

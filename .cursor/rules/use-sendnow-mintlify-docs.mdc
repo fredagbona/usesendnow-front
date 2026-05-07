@@ -1,0 +1,41 @@
+---
+description: Doc Mintlify (apps/docs) — bilingue EN/FR obligatoire pour useSendNow
+alwaysApply: true
+---
+
+# Mintlify — `apps/docs`
+
+Ce dossier est la **source de vérité** de la doc publique MsgFlash / useSendNow (Mintlify).
+
+## Bilingue EN + FR
+
+- Les pages **anglais** : racine de `apps/docs` (ex. `guides/billing.mdx`, `api-reference/messages/send.mdx`).
+- Les pages **français** : même chemin sous `fr/` (ex. `fr/guides/billing.mdx`).
+
+**Règle** : dès qu’une page **EN** est créée ou remplacée de façon durable, créer ou mettre à jour la **copie FR** équivalente sous `fr/…` (même structure de titres, exemples adaptés si besoin).
+
+## Navigation
+
+Éditer **`docs.json`** :
+
+- Langue `en` : chemins de pages **sans** préfixe `fr/` (ex. `"guides/billing"`).
+- Langue `fr` : chemins **avec** préfixe `fr/` (ex. `"fr/guides/billing"`).
+
+Ajouter la nouvelle page dans **les deux** blocs `navigation.languages`, dans le groupe qui convient (même logique côté FR).
+
+## Format des pages
+
+Fichiers **`.mdx`** avec frontmatter :
+
+```yaml
+---
+title: ...
+description: ...
+---
+```
+
+Voir `README.md` dans `apps/docs` pour la structure du repo et le déploiement.
+
+## Specs backend / intégration
+
+Les specs d’architecture et d’intégration API pour l’équipe restent dans le dépôt **backend** (`usesendnow-backend/specs/`). Ce dossier Mintlify est la doc **consommateurs / développeurs API**, pas le substitute des specs internes.

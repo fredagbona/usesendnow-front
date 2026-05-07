@@ -1,0 +1,49 @@
+---
+title: Équipes & espaces de travail
+description: Équipes Pro et Plus, invitations, clés API d'équipe et en-tête X-Team-Id pour l'API publique.
+---
+
+## Qui peut utiliser les équipes ?
+
+- **Créer une équipe :** uniquement les titulaires d'abonnement **Pro** ou **Plus**.
+- **Plafonds :** Pro — jusqu'à **2** équipes possédées, **4** sièges par équipe (propriétaire inclus). Plus — jusqu'à **4** équipes possédées, **8** sièges par équipe.
+- **Inviter** n'importe quelle adresse e-mail (y compris Free/Starter ou sans compte).
+
+## Espace personnel vs équipe
+
+- **Personnel :** par défaut. Données et quotas = **votre** abonnement.
+- **Équipe :** espace partagé lié à une équipe. Quotas = abonnement du **propriétaire d'équipe**. Le **sélecteur d'espace** du portail (à brancher côté front) change le contexte actif.
+
+## Invitations
+
+- Expiration **24 h (UTC)**. Le propriétaire ou l'admin peut **renvoyer** l'e-mail (l'ancien lien est invalidé).
+- **Boîte de réception :** `GET /api/teams/invitations/mine`.
+- **Accepter :** `POST /api/teams/invitations/accept` avec `{ "invitationId" }` (connecté) ou `{ "token" }` depuis l'e-mail.
+
+## Clés API d'équipe (`msgf_team_…`)
+
+- Distinctes des clés personnelles (`msgf_live_…`).
+- Créées dans **Équipe → Clés API** (propriétaire/admin uniquement).
+- Pour **`/api/v1/*`** : envoyer **`X-Team-Id: <teamId>`** avec la **clé d'équipe** à chaque requête. Les données (messages, campagnes, contacts, modèles, webhooks, instances visibles, recherches de numéros, médias, etc.) sont dans l'espace de cette équipe.
+- Les clés personnelles **ne doivent pas** être utilisées avec `X-Team-Id` (erreur `TEAM_KEY_REQUIRED`).
+- Certaines routes v1 en lecture seule (compte, usage, la plupart des lectures facturation) exigent une clé **personnelle** — voir [Contexte équipe](/fr/api-reference/teams/team-context).
+
+## JWT console et `X-Team-Id` optionnel
+
+Sur les routes ressources **`/api/*`** (messages, contacts, modèles, campagnes, instances, webhooks, statuts, médias, recherches de numéros), vous pouvez envoyer **`X-Team-Id`** avec le JWT de session pour utiliser l'espace **équipe** plutôt que le personnel. Sans en-tête : espace personnel. Équipe invalide ou sans adhésion : **`TEAM_NOT_FOUND`**. Détails : [Contexte équipe](/fr/api-reference/teams/team-context).
+
+## Rôles (résumé)
+
+| Rôle | Notes |
+|------|--------|
+| **Propriétaire** | Facturation, suppression d'équipe, contrôle total. Ne peut pas « quitter » — supprimer l'équipe. |
+| **Admin** | Comme le propriétaire sauf **pas de facturation** et **pas de suppression d'équipe**. |
+| **Collaborateur** | Pas de clés API d'équipe ni suppression d'instance ; envoi uniquement sur les instances **assignées**. |
+
+## Downgrades et équipes
+
+Impossible de planifier un **downgrade** ou une **résiliation vers Free** tant que vos équipes possédées violent les limites du plan cible — supprimez ou réduisez les équipes d'abord (`PLAN_CHANGE_BLOCKED_ACTIVE_TEAMS`).
+
+## Préfixe API console
+
+Routes de gestion sous **`/api/teams`** avec JWT. Table détaillée : `specs/integrations/portal-integration/33-teams-api-implementation.md` (dépôt backend).

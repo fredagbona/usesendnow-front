@@ -22,6 +22,7 @@ import {
   AlertDiamondIcon,
   WebhookIcon,
 } from "hugeicons-react"
+import TeamInvitationsInbox from "@/components/teams/TeamInvitationsInbox"
 
 const MESSAGE_STATUS_VARIANT: Record<string, "neutral" | "blue" | "success" | "purple" | "error"> = {
   queued: "neutral",
@@ -183,6 +184,8 @@ export default function DashboardPage() {
         title={d.pageTitle}
         description={d.pageDescription}
       />
+
+      <TeamInvitationsInbox />
 
       {/* No instance alert */}
       {noConnectedInstances && (

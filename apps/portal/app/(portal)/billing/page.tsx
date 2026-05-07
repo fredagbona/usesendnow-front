@@ -118,6 +118,15 @@ function getPlanFeatures(plan: Plan, locale: "fr" | "en", billingCopy: ReturnTyp
         ? `${contactGroupsLimit} ${billingCopy.contactGroupsSuffix}`
         : undefined
 
+  const teamsFeatureLine =
+    plan.code === "pro"
+      ? billingCopy.teamsPro
+      : plan.code === "plus"
+        ? billingCopy.teamsPlus
+        : plan.code === "free" || plan.code === "starter"
+          ? billingCopy.teamsJoinOnly
+          : undefined
+
   return [
     `${limits.maxInstances} ${limits.maxInstances > 1 ? billingCopy.instances : billingCopy.instance}`,
     `${displayedMonthlyOutboundQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.messagesPerMonth}`,
@@ -129,6 +138,7 @@ function getPlanFeatures(plan: Plan, locale: "fr" | "en", billingCopy: ReturnTyp
     `${billingCopy.features.statuses} : ${features.statuses ? billingCopy.yes : billingCopy.no}`,
     `${billingCopy.features.webhooks} : ${features.webhooks ? billingCopy.yes : billingCopy.no}`,
     `${billingCopy.features.voiceNotes} : ${features.voiceNotes ? billingCopy.yes : billingCopy.no}`,
+    teamsFeatureLine,
   ].filter((feature): feature is string => Boolean(feature))
 }
 
@@ -287,7 +297,7 @@ function BillingPageContent() {
   const { copy, locale } = usePortalLocale()
   const billingCopy = copy.billing
   const { subscription, plans, loading, error, refetch } = useBilling()
-  const { payments, page, totalPages, loading: paymentsLoading, goToPage } = usePayments()
+  const { payments, page, totalPages, loading: paymentsLoading, goToPage, paymentsTeamOwnerOnly } = usePayments()
   const [planModalOpen, setPlanModalOpen] = useState(false)
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [cancelScheduledModalOpen, setCancelScheduledModalOpen] = useState(false)
@@ -372,6 +382,8 @@ function BillingPageContent() {
           toast.error(billingCopy.toast.planUnavailable)
         } else if (err.code === "INTERNAL_ERROR") {
           toast.error(billingCopy.toast.paymentTemporarilyUnavailable)
+        } else if (err.code === "BILLING_TEAM_MUTATION_FORBIDDEN") {
+          toast.error(billingCopy.toast.teamMutationForbidden)
         } else {
           toast.error(billingCopy.toast.changeFailed)
         }
@@ -400,6 +412,8 @@ function BillingPageContent() {
           toast.error(billingCopy.toast.noActiveSubscription)
         } else if (err.code === "UNAUTHORIZED") {
           return
+        } else if (err.code === "BILLING_TEAM_MUTATION_FORBIDDEN") {
+          toast.error(billingCopy.toast.teamMutationForbidden)
         } else {
           toast.error(billingCopy.toast.cancelFailed)
         }
@@ -417,8 +431,14 @@ function BillingPageContent() {
       toast.success(billingCopy.toast.scheduledCancelled)
       setCancelScheduledModalOpen(false)
     } catch (err) {
-      if (err instanceof ApiClientError && err.code === "NO_SCHEDULED_CHANGE") {
-        toast.error(billingCopy.toast.noScheduledChange)
+      if (err instanceof ApiClientError) {
+        if (err.code === "NO_SCHEDULED_CHANGE") {
+          toast.error(billingCopy.toast.noScheduledChange)
+        } else if (err.code === "BILLING_TEAM_MUTATION_FORBIDDEN") {
+          toast.error(billingCopy.toast.teamMutationForbidden)
+        } else {
+          toast.error(billingCopy.toast.scheduledCancelFailed)
+        }
       } else {
         toast.error(billingCopy.toast.scheduledCancelFailed)
       }
@@ -583,6 +603,11 @@ function BillingPageContent() {
         <Card className="p-0 overflow-hidden">
           {paymentsLoading ? (
             <div className="px-6 py-10 text-center text-sm text-text-muted">{billingCopy.loadingPayments}</div>
+          ) : paymentsTeamOwnerOnly ? (
+            <div className="flex gap-3 px-6 py-8 text-left">
+              <InformationCircleIcon className="w-5 h-5 shrink-0 text-text-muted mt-0.5" aria-hidden />
+              <p className="text-sm text-text-secondary leading-relaxed">{billingCopy.paymentsHistoryTeamOwnerOnly}</p>
+            </div>
           ) : payments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center px-6">
               <InvoiceIcon className="w-8 h-8 text-text-muted mb-3" />

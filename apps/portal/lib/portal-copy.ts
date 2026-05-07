@@ -1,4 +1,5 @@
 import type { PortalLocale } from "@/lib/portal-locale"
+import { teamsEn, teamsFr } from "@/lib/copy/teams"
 
 export const portalCopy = {
   fr: {
@@ -13,6 +14,7 @@ export const portalCopy = {
       numberLookups: "Number Lookups",
       apiKeys: "Clés API",
       billing: "Abonnement",
+      teams: teamsFr.navLabel,
     },
     topnav: {
       light: "Clair",
@@ -45,6 +47,10 @@ export const portalCopy = {
       templateDetail: "Détail template",
       groupDetail: "Détail groupe",
       portal: "Portail",
+      teams: teamsFr.listTitle,
+      teamsNew: teamsFr.createTitle,
+      teamDetail: teamsFr.detailTitle,
+      teamsInvite: teamsFr.invitePageTitle,
     },
     sidebar: {
       expandNav: "Développer la navigation",
@@ -104,6 +110,9 @@ export const portalCopy = {
       billingLoadError: "Impossible de charger les données de facturation.",
       templatesLoadError: "Impossible de charger les modèles.",
       webhooksLoadError: "Impossible de charger les webhooks.",
+      teamsListLoadError: teamsFr.loadListError,
+      teamDetailLoadError: teamsFr.loadDetailError,
+      teamsInvitationsMineLoadError: teamsFr.loadInvitesError,
     },
     auth: {
       layoutMarketing: {
@@ -275,6 +284,12 @@ export const portalCopy = {
       },
       staticPages: [
         { id: "page-dashboard", title: "Tableau de bord", description: "Vue d'ensemble du portail", href: "/dashboard" },
+        {
+          id: "page-teams",
+          title: "Équipes",
+          description: "Espaces de travail partagés, invitations et clés d’équipe",
+          href: "/teams",
+        },
         { id: "page-instances", title: "Instances", description: "Gérer les connexions WhatsApp", href: "/instances" },
         { id: "page-messages", title: "Messages", description: "Envoyer et consulter les messages", href: "/messages" },
         { id: "page-campaigns", title: "Campagnes", description: "Piloter les envois en masse", href: "/campaigns" },
@@ -382,6 +397,10 @@ export const portalCopy = {
         webhooks: "Webhooks",
         voiceNotes: "Notes vocales",
       },
+      teamsJoinOnly:
+        "Équipes : pas de création d’espace équipe — vous pouvez rejoindre une équipe sur invitation.",
+      teamsPro: "Équipes : jusqu’à 2 espaces propriétaire, 4 sièges par équipe.",
+      teamsPlus: "Équipes : jusqu’à 4 espaces propriétaire, 8 sièges par équipe.",
       priceUnit: "€ / mois",
       yes: "oui",
       no: "non",
@@ -401,6 +420,8 @@ export const portalCopy = {
       messages: "Messages",
       statuses: "Statuts",
       paymentHistory: "Historique des paiements",
+      paymentsHistoryTeamOwnerOnly:
+        "L’historique des paiements n’est visible que pour le propriétaire de l’équipe. Repassez en espace personnel ou contactez le propriétaire.",
       loadingPayments: "Chargement…",
       noPayments: "Aucun paiement enregistré pour le moment",
       paymentTableHeaders: ["Date", "Plan", "Période", "Montant", "Statut"],
@@ -478,6 +499,8 @@ export const portalCopy = {
         scheduledCancelled: "Le changement programmé a été annulé.",
         noScheduledChange: "Aucun changement programmé à annuler.",
         scheduledCancelFailed: "Impossible d'annuler le changement. Réessayez.",
+        teamMutationForbidden:
+          "Les changements d’abonnement ne sont possibles qu’avec le compte du propriétaire. Repassez en espace personnel ou demandez au propriétaire d’équipe.",
       },
     },
     templates: {
@@ -1604,6 +1627,7 @@ export const portalCopy = {
       instanceDisconnected: "WhatsApp déconnecté",
       profileUpdated: "Profil mis à jour",
     },
+    teams: teamsFr,
   },
   en: {
     nav: {
@@ -1617,6 +1641,7 @@ export const portalCopy = {
       numberLookups: "Number Lookups",
       apiKeys: "API Keys",
       billing: "Billing",
+      teams: teamsEn.navLabel,
     },
     topnav: {
       light: "Light",
@@ -1649,6 +1674,10 @@ export const portalCopy = {
       templateDetail: "Template Details",
       groupDetail: "Group Details",
       portal: "Portal",
+      teams: teamsEn.listTitle,
+      teamsNew: teamsEn.createTitle,
+      teamDetail: teamsEn.detailTitle,
+      teamsInvite: teamsEn.invitePageTitle,
     },
     sidebar: {
       expandNav: "Expand navigation",
@@ -1708,6 +1737,9 @@ export const portalCopy = {
       billingLoadError: "Unable to load billing data.",
       templatesLoadError: "Unable to load templates.",
       webhooksLoadError: "Unable to load webhooks.",
+      teamsListLoadError: teamsEn.loadListError,
+      teamDetailLoadError: teamsEn.loadDetailError,
+      teamsInvitationsMineLoadError: teamsEn.loadInvitesError,
     },
     auth: {
       layoutMarketing: {
@@ -1877,6 +1909,12 @@ export const portalCopy = {
       },
       staticPages: [
         { id: "page-dashboard", title: "Dashboard", description: "Overview of the portal", href: "/dashboard" },
+        {
+          id: "page-teams",
+          title: "Teams",
+          description: "Shared workspaces, invitations, and team keys",
+          href: "/teams",
+        },
         { id: "page-instances", title: "Instances", description: "Manage WhatsApp connections", href: "/instances" },
         { id: "page-messages", title: "Messages", description: "Send and review messages", href: "/messages" },
         { id: "page-campaigns", title: "Campaigns", description: "Run bulk sends", href: "/campaigns" },
@@ -1984,6 +2022,10 @@ export const portalCopy = {
         webhooks: "Webhooks",
         voiceNotes: "Voice notes",
       },
+      teamsJoinOnly:
+        "Teams: you cannot create a team workspace — you can join when invited.",
+      teamsPro: "Teams: up to 2 owner workspaces, 4 seats each.",
+      teamsPlus: "Teams: up to 4 owner workspaces, 8 seats each.",
       priceUnit: "€ / month",
       yes: "yes",
       no: "no",
@@ -2003,6 +2045,8 @@ export const portalCopy = {
       messages: "Messages",
       statuses: "Statuses",
       paymentHistory: "Payment history",
+      paymentsHistoryTeamOwnerOnly:
+        "Payment history is only visible to the team owner. Switch to your personal workspace or contact the owner.",
       loadingPayments: "Loading…",
       noPayments: "No payments recorded yet",
       paymentTableHeaders: ["Date", "Plan", "Period", "Amount", "Status"],
@@ -2079,6 +2123,8 @@ export const portalCopy = {
         scheduledCancelled: "Scheduled change has been canceled.",
         noScheduledChange: "No scheduled change to cancel.",
         scheduledCancelFailed: "Unable to cancel scheduled change. Please try again.",
+        teamMutationForbidden:
+          "Subscription changes are only available as the account owner. Switch to your personal workspace or ask the team owner.",
       },
     },
     templates: {
@@ -3193,5 +3239,6 @@ export const portalCopy = {
       instanceDisconnected: "WhatsApp disconnected",
       profileUpdated: "Profile updated",
     },
+    teams: teamsEn,
   },
 } satisfies Record<PortalLocale, Record<string, unknown>>

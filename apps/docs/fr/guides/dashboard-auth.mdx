@@ -14,6 +14,21 @@ Elle ne concerne pas l’API publique `x-api-key`.
 
 ---
 
+## En-tête d'espace équipe (optionnel)
+
+Après connexion, **`Authorization: Bearer <jwt>`** identifie l'utilisateur. Pour les routes **ressources** sous **`/api/*`** (par ex. `/api/messages`, `/api/contacts`, `/api/campaigns`, `/api/instances`, `/api/templates`, `/api/webhooks`, `/api/statuses`, `/api/media`, `/api/number-lookups`), vous pouvez ajouter :
+
+```http
+X-Team-Id: <uuid équipe>
+```
+
+- **Avec** `X-Team-Id` : l'espace **partagé** de cette équipe (vous devez être membre actif).
+- **Sans** : espace **personnel**.
+
+Les routes **`/api/auth/*`** ignorent cet en-tête. La gestion équipe sous **`/api/teams`** est à part ; voir [Équipes & espaces de travail](/fr/guides/teams-workspaces) et [Contexte équipe](/fr/api-reference/teams/team-context).
+
+---
+
 ## Endpoints utilisés par la console
 
 | Méthode | Endpoint | Usage |

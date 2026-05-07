@@ -1,0 +1,49 @@
+---
+title: Teams & workspaces
+description: Pro and Plus teams, invitations, team API keys, and X-Team-Id for the public API.
+---
+
+## Who can use teams?
+
+- **Create a team:** only **Pro** or **Plus** subscription owners.
+- **Caps:** Pro — up to **2** owned teams, **4** seats per team (owner included). Plus — up to **4** owned teams, **8** seats per team.
+- **Invite anyone** by email (including Free/Starter users or people without an account yet).
+
+## Personal vs team workspace
+
+- **Personal:** default. Your data and quotas follow **your** subscription.
+- **Team:** shared workspace tied to a team. Quotas and plan limits follow the **team owner’s** subscription. Use the **workspace switcher** in the portal (when implemented) to change context.
+
+## Invitations
+
+- Invitations expire after **24 hours (UTC)**. The owner or admin can **resend** (invalidates the previous link).
+- **Dashboard inbox:** `GET /api/teams/invitations/mine` lists pending invites for your login email.
+- **Accept:** `POST /api/teams/invitations/accept` with `{ "invitationId" }` (logged in) or `{ "token" }` from the email link.
+
+## Team API keys (`msgf_team_…`)
+
+- Separate from personal keys (`msgf_live_…`).
+- Created under **Teams → API keys** (owner/admin only).
+- For **`/api/v1/*`**: send **`X-Team-Id: <teamId>`** together with the **team** key on every request. Workspace data (messages, campaigns, contacts, templates, webhooks, instances you can see, number lookups, media, etc.) is scoped to that team.
+- Personal keys **must not** be used with `X-Team-Id` (the API returns `TEAM_KEY_REQUIRED`).
+- Some read-only v1 routes (account, usage, most billing reads) require a **personal** key only — see [Team context](/api-reference/teams/team-context).
+
+## Console JWT and optional `X-Team-Id`
+
+On **`/api/*`** resource routes (messages, contacts, templates, campaigns, instances, webhooks, statuses, media, number lookups), you can send **`X-Team-Id`** with the session JWT to use the **team workspace** instead of your personal one. Omit the header for personal workspace. Invalid or non-member teams return **`TEAM_NOT_FOUND`**. Details: [Team context](/api-reference/teams/team-context).
+
+## Roles (short)
+
+| Role | Notes |
+|------|--------|
+| **Owner** | Billing, delete team, full control. Cannot “leave” — delete the team instead. |
+| **Admin** | Same as owner except **no billing** and **cannot delete the team**. |
+| **Collaborator** | Cannot manage team API keys or delete instances; may only use **assigned** instances for sending. |
+
+## Downgrades and teams
+
+You cannot schedule a **downgrade** or **cancellation to Free** while owned teams would violate the target plan’s team limits — delete or shrink teams first (`PLAN_CHANGE_BLOCKED_ACTIVE_TEAMS`).
+
+## Console API prefix
+
+All team management routes are under **`/api/teams`** with JWT. See the backend spec `specs/integrations/portal-integration/33-teams-api-implementation.md` for the full table.

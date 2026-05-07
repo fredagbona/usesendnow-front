@@ -1,0 +1,65 @@
+---
+title: Team context
+description: How X-Team-Id selects the team workspace for the public API (team keys) and the console API (JWT).
+---
+
+Team features use a **workspace** (personal or team). Integrations express that with **API key type** plus **`X-Team-Id`** where applicable.
+
+## Public API (`/api/v1/*`, `x-api-key`)
+
+### Team API keys (`msgf_team_…`)
+
+- Created in the portal (**Team → API keys**). Owner or Admin only.
+- Send **`X-Team-Id: <team uuid>`**; it **must** match the team bound to the key. If the header is missing or does not match, authentication fails (`401`, same message as an invalid key).
+- Successful calls use the team’s shared workspace (contacts, templates, campaigns, etc.) and the **team owner’s** subscription for limits and billing.
+
+### Personal API keys (`msgf_live_…`)
+
+- Do **not** send `X-Team-Id` on workspace routes. If you send it, the API returns **`403`** with code **`TEAM_KEY_REQUIRED`** (use a team key for team workspace).
+
+### Which `v1` routes use the team workspace?
+
+Any **`/api/v1/*`** route that reads or writes workspace data resolves the workspace from a **team key** + **`X-Team-Id`**. That includes messages (send, schedule, bulk, history), campaigns, templates, contacts, groups, webhooks, outbound statuses, instances (list, get, state, health), number lookups, media, and related operations.
+
+### Endpoints **not** available with team keys
+
+These require a **personal** key (`403`, **`TEAM_KEY_NOT_ALLOWED`**):
+
+| Method | Path |
+|--------|------|
+| `GET` | `/api/v1/me` |
+| `GET` | `/api/v1/usage` |
+| `GET` | `/api/v1/billing/subscription` |
+| `GET` | `/api/v1/billing/usage` |
+| `GET` | `/api/v1/billing/payments` |
+
+`GET /api/v1/billing/plans` (plan catalog) **is** allowed with a team key.
+
+### Instance operations
+
+Create, connect, logout, and delete instances still run as the **owning user** behind the workspace, with collaborator permission checks. List and read operations use the team workspace scope.
+
+### Example
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/messages/send \
+  -H "x-api-key: msgf_team_your_team_key_here" \
+  -H "X-Team-Id: YOUR_TEAM_UUID" \
+  -H "Content-Type: application/json" \
+  -d '{"instanceId":"...","to":"+33612345678","type":"text","text":"Hello from team"}'
+```
+
+---
+
+## Console API (`/api/*`, `Authorization: Bearer <jwt>`)
+
+Resource routes (JWT) accept an **optional** header:
+
+- **`X-Team-Id: <team uuid>`** — operate in that team’s **shared workspace** (you must be an active member).
+- **Omitted** — operate in your **personal** workspace (default).
+
+Applies to routes such as **`/api/messages`**, **`/api/contacts`**, **`/api/templates`**, **`/api/campaigns`**, **`/api/instances`**, **`/api/webhooks`**, **`/api/statuses`**, **`/api/media`**, **`/api/number-lookups`**, and their sub-paths.
+
+If `X-Team-Id` is not a team you belong to (or the team is gone), the API returns **`404`** with code **`TEAM_NOT_FOUND`**.
+
+Team membership and billing under **`/api/teams`** are documented separately; they do not use this header to “switch workspace” for those admin endpoints.

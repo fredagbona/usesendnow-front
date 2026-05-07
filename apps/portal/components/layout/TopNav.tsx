@@ -18,6 +18,7 @@ import Avatar from "@/components/ui/Avatar"
 import { usePortalTheme } from "@/components/ui/ThemeProvider"
 import GlobalSearch from "@/components/layout/GlobalSearch"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { WorkspaceMenuSection } from "@/components/workspace/WorkspaceSwitcher"
 
 interface TopNavProps {
   user?: User | null
@@ -123,7 +124,7 @@ export default function TopNav({ user, planName, onMobileMenu }: TopNavProps) {
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-1.5 w-52 bg-bg border border-border-strong rounded-none shadow-[4px_4px_0px_0px_rgba(10,10,10,0.14)] overflow-hidden z-50">
+            <div className="absolute right-0 top-full mt-1.5 w-64 max-w-[calc(100vw-1rem)] bg-bg border border-border-strong rounded-none shadow-[4px_4px_0px_0px_rgba(10,10,10,0.14)] overflow-hidden z-50">
               <div className="flex items-center gap-2.5 px-3 py-3 bg-bg-subtle border-b border-border">
                 {user && (
                   <Avatar
@@ -140,6 +141,8 @@ export default function TopNav({ user, planName, onMobileMenu }: TopNavProps) {
                   <p className="text-xs text-text-muted truncate">{user?.email}</p>
                 </div>
               </div>
+
+              <WorkspaceMenuSection onClose={() => setDropdownOpen(false)} />
 
               <div className="p-1">
                 <Link

@@ -1,0 +1,65 @@
+---
+title: Contexte équipe
+description: Comment X-Team-Id sélectionne l'espace équipe pour l'API publique (clés d'équipe) et l'API console (JWT).
+---
+
+Les fonctionnalités équipe utilisent un **espace de travail** (personnel ou équipe). Les intégrations l'expriment avec le **type de clé API** et **`X-Team-Id`** le cas échéant.
+
+## API publique (`/api/v1/*`, `x-api-key`)
+
+### Clés API d'équipe (`msgf_team_…`)
+
+- Créées dans le portail (**Équipe → Clés API**). Propriétaire ou admin uniquement.
+- Envoyer **`X-Team-Id: <uuid équipe>`** ; il **doit** correspondre à l'équipe liée à la clé. Sans en-tête ou en cas d'écart, l'authentification échoue (`401`, même type de message qu'une clé invalide).
+- Les appels réussis utilisent l'espace partagé de l'équipe et l'abonnement du **propriétaire d'équipe** pour les quotas.
+
+### Clés personnelles (`msgf_live_…`)
+
+- Ne pas envoyer `X-Team-Id` sur les routes de données. Si vous l'envoyez : **`403`**, code **`TEAM_KEY_REQUIRED`** (utilisez une clé d'équipe pour le contexte équipe).
+
+### Quelles routes `v1` utilisent l'espace équipe ?
+
+Toute route **`/api/v1/*`** qui lit ou écrit des données résout l'espace à partir d'une **clé d'équipe** + **`X-Team-Id`** : messages (envoi, planification, lot, historique), campagnes, modèles, contacts, groupes, webhooks, statuts sortants, instances (liste, détail, état, santé), recherches de numéros, médias, etc.
+
+### Endpoints **non** disponibles avec une clé d'équipe
+
+Nécessitent une clé **personnelle** (`403`, **`TEAM_KEY_NOT_ALLOWED`**) :
+
+| Méthode | Chemin |
+|---------|--------|
+| `GET` | `/api/v1/me` |
+| `GET` | `/api/v1/usage` |
+| `GET` | `/api/v1/billing/subscription` |
+| `GET` | `/api/v1/billing/usage` |
+| `GET` | `/api/v1/billing/payments` |
+
+`GET /api/v1/billing/plans` (catalogue des offres) **est** autorisé avec une clé d'équipe.
+
+### Opérations sur les instances
+
+Création, connexion, déconnexion et suppression restent rattachées au **propriétaire** derrière l'espace, avec contrôle des droits collaborateur. Liste et lecture utilisent le périmètre équipe.
+
+### Exemple
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/messages/send \
+  -H "x-api-key: msgf_team_votre_cle" \
+  -H "X-Team-Id: UUID_EQUIPE" \
+  -H "Content-Type: application/json" \
+  -d '{"instanceId":"...","to":"+33612345678","type":"text","text":"Hello"}'
+```
+
+---
+
+## API console (`/api/*`, `Authorization: Bearer <jwt>`)
+
+Les routes ressources (JWT) acceptent un en-tête **optionnel** :
+
+- **`X-Team-Id: <uuid équipe>`** — agir dans l'espace **partagé** de cette équipe (vous devez être membre actif).
+- **Absent** — espace **personnel** (défaut).
+
+S'applique notamment à **`/api/messages`**, **`/api/contacts`**, **`/api/templates`**, **`/api/campaigns`**, **`/api/instances`**, **`/api/webhooks`**, **`/api/statuses`**, **`/api/media`**, **`/api/number-lookups`** et leurs sous-chemins.
+
+Si `X-Team-Id` ne correspond pas à une équipe dont vous êtes membre (ou équipe supprimée) : **`404`**, code **`TEAM_NOT_FOUND`**.
+
+La gestion des membres et la facturation sous **`/api/teams`** sont documentées à part ; ces routes n'utilisent pas cet en-tête pour « changer d'espace » sur les endpoints d'administration équipe.

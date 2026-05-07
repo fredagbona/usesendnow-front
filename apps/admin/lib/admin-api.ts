@@ -10,7 +10,10 @@ import type {
   AdminOverviewResponse,
   AdminPaginatedRows,
   AdminRequestLogRow,
+  AdminTeamDetailResponse,
+  AdminTeamsListResponse,
   AdminUserRow,
+  AdminUserTeamAssociation,
 } from "@usesendnow/types"
 
 type HttpMethod = "GET" | "POST"
@@ -83,6 +86,20 @@ function normalizePaginated<T>(payload: PaginatedPayload<T>): AdminPaginatedRows
   }
 }
 
+function normalizeUserTeamsPayload(payload: Record<string, unknown>): { items: AdminUserTeamAssociation[] } {
+  const raw = (payload.items ?? payload.teams ?? []) as unknown
+  if (!Array.isArray(raw)) return { items: [] }
+  const items: AdminUserTeamAssociation[] = []
+  for (const entry of raw) {
+    if (typeof entry !== "object" || entry === null) continue
+    const row = entry as Record<string, unknown>
+    const teamId = row.teamId ?? row.id
+    if (typeof teamId !== "string" || teamId === "") continue
+    items.push({ ...row, teamId } as AdminUserTeamAssociation)
+  }
+  return { items }
+}
+
 export const adminApi = {
   auth: {
     login: (email: string, password: string) =>
@@ -95,6 +112,11 @@ export const adminApi = {
     adminRequest<PaginatedPayload<AdminUserRow>>("GET", `/api/admin/users${toQuery(params)}`).then(normalizePaginated),
   userDetail: (id: string) =>
     adminRequest<Record<string, unknown>>("GET", `/api/admin/users/${id}`),
+  teams: (params?: Record<string, string | number | undefined>) =>
+    adminRequest<AdminTeamsListResponse>("GET", `/api/admin/teams${toQuery(params)}`),
+  teamDetail: (id: string) => adminRequest<AdminTeamDetailResponse>("GET", `/api/admin/teams/${id}`),
+  userTeams: (userId: string) =>
+    adminRequest<Record<string, unknown>>("GET", `/api/admin/users/${userId}/teams`).then(normalizeUserTeamsPayload),
   requestLogs: (params?: Record<string, string | number | undefined>) =>
     adminRequest<PaginatedPayload<AdminRequestLogRow>>("GET", `/api/admin/request-logs${toQuery(params)}`).then(normalizePaginated),
   apiKeys: (params?: Record<string, string | number | undefined>) =>

@@ -46,9 +46,15 @@
               "guides/webhooks",
               "guides/instances",
               "guides/statuses",
-              "guides/billing"
+              "guides/billing",
+              "guides/teams-workspaces"
             ],
             "icon": "book-open"
+          },
+          {
+            "group": "API Reference · Teams",
+            "pages": ["api-reference/teams/team-context"],
+            "icon": "users"
           },
           {
             "group": "API Reference · Instances",
@@ -197,9 +203,15 @@
               "fr/guides/webhooks",
               "fr/guides/instances",
               "fr/guides/statuses",
-              "fr/guides/billing"
+              "fr/guides/billing",
+              "fr/guides/teams-workspaces"
             ],
             "icon": "book-open"
+          },
+          {
+            "group": "Référence API · Équipes",
+            "pages": ["fr/api-reference/teams/team-context"],
+            "icon": "users"
           },
           {
             "group": "Référence API · Instances",

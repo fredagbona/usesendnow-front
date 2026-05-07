@@ -57,6 +57,13 @@ import type {
   ImportContactsPayload,
   NumberLookupsListResponse,
   InstanceHealth,
+  TeamInvitationMine,
+  TeamInvitation,
+  TeamSummary,
+  TeamDetail,
+  CreateTeamPayload,
+  CreateTeamApiKeyResponse,
+  TeamApiKeyRow,
 } from "@usesendnow/types"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -82,14 +89,53 @@ class ApiClientError extends Error {
   }
 }
 
+/** Same storage key as `apps/portal/lib/workspace-storage` — authenticated requests send `X-Team-Id` in team workspace when allowed. */
+const PORTAL_WORKSPACE_STORAGE_KEY = "msgflash_portal_workspace_v1"
+
+/**
+ * Routes that must stay “actor personal” — no X-Team-Id:
+ * - Auth / profile
+ * - Listing all teams you belong to (`GET /api/teams`) and creating a team (`POST /api/teams`)
+ * - Your pending invites inbox + accept (not scoped to the active workspace team)
+ */
+function shouldAttachPortalWorkspaceHeaders(path: string, isPublic: boolean): boolean {
+  if (isPublic) return false
+  const base = path.includes("?") ? path.slice(0, path.indexOf("?")) : path
+  if (base.startsWith("/api/auth/")) return false
+  if (base === "/api/teams") return false
+  if (base === "/api/teams/invitations/mine") return false
+  if (base === "/api/teams/invitations/accept") return false
+  return true
+}
+
+function portalWorkspaceHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = window.localStorage.getItem(PORTAL_WORKSPACE_STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as { mode?: string; teamId?: unknown }
+    if (parsed.mode === "team" && typeof parsed.teamId === "string" && parsed.teamId.length > 0) {
+      return { "X-Team-Id": parsed.teamId }
+    }
+  } catch {
+    /* ignore */
+  }
+  return {}
+}
+
 async function request<T>(
   method: string,
   path: string,
   body?: unknown,
-  isPublic = false
+  isPublic = false,
+  extraHeaders?: Record<string, string>,
 ): Promise<T> {
+  const workspaceHeaders =
+    shouldAttachPortalWorkspaceHeaders(path, isPublic) ? portalWorkspaceHeaders() : {}
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...workspaceHeaders,
+    ...(extraHeaders ?? {}),
   }
 
   if (!isPublic) {
@@ -195,8 +241,8 @@ async function uploadRequest<T>(
   return json.data as T
 }
 
-const get = <T>(path: string, isPublic = false) =>
-  request<T>("GET", path, undefined, isPublic)
+const get = <T>(path: string, isPublic = false, extraHeaders?: Record<string, string>) =>
+  request<T>("GET", path, undefined, isPublic, extraHeaders)
 const post = <T>(path: string, body?: unknown, isPublic = false) =>
   request<T>("POST", path, body, isPublic)
 const put = <T>(path: string, body?: unknown) =>
@@ -481,8 +527,7 @@ const webhooks = {
 // ─── Billing ──────────────────────────────────────────────────────────────────
 
 const billing = {
-  getSubscription: () =>
-    get<SubscriptionResponse>("/api/billing/subscription"),
+  getSubscription: () => get<SubscriptionResponse>("/api/billing/subscription"),
 
   getMe: () => get<SubscriptionResponse>("/api/subscriptions/me"),
 
@@ -529,6 +574,141 @@ const numberLookups = {
     post<ImportContactsResponse>(`/api/number-lookups/${id}/import-contacts`, payload),
 }
 
+function normalizeTeamListPayload(payload: TeamSummary[] | { items?: TeamSummary[]; teams?: TeamSummary[] }): TeamSummary[] {
+  if (Array.isArray(payload)) return payload
+  return payload.items ?? payload.teams ?? []
+}
+
+function parseTruthyOwnerFlag(value: unknown): boolean {
+  if (value === true || value === 1) return true
+  if (typeof value === "string") {
+    const s = value.toLowerCase().trim()
+    return s === "true" || s === "1" || s === "yes"
+  }
+  return false
+}
+
+function pickFirstRoleString(...vals: unknown[]): string | undefined {
+  for (const v of vals) {
+    if (typeof v === "string" && v.trim()) return v.trim()
+  }
+  return undefined
+}
+
+function normalizeTeamDetailPayload(payload: TeamDetail & { team?: TeamDetail }): TeamDetail {
+  const env = payload as unknown as Record<string, unknown>
+  if (payload.team && typeof payload.team === "object") {
+    const inner = payload.team
+    const innerRec = inner as unknown as Record<string, unknown>
+    const myRoleMerged = pickFirstRoleString(
+      inner.myRole,
+      payload.myRole,
+      innerRec.role,
+      env.role,
+      env.membershipRole,
+      env.currentUserRole,
+    )
+    const isOwnerMerged =
+      inner.isOwner === true ||
+      payload.isOwner === true ||
+      parseTruthyOwnerFlag(innerRec.isOwner) ||
+      parseTruthyOwnerFlag(env.isOwner)
+
+    return {
+      ...inner,
+      members: payload.members ?? inner.members,
+      invitations: payload.invitations ?? inner.invitations,
+      usageThisMonth: payload.usageThisMonth ?? inner.usageThisMonth,
+      instances: payload.instances ?? inner.instances,
+      myRole: myRoleMerged ?? inner.myRole ?? payload.myRole,
+      isOwner: isOwnerMerged ? true : (inner.isOwner ?? payload.isOwner),
+      maxSeats: inner.maxSeats ?? payload.maxSeats,
+      activeMemberCount: inner.activeMemberCount ?? payload.activeMemberCount,
+      createdAt: inner.createdAt ?? payload.createdAt,
+    }
+  }
+  const flat = payload as unknown as Record<string, unknown>
+  const myRoleFlat = pickFirstRoleString(
+    payload.myRole,
+    flat.role,
+    flat.membershipRole,
+    flat.currentUserRole,
+  )
+  const isOwnerFlat = payload.isOwner === true || parseTruthyOwnerFlag(flat.isOwner)
+  return {
+    ...payload,
+    myRole: myRoleFlat ?? payload.myRole,
+    isOwner: isOwnerFlat ? true : payload.isOwner,
+  }
+}
+
+// ─── Teams (workspaces) ──────────────────────────────────────────────────────
+
+function normalizeInvitationMineList(
+  payload: TeamInvitationMine[] | { items?: TeamInvitationMine[]; invitations?: TeamInvitationMine[] },
+): TeamInvitationMine[] {
+  if (Array.isArray(payload)) return payload
+  return payload.items ?? payload.invitations ?? []
+}
+
+function normalizeApiKeyList(payload: TeamApiKeyRow[] | { items?: TeamApiKeyRow[] }): TeamApiKeyRow[] {
+  if (Array.isArray(payload)) return payload
+  return payload.items ?? []
+}
+
+const teams = {
+  listMineInvitations: () =>
+    get<TeamInvitationMine[] | { items?: TeamInvitationMine[] }>("/api/teams/invitations/mine").then(
+      normalizeInvitationMineList,
+    ),
+
+  acceptInvitation: (body: { invitationId?: string; token?: string }) =>
+    post<{ success?: boolean }>("/api/teams/invitations/accept", body),
+
+  list: () =>
+    get<TeamSummary[] | { items?: TeamSummary[]; teams?: TeamSummary[] }>("/api/teams").then(normalizeTeamListPayload),
+
+  create: (payload: CreateTeamPayload) => post<TeamDetail>("/api/teams", payload),
+
+  get: (teamId: string) =>
+    get<TeamDetail & { team?: TeamDetail }>(`/api/teams/${teamId}`).then(normalizeTeamDetailPayload),
+
+  update: (teamId: string, body: { name: string }) => patch<TeamDetail>(`/api/teams/${teamId}`, body),
+
+  delete: (teamId: string) => del<{ deleted?: boolean }>(`/api/teams/${teamId}`),
+
+  createInvitation: (teamId: string, body: { email: string; role: "admin" | "collaborator" }) =>
+    post<TeamInvitation>(`/api/teams/${teamId}/invitations`, body),
+
+  resendInvitation: (teamId: string, invitationId: string) =>
+    post<{ success?: boolean }>(`/api/teams/${teamId}/invitations/${invitationId}/resend`),
+
+  revokeInvitation: (teamId: string, invitationId: string) =>
+    del<{ success?: boolean }>(`/api/teams/${teamId}/invitations/${invitationId}`),
+
+  removeMember: (teamId: string, userId: string) =>
+    del<{ success?: boolean }>(`/api/teams/${teamId}/members/${userId}`),
+
+  leave: (teamId: string) => post<{ success?: boolean }>(`/api/teams/${teamId}/members/leave`),
+
+  assignInstance: (teamId: string, body: { instanceId: string; memberUserId: string }) =>
+    post<{ success?: boolean }>(`/api/teams/${teamId}/instance-assignments`, body),
+
+  unassignInstance: (teamId: string, instanceId: string, memberUserId: string) => {
+    const q = new URLSearchParams({ instanceId, memberUserId }).toString()
+    return del<{ success?: boolean }>(`/api/teams/${teamId}/instance-assignments?${q}`)
+  },
+
+  listApiKeys: (teamId: string) =>
+    get<TeamApiKeyRow[] | { items?: TeamApiKeyRow[] }>(`/api/teams/${teamId}/api-keys`).then(normalizeApiKeyList),
+
+  createApiKey: (teamId: string, body: { name: string }) =>
+    post<CreateTeamApiKeyResponse>(`/api/teams/${teamId}/api-keys`, body),
+
+  revokeApiKey: (teamId: string, keyId: string) =>
+    del<{ success?: boolean }>(`/api/teams/${teamId}/api-keys/${keyId}`),
+}
+
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 export const apiClient = {
@@ -545,6 +725,7 @@ export const apiClient = {
   billing,
   statuses,
   numberLookups,
+  teams,
 }
 
 export { ApiClientError }
