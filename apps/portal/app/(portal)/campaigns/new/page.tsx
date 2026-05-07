@@ -119,7 +119,6 @@ export default function NewCampaignPage() {
   const canCreateCampaign =
     form.name.trim().length > 0
     && Boolean(form.instanceId)
-    && Boolean(form.schedule)
     && recipientsValid
     && contentValid
     && !temporaryMediaExpired
@@ -128,7 +127,6 @@ export default function NewCampaignPage() {
   const createDisabledReason = useMemo(() => {
     if (!form.name.trim()) return null
     if (!form.instanceId) return np.missingInstance
-    if (!form.schedule) return np.missingSchedule
     if (!recipientsValid) return np.missingRecipients
     if (contentMode === "template" && !form.templateId) return np.missingTemplate
     if (contentMode === "direct") {
@@ -145,7 +143,6 @@ export default function NewCampaignPage() {
     form.directType,
     form.instanceId,
     form.name,
-    form.schedule,
     form.templateId,
     np,
     recipientsValid,
@@ -435,7 +432,6 @@ export default function NewCampaignPage() {
               type="datetime-local"
               value={form.schedule}
               onChange={(e) => setForm((prev) => ({ ...prev, schedule: e.target.value }))}
-              required
             />
 
             <Select label={np.repeatLabel} value={form.repeat} onChange={(e) => setForm((prev) => ({ ...prev, repeat: e.target.value as "none" | "daily" | "weekly" }))}>
