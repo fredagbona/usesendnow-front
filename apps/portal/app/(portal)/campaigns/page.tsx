@@ -335,7 +335,7 @@ export default function CampaignsPage() {
       toast.success(list.scheduled)
       setCreateModalOpen(false)
       setCustomVariables([])
-      releaseUploadedMedia()
+      shouldCleanupMediaRef.current = false
       resetMediaState()
       setContentMode("direct")
       setForm({

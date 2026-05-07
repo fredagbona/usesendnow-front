@@ -351,6 +351,7 @@ export default function NewCampaignPage() {
         toast.success(copy.campaigns.created)
       }
 
+      shouldCleanupMediaRef.current = false
       router.push("/campaigns")
       router.refresh()
     } catch (err) {
