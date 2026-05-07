@@ -27,6 +27,7 @@ import CampaignSafetyHints from "@/components/campaigns/CampaignSafetyHints"
 import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
 import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, formatBytes } from "@/lib/messageComposer"
+import { isTemporaryMediaBlockedForRecurring, isTemporaryMediaExpiredForScheduledAt } from "@/lib/mediaValidation"
 import { Megaphone01Icon, ArrowLeft01Icon, InformationCircleIcon } from "hugeicons-react"
 
 export default function NewCampaignPage() {
@@ -113,12 +114,16 @@ export default function NewCampaignPage() {
       : form.directType === "text"
         ? form.directBody.trim().length > 0
         : Boolean(form.directMediaUrl)
+  const temporaryMediaExpired = isTemporaryMediaExpiredForScheduledAt(uploadedMedia, form.schedule)
+  const temporaryMediaRecurring = isTemporaryMediaBlockedForRecurring(uploadedMedia, form.repeat)
   const canCreateCampaign =
     form.name.trim().length > 0
     && Boolean(form.instanceId)
     && Boolean(form.schedule)
     && recipientsValid
     && contentValid
+    && !temporaryMediaExpired
+    && !temporaryMediaRecurring
 
   const toggleRecipientValue = (field: "tags" | "explicit", value: string) => {
     setForm((prev) => ({
@@ -260,6 +265,16 @@ export default function NewCampaignPage() {
     e.preventDefault()
     if (!canCreateCampaign) return
 
+    if (temporaryMediaRecurring) {
+      setMediaError(copy.campaigns.newPage.mediaRecurringBlocked)
+      return
+    }
+
+    if (temporaryMediaExpired) {
+      setMediaError(copy.campaigns.newPage.mediaScheduleBlocked)
+      return
+    }
+
     setCreating(true)
     try {
       const schedule = form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString()
@@ -320,6 +335,12 @@ export default function NewCampaignPage() {
           toast.error(np.errorQuotaExceeded)
         } else if (err.code === "NOT_FOUND") {
           toast.error(np.errorNotFound)
+        } else if (err.code === "MEDIA_URL_EXPIRED" || err.code === "MEDIA_URL_EXPIRES_BEFORE_EXECUTION") {
+          setMediaError(copy.campaigns.newPage.mediaScheduleBlocked)
+        } else if (err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_RECURRING" || err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_CRON") {
+          setMediaError(copy.campaigns.newPage.mediaRecurringBlocked)
+        } else if (err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_TEMPLATE") {
+          setMediaError(copy.campaigns.newPage.mediaTemplateBlocked)
         } else if (err.code === "VALIDATION_ERROR") {
           toast.error(np.errorValidation)
         } else {
@@ -571,6 +592,14 @@ export default function NewCampaignPage() {
                       onFileChange={handleFileSelect}
                       onRemove={handleRemoveFile}
                     />
+                  )}
+
+                  {uploadedMedia && temporaryMediaExpired && (
+                    <p className="text-xs text-error">{copy.campaigns.newPage.mediaScheduleBlocked}</p>
+                  )}
+
+                  {uploadedMedia && temporaryMediaRecurring && (
+                    <p className="text-xs text-error">{copy.campaigns.newPage.mediaRecurringBlocked}</p>
                   )}
 
                   {form.directType !== "voice_note" && (

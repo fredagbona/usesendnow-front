@@ -1069,7 +1069,7 @@ export const portalCopy = {
       mediaUpload: {
         uploading: "Upload en cours...",
         uploadingHint: "Le fichier est envoyé vers l’hébergement temporaire sécurisé.",
-        fileDetails: "{{size}} · {{mime}} · expire le {{date}}",
+        fileDetails: "{{size}} · {{mime}} · expire le : {{date}}",
         replace: "Remplacer",
         tempHostNotice: "Le fichier est hébergé temporairement et supprimé automatiquement après expiration.",
         publicLinkNotice: "Le lien généré est public. N’uploadez pas de document sensible.",
@@ -1163,6 +1163,9 @@ export const portalCopy = {
           "Le fichier ressemble à une note vocale. Le type a été prérempli en conséquence.",
         schedulePastExpiryError:
           "Le média doit rester valide jusqu'à l'envoi. Si la date prévue dépasse l'expiration, l'envoi peut échouer.",
+        mediaRecurringBlocked: "Les médias temporaires ne sont pas autorisés pour les messages récurrents. Utilisez une URL publique permanente.",
+        mediaCronBlocked: "Les médias temporaires ne sont pas autorisés pour les messages planifiés récurrents. Utilisez une URL publique permanente.",
+        mediaTemplateBlocked: "Les médias temporaires ne peuvent pas être enregistrés dans un template réutilisable. Utilisez une URL publique permanente.",
         uploadFailedStatusLine: "Échec de l'upload média.",
         previewFailedStatusLine: "Impossible de générer l'aperçu.",
         sendFailedStatusLine: "Échec de l'envoi. Corrigez les champs puis réessayez.",
@@ -1314,6 +1317,15 @@ export const portalCopy = {
         instancePlaceholder: "— Sélectionner une instance —",
         scheduleLabel: "Planifier le lancement",
         repeatLabel: "Répétition",
+        mediaExpiryLabel: "Expire le : {{date}}",
+        mediaGenericWarning:
+          "Ce fichier a été uploadé de manière temporaire. Il peut expirer avant l’envoi prévu. Utilisez une URL publique permanente ou réuploadez le fichier plus près de l’heure d’envoi.",
+        mediaScheduleBlocked:
+          "Ce média expirera avant le lancement de la campagne. Réuploadez le fichier plus près de l’envoi ou utilisez une URL publique permanente.",
+        mediaRecurringBlocked:
+          "Les médias temporaires ne sont pas autorisés pour les campagnes récurrentes. Utilisez une URL publique permanente.",
+        mediaTemplateBlocked:
+          "Les médias temporaires ne peuvent pas être enregistrés dans un template réutilisable. Utilisez une URL publique permanente.",
         recipientTypeLabel: "Type de destinataires",
         recipientTypeAll: "Tous les contacts",
         recipientTypeTags: "Par tags",
@@ -1390,6 +1402,12 @@ export const portalCopy = {
         mediaFileTooLargePrefix: "Fichier trop volumineux. Maximum",
         formatUnsupportedPrefix: "Format non supporté. Accepté :",
         mediaReplaceNotice: "Le précédent fichier temporaire sera remplacé par le nouveau.",
+        mediaScheduleBlocked:
+          "Ce média expirera avant le lancement de la campagne. Réuploadez le fichier plus près de l’envoi ou utilisez une URL publique permanente.",
+        mediaRecurringBlocked:
+          "Les médias temporaires ne sont pas autorisés pour les campagnes récurrentes. Utilisez une URL publique permanente.",
+        mediaTemplateBlocked:
+          "Les médias temporaires ne peuvent pas être enregistrés dans un template réutilisable. Utilisez une URL publique permanente.",
         mediaTypeNotAllowed: "Ce format de fichier n'est pas supporté.",
         mediaTooLarge: "Le fichier dépasse la taille maximale autorisée.",
         mediaUploadFailed: "L'upload du fichier a échoué. Réessayez.",
@@ -2667,7 +2685,7 @@ export const portalCopy = {
       mediaUpload: {
         uploading: "Upload in progress...",
         uploadingHint: "The file is being sent to secure temporary storage.",
-        fileDetails: "{{size}} · {{mime}} · expires {{date}}",
+        fileDetails: "{{size}} · {{mime}} · expires: {{date}}",
         replace: "Replace",
         tempHostNotice: "The file is hosted temporarily and deleted automatically after expiry.",
         publicLinkNotice: "The generated link is public. Do not upload sensitive documents.",
@@ -2755,6 +2773,12 @@ export const portalCopy = {
           "This file looks like a voice note. The message type was prefilled accordingly.",
         schedulePastExpiryError:
           "Media must stay valid until send time. If the scheduled time is after expiry, sending may fail.",
+        mediaRecurringBlocked:
+          "Temporary media is not allowed for recurring messages. Use a permanent public URL.",
+        mediaCronBlocked:
+          "Temporary media is not allowed for recurring scheduled messages. Use a permanent public URL.",
+        mediaTemplateBlocked:
+          "Temporary media cannot be saved in a reusable template. Use a permanent public URL.",
         uploadFailedStatusLine: "Media upload failed.",
         previewFailedStatusLine: "Unable to generate preview.",
         sendFailedStatusLine: "Send failed. Fix the fields and try again.",
@@ -2904,6 +2928,15 @@ export const portalCopy = {
         instancePlaceholder: "— Select an instance —",
         scheduleLabel: "Schedule launch",
         repeatLabel: "Repeat",
+        mediaExpiryLabel: "Expires: {{date}}",
+        mediaGenericWarning:
+          "This file was uploaded temporarily. It may expire before the planned send time. Use a permanent public URL or re-upload the file closer to send time.",
+        mediaScheduleBlocked:
+          "This media will expire before the campaign starts. Re-upload the file closer to send time or use a permanent public URL.",
+        mediaRecurringBlocked:
+          "Temporary media is not allowed for recurring campaigns. Use a permanent public URL.",
+        mediaTemplateBlocked:
+          "Temporary media cannot be saved in a reusable template. Use a permanent public URL.",
         recipientTypeLabel: "Recipient type",
         recipientTypeAll: "All contacts",
         recipientTypeTags: "By tags",
@@ -2980,6 +3013,12 @@ export const portalCopy = {
         mediaFileTooLargePrefix: "File too large. Maximum",
         formatUnsupportedPrefix: "Unsupported format. Accepted:",
         mediaReplaceNotice: "The previous temporary file will be replaced by the new one.",
+        mediaScheduleBlocked:
+          "This media will expire before the campaign starts. Re-upload the file closer to send time or use a permanent public URL.",
+        mediaRecurringBlocked:
+          "Temporary media is not allowed for recurring campaigns. Use a permanent public URL.",
+        mediaTemplateBlocked:
+          "Temporary media cannot be saved in a reusable template. Use a permanent public URL.",
         mediaTypeNotAllowed: "This file format is not supported.",
         mediaTooLarge: "The file exceeds the maximum allowed size.",
         mediaUploadFailed: "File upload failed. Please try again.",

@@ -31,6 +31,7 @@ import { SkeletonTableRow } from "@/components/ui/Skeleton"
 import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
 import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, formatBytes } from "@/lib/messageComposer"
+import { isTemporaryMediaBlockedForRecurring, isTemporaryMediaExpiredForScheduledAt } from "@/lib/mediaValidation"
 import { Megaphone01Icon } from "hugeicons-react"
 
 const STATUS_VARIANT: Record<string, "neutral" | "yellow" | "blue" | "orange" | "success" | "error" | "purple"> = {
@@ -79,7 +80,7 @@ export default function CampaignsPage() {
   const [cancelling, setCancelling] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [customVariables, setCustomVariables] = useState<CustomVariableEntry[]>([])
-  const [contentMode, setContentMode] = useState<"template" | "direct">("template")
+  const [contentMode, setContentMode] = useState<"template" | "direct">("direct")
   const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -140,12 +141,16 @@ export default function CampaignsPage() {
       : form.directType === "text"
         ? form.directBody.trim().length > 0
         : Boolean(form.directMediaUrl)
+  const temporaryMediaExpired = isTemporaryMediaExpiredForScheduledAt(uploadedMedia, form.schedule)
+  const temporaryMediaRecurring = isTemporaryMediaBlockedForRecurring(uploadedMedia, form.repeat)
   const canCreateCampaign =
     form.name.trim().length > 0
     && Boolean(form.instanceId)
     && Boolean(form.schedule)
     && recipientsValid
     && contentValid
+    && !temporaryMediaExpired
+    && !temporaryMediaRecurring
 
   const toggleRecipientValue = (field: "tags" | "explicit", value: string) => {
     setForm((prev) => ({
@@ -281,6 +286,16 @@ export default function CampaignsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canCreateCampaign) return
+
+    if (temporaryMediaRecurring) {
+      toast.error(list.mediaRecurringBlocked)
+      return
+    }
+
+    if (temporaryMediaExpired) {
+      toast.error(list.mediaScheduleBlocked)
+      return
+    }
     setCreating(true)
     try {
       const payload: CreateCampaignPayload = {
@@ -322,7 +337,7 @@ export default function CampaignsPage() {
       setCustomVariables([])
       releaseUploadedMedia()
       resetMediaState()
-      setContentMode("template")
+      setContentMode("direct")
       setForm({
         name: "",
         instanceId: "",

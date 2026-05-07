@@ -23,6 +23,7 @@ import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { RecipientSelector, type RecipientMode } from "@/components/messages/RecipientSelector"
 import { SendStatusPanel } from "@/components/messages/SendStatusPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
+import { isTemporaryMediaExpiredForScheduledAt } from "@/lib/mediaValidation"
 
 type ComposeMode = "freeform" | "template"
 
@@ -71,6 +72,7 @@ export default function NewMessagePage() {
     () => (selectedTemplate ? getCustomVariables(selectedTemplate.variables) : []),
     [selectedTemplate],
   )
+  const temporaryMediaExpired = isTemporaryMediaExpiredForScheduledAt(uploadedMedia, sendForm.scheduledAt)
 
   useEffect(() => {
     uploadedMediaRef.current = uploadedMedia
@@ -267,13 +269,9 @@ export default function NewMessagePage() {
       return
     }
 
-    if (composeMode === "freeform" && sendForm.scheduledAt && uploadedMedia) {
-      const scheduledAt = new Date(sendForm.scheduledAt)
-      const expiresAt = new Date(uploadedMedia.expiresAt)
-      if (scheduledAt.getTime() > expiresAt.getTime()) {
-        setMediaError(m.schedulePastExpiryError)
-        return
-      }
+    if (composeMode === "freeform" && temporaryMediaExpired) {
+      setMediaError(m.schedulePastExpiryError)
+      return
     }
 
     setSending(true)
@@ -314,6 +312,12 @@ export default function NewMessagePage() {
           toast.error(m.sendErrorTemplateContext)
         } else if (err.code === "TEMPLATE_INVALID") {
           toast.error(m.sendErrorTemplateInvalid)
+        } else if (err.code === "MEDIA_URL_EXPIRED" || err.code === "MEDIA_URL_EXPIRES_BEFORE_EXECUTION") {
+          setMediaError(m.schedulePastExpiryError)
+        } else if (err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_RECURRING" || err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_CRON") {
+          setMediaError(m.mediaRecurringBlocked)
+        } else if (err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_TEMPLATE") {
+          setMediaError(m.mediaTemplateBlocked)
         } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
           toast.error(m.sendErrorQuota)
         } else if (err.code === "NOT_FOUND") {
@@ -481,7 +485,7 @@ export default function NewMessagePage() {
                         uploadNotice={mediaNotice}
                       />
                     ) : (
-                      <MediaUploadPanel
+                    <MediaUploadPanel
                         type={sendForm.type}
                         uploading={uploading}
                         uploadProgress={uploadProgress}
@@ -494,6 +498,10 @@ export default function NewMessagePage() {
                         onRemove={handleRemoveFile}
                       />
                     )
+                  )}
+
+                  {temporaryMediaExpired && (
+                    <p className="text-xs text-error">{m.schedulePastExpiryError}</p>
                   )}
 
                   {sendForm.type !== "voice_note" && (
