@@ -19,13 +19,59 @@ Cette feature dépend toujours d’une instance connectée choisie par l’utili
 ## Règles produit
 
 - `instanceId` est obligatoire
-- `< 1000` numéros : traitement synchrone
-- `>= 1000` numéros : traitement asynchrone avec polling
+- `< 100` numéros : traitement synchrone
+- `>= 100` numéros : traitement asynchrone avec polling
+- le backend traite les numéros valides par batchs provider de `20`
 - les résultats sont regroupés en :
   - `onWhatsApp`
   - `notOnWhatsApp`
   - `invalid`
 - l’import contacts ne prend que les numéros `onWhatsApp`
+
+### Différence entre lookup sync et lookup async
+
+Un **lookup sync** est une vérification courte que le backend traite dans la même requête HTTP.
+Concrètement :
+- l’utilisateur clique sur `Verify numbers`
+- le frontend attend la réponse
+- les résultats reviennent immédiatement dans la réponse API
+- il n’y a pas d’écran de progression long ni de job à surveiller
+
+Cas d’usage :
+- petite liste
+- test rapide
+- vérification ponctuelle
+
+Un **lookup async** est une vérification plus volumineuse, traitée en arrière-plan par un worker.
+Concrètement :
+- l’utilisateur clique sur `Verify numbers`
+- le backend répond tout de suite avec un `lookupId`
+- le traitement continue en arrière-plan
+- le frontend doit afficher un état `in progress`
+- puis interroger régulièrement l’endpoint de progression jusqu’à la fin
+
+Cas d’usage :
+- listes plus longues
+- import en masse
+- vérifications qui peuvent prendre plusieurs appels provider
+
+### Ce que le user doit comprendre à l’écran
+
+Le produit ne doit pas exposer seulement `sync` ou `async` comme jargon brut.
+Il faut expliquer clairement ce que cela veut dire pour l’utilisateur :
+
+- **Vérification instantanée**
+  - utilisée pour les petites listes
+  - les résultats s’affichent directement
+
+- **Vérification en arrière-plan**
+  - utilisée pour les listes plus longues
+  - le traitement continue pendant que l’utilisateur peut rester sur la page
+  - une progression est affichée jusqu’à la fin
+
+Le frontend peut garder les termes techniques `sync` / `async` dans le code ou en debug, mais en UI il faut préférer :
+- `Instant verification`
+- `Background verification`
 
 ---
 
@@ -37,6 +83,8 @@ Cette feature dépend toujours d’une instance connectée choisie par l’utili
 | POST | /api/number-lookups | JWT | Lancer une vérification sync ou async |
 | GET | /api/number-lookups | JWT | Lister les vérifications passées |
 | GET | /api/number-lookups/{id} | JWT | Lire le statut et le résultat |
+| GET | /api/number-lookups/{id}/progress | JWT | Suivre la progression d’un lookup async |
+| POST | /api/number-lookups/{id}/cancel | JWT | Annuler un lookup pending/processing |
 | POST | /api/number-lookups/{id}/import-contacts | JWT | Importer les numéros valides en contacts |
 
 ---
@@ -72,7 +120,24 @@ Règles frontend :
 - une ligne = un numéro
 - trim des lignes vides
 - compteur live du nombre de numéros
-- avertissement si `>= 1000` : `This lookup will run in background.`
+- indication si `< 100` :
+  - `This verification will run instantly and return results directly.`
+- indication si `>= 100` :
+  - `This verification will run in background. You will be able to follow progress live.`
+
+Bloc visuel recommandé sous la zone de saisie :
+
+```txt
+Small list (< 100 numbers)
+Instant verification
+Results appear immediately after submission.
+
+Large list (100+ numbers)
+Background verification
+Processing continues in the background with live progress.
+```
+
+Ce bloc doit être visible avant soumission pour éviter la surprise UX.
 
 ### LookupSummaryCards
 Affiche :
@@ -101,7 +166,9 @@ Chaque ligne `Invalid` :
 Colonnes :
 - date
 - instance
+- mode (`Instant` / `Background`)
 - status
+- progress
 - requested
 - onWhatsAppCount
 - notOnWhatsAppCount
@@ -129,14 +196,29 @@ Action :
 - `submitting.sync`
 - `submitting.async`
 - `polling`
+- `cancelling`
 - `done`
 - `failed`
+- `cancelled`
 - `importingContacts`
 
 Messages :
 - sync : `Lookup completed`
 - async : `Lookup started. Results will be available shortly.`
 - failed : `Lookup failed. Please try again.`
+- cancelled : `Lookup cancelled.`
+
+Messages explicatifs recommandés :
+- avant envoi d’une petite liste :
+  - `This list will be verified instantly.`
+- avant envoi d’une grande liste :
+  - `This list will be verified in the background. You can follow progress live.`
+- pendant un async :
+  - `Verification in progress...`
+- sous la barre de progression :
+  - `Checked {checkedCount} of {normalizedCount} valid numbers`
+- en fin de traitement :
+  - `Verification completed`
 
 ---
 
@@ -148,7 +230,7 @@ Request :
 ```json
 {
   "instanceId": "uuid",
-  "numbers": ["+41791234567", "+81476222311"]
+  "numbers": ["+22901000000", "+22902000000"]
 }
 ```
 
@@ -181,7 +263,7 @@ Réponse async :
     "mode": "async",
     "lookupId": "uuid",
     "status": "pending",
-    "requested": 1250,
+    "requested": 400,
     "message": "Lookup in progress. Check status later."
   }
 }
@@ -212,6 +294,54 @@ Réponse :
 }
 ```
 
+### GET /api/number-lookups/{id}/progress
+
+Réponse :
+```json
+{
+  "data": {
+    "id": "uuid",
+    "status": "processing",
+    "progress": 60,
+    "requestedCount": 400,
+    "normalizedCount": 392,
+    "checkedCount": 240,
+    "onWhatsAppCount": 151,
+    "notOnWhatsAppCount": 89,
+    "invalidCount": 8,
+    "error": null,
+    "createdAt": "2026-05-07T10:00:00.000Z",
+    "updatedAt": "2026-05-07T10:00:07.000Z",
+    "completedAt": null
+  }
+}
+```
+
+Interprétation frontend :
+- `pending`
+  - le job a été créé mais n’a pas encore commencé
+- `processing`
+  - le worker traite actuellement les batchs
+- `done`
+  - la vérification est terminée, les résultats complets sont disponibles
+- `failed`
+  - la vérification a échoué
+- `cancelled`
+  - la vérification a été interrompue par l’utilisateur
+
+### POST /api/number-lookups/{id}/cancel
+
+Réponse :
+```json
+{
+  "data": {
+    "id": "uuid",
+    "status": "cancelled",
+    "completedAt": "2026-05-07T10:00:08.000Z"
+  }
+}
+```
+
 ### POST /api/number-lookups/{id}/import-contacts
 
 Request :
@@ -237,6 +367,65 @@ Response :
 ---
 
 ## UX recommandé
+
+### Stratégie frontend recommandée
+- si `numbers.length < 100` :
+  - appel direct
+  - attendre la réponse synchrone
+- si `numbers.length >= 100` :
+  - envoyer le lookup
+  - rediriger vers la vue détail / suivi
+  - poller `GET /api/number-lookups/{id}/progress` toutes les `2s`
+  - arrêter le polling quand `status` devient :
+    - `done`
+    - `failed`
+    - `cancelled`
+
+### Présentation visuelle recommandée
+
+Pour un lookup async, afficher au minimum :
+- un badge `Background verification`
+- une barre de progression
+- le pourcentage
+- les compteurs intermédiaires :
+  - `Checked`
+  - `On WhatsApp`
+  - `Not on WhatsApp`
+  - `Invalid`
+- un bouton `Cancel lookup`
+
+Exemple de rendu textuel :
+
+```txt
+Background verification
+We are checking your numbers in batches.
+
+[██████████░░░░░░░░] 60%
+
+Checked: 240 / 392
+On WhatsApp: 151
+Not on WhatsApp: 89
+Invalid: 8
+
+[Cancel lookup]
+```
+
+Pour un lookup sync, ne pas montrer une barre de progression longue.
+Afficher seulement un état court de chargement :
+
+```txt
+Instant verification
+Checking your numbers...
+```
+
+### Actions UI recommandées
+- afficher le bouton `Cancel lookup` seulement si `status` est :
+  - `pending`
+  - `processing`
+- masquer `Import contacts` tant que `status !== done`
+- afficher les counts intermédiaires pendant `processing`
+- si `status = cancelled`, afficher les résultats partiels seulement si le backend en stocke plus tard
+  - pour cette V1, considérer qu’un lookup annulé n’a pas de résultat exploitable
 
 ### Après création sync
 - afficher immédiatement le résumé

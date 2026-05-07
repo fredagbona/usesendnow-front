@@ -824,9 +824,11 @@ export const portalCopy = {
       history: "Historique",
       emDash: "—",
       detail: {
+        loadNotFound: "Lookup introuvable.",
+        loadFailed: "Impossible de charger le lookup.",
         title: "Détails du lookup",
         instance: "Instance",
-        instanceStatus: "Statut instance",
+        instanceStatus: "Statut de l'instance",
         requested: "Demandés",
         onWhatsApp: "WhatsApp",
         absent: "Absents",
@@ -2447,6 +2449,8 @@ export const portalCopy = {
       history: "History",
       emDash: "—",
       detail: {
+        loadNotFound: "Lookup not found.",
+        loadFailed: "Unable to load the lookup.",
         title: "Lookup details",
         instance: "Instance",
         instanceStatus: "Instance status",

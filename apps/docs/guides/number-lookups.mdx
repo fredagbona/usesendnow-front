@@ -10,13 +10,16 @@ description: Check whether one or more numbers are on WhatsApp, then import matc
 | `POST` | `/api/v1/number-lookups` |
 | `GET` | `/api/v1/number-lookups` |
 | `GET` | `/api/v1/number-lookups/{id}` |
+| `GET` | `/api/v1/number-lookups/{id}/progress` |
+| `POST` | `/api/v1/number-lookups/{id}/cancel` |
 | `POST` | `/api/v1/number-lookups/{id}/import-contacts` |
 
 ## Rules
 
 - `instanceId` est obligatoire
-- moins de `1000` numéros : traitement synchrone
-- `1000` numéros ou plus : traitement asynchrone
+- moins de `100` numéros : traitement synchrone
+- `100` numéros ou plus : traitement asynchrone
+- les numéros valides sont traités par batchs provider de `20`
 - seuls les numéros trouvés sur WhatsApp peuvent être importés en contacts
 
 ## Lancer une vérification
@@ -72,6 +75,20 @@ curl -X POST https://srv.msgflash.com/api/v1/number-lookups \
 
 ```bash
 curl https://srv.msgflash.com/api/v1/number-lookups/LOOKUP_ID \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+## Track progress
+
+```bash
+curl https://srv.msgflash.com/api/v1/number-lookups/LOOKUP_ID/progress \
+  -H "x-api-key: msgf_live_your_api_key_here"
+```
+
+## Cancel an async lookup
+
+```bash
+curl -X POST https://srv.msgflash.com/api/v1/number-lookups/LOOKUP_ID/cancel \
   -H "x-api-key: msgf_live_your_api_key_here"
 ```
 

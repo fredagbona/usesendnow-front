@@ -16,6 +16,12 @@ POST /api/v1/number-lookups
 | `instanceId` | UUID | yes | ID de l’instance connectée à utiliser |
 | `numbers` | string[] | yes | 1 à 10 000 numéros au format international |
 
+## Processing rules
+
+- moins de `100` numéros : réponse synchrone
+- `100` numéros ou plus : réponse asynchrone `202`
+- les numéros valides sont traités côté provider par batchs de `20`
+
 ## Success response `200` ou `202`
 
 ```json
