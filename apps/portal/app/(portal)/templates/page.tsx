@@ -1,13 +1,12 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
 import { useTemplates } from "@/hooks/useTemplates"
 import { formatDate } from "@/lib/format"
-import { parseTemplateVariables } from "@/lib/templateEngine"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { renderWithStrongCount, renderWithStrongName } from "@/lib/render-copy-placeholders"
 import type { Template, TemplateType } from "@usesendnow/types"
@@ -16,114 +15,17 @@ import Button from "@/components/ui/Button"
 import Badge from "@/components/ui/Badge"
 import Card from "@/components/ui/Card"
 import Modal from "@/components/ui/Modal"
-import Input from "@/components/ui/Input"
-import Select from "@/components/ui/Select"
-import Textarea from "@/components/ui/Textarea"
 import EmptyState from "@/components/ui/EmptyState"
-import Alert from "@/components/ui/Alert"
 import { SkeletonCard } from "@/components/ui/Skeleton"
 import { HighlightedTemplateBody } from "@/components/templates/HighlightedTemplateBody"
-import { TemplateVariableGuide } from "@/components/templates/TemplateVariableGuide"
 import { File01Icon } from "hugeicons-react"
 import { apiClient as api, ApiClientError } from "@usesendnow/api-client"
-
-const TEMPLATE_TYPES: TemplateType[] = ["text", "image", "video", "audio", "document"]
-
-function TemplateEditModal({
-  template,
-  onSuccess,
-  onClose,
-}: {
-  template: Template
-  onSuccess: (template: Template) => void
-  onClose: () => void
-}) {
-  const { copy } = usePortalLocale()
-  const t = copy.templates
-  const tNew = t.new
-  const typeLabels = t.detail.typeLabels
-
-  const [name, setName] = useState(template.name)
-  const [body, setBody] = useState(template.body ?? "")
-  const [mediaUrl, setMediaUrl] = useState(template.mediaUrl ?? "")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const detectedVariables = useMemo(() => parseTemplateVariables(body), [body])
-  const requiresMedia = template.type !== "text"
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    try {
-      const response = await api.templates.update(template.id, {
-        name: name.trim(),
-        body: body.trim() || null,
-        mediaUrl: requiresMedia ? mediaUrl.trim() || null : null,
-      })
-      onSuccess(response)
-      onClose()
-      toast.success(t.templateUpdated)
-    } catch (err) {
-      if (err instanceof ApiClientError && err.code === "TEMPLATE_INVALID") {
-        setError(t.invalidTemplate)
-      } else if (err instanceof ApiClientError && err.code === "VALIDATION_ERROR") {
-        setError(t.validationError)
-      } else {
-        setError(t.templateUpdateFailed)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <Modal open onClose={onClose} title={t.editTitle} maxWidth="max-w-2xl">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input label={t.name} value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
-        <Select label={t.type} value={template.type} disabled>
-          <option>{typeLabels[template.type]}</option>
-        </Select>
-        <Textarea
-          label={requiresMedia ? t.bodyOptional : t.body}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          required={!requiresMedia}
-          rows={5}
-          placeholder={tNew.bodyPlaceholder}
-        />
-        <TemplateVariableGuide variables={detectedVariables} />
-        {requiresMedia && (
-          <Input
-            label={t.detail.mediaUrlTitle}
-            type="url"
-            value={mediaUrl}
-            onChange={(e) => setMediaUrl(e.target.value)}
-            placeholder={t.mediaUrlPlaceholder}
-          />
-        )}
-        {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
-        <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            {tNew.cancel}
-          </Button>
-          <Button type="submit" variant="primary" loading={loading}>
-            {t.save}
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  )
-}
 
 export default function TemplatesPage() {
   const router = useRouter()
   const { copy } = usePortalLocale()
   const t = copy.templates
-  const { templates, total, page, limit, loading, goToPage, updateTemplate, removeTemplate } = useTemplates()
-  const [editTarget, setEditTarget] = useState<Template | null>(null)
+  const { templates, total, page, limit, loading, goToPage, removeTemplate } = useTemplates()
   const [deleteTarget, setDeleteTarget] = useState<Template | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
 
@@ -212,7 +114,7 @@ export default function TemplatesPage() {
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => setEditTarget(template)}>
+                  <Button size="sm" variant="secondary" onClick={() => router.push(`/templates/${template.id}/edit`)}>
                     {t.edit}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => router.push(`/templates/${template.id}`)}>
@@ -240,17 +142,6 @@ export default function TemplatesPage() {
             </div>
           )}
         </>
-      )}
-
-      {editTarget && (
-        <TemplateEditModal
-          template={editTarget}
-          onSuccess={(template) => {
-            updateTemplate(template)
-            setEditTarget(null)
-          }}
-          onClose={() => setEditTarget(null)}
-        />
       )}
 
       <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={t.deleteTitle}>

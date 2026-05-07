@@ -243,6 +243,7 @@ export default function NewCampaignPage() {
 
   const handleTemplateChange = (templateId: string) => {
     const template = templates.find((t) => t.id === templateId) ?? null
+    setContentMode("template")
     setForm((prev) => ({ ...prev, templateId }))
     setCustomVariables(
       template
