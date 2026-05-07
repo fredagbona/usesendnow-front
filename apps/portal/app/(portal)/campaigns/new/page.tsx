@@ -125,6 +125,34 @@ export default function NewCampaignPage() {
     && !temporaryMediaExpired
     && !temporaryMediaRecurring
 
+  const createDisabledReason = useMemo(() => {
+    if (!form.name.trim()) return null
+    if (!form.instanceId) return np.missingInstance
+    if (!form.schedule) return np.missingSchedule
+    if (!recipientsValid) return np.missingRecipients
+    if (contentMode === "template" && !form.templateId) return np.missingTemplate
+    if (contentMode === "direct") {
+      if (form.directType === "text" && !form.directBody.trim()) return np.missingDirectMessage
+      if (form.directType !== "text" && !form.directMediaUrl) return np.missingDirectMessage
+    }
+    if (temporaryMediaExpired) return np.temporaryMediaExpired
+    if (temporaryMediaRecurring) return np.temporaryMediaRecurring
+    return null
+  }, [
+    contentMode,
+    form.directBody,
+    form.directMediaUrl,
+    form.directType,
+    form.instanceId,
+    form.name,
+    form.schedule,
+    form.templateId,
+    np,
+    recipientsValid,
+    temporaryMediaExpired,
+    temporaryMediaRecurring,
+  ])
+
   const toggleRecipientValue = (field: "tags" | "explicit", value: string) => {
     setForm((prev) => ({
       ...prev,
@@ -626,10 +654,10 @@ export default function NewCampaignPage() {
 
         <div className="flex items-center justify-between">
           <div className="text-sm text-text-secondary">
-            {!canCreateCampaign && (
+            {!canCreateCampaign && createDisabledReason && (
               <span className="flex items-center gap-1.5">
                 <InformationCircleIcon className="w-4 h-4" />
-                {np.fillRequiredHint}
+                {createDisabledReason}
               </span>
             )}
           </div>

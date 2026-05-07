@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
         : "msgflash — WhatsApp API pour les makers qui n'attendent pas Meta",
     description:
       locale === "en"
-        ? "Connect your number in 2 minutes and send your first WhatsApp messages via API in 5 minutes. No BSP approval, no hidden fees, starting at $9/month."
+        ? "Connect your number in 2 minutes and send your first WhatsApp messages via API in 5 minutes. No BSP approval, no hidden fees, starting at €9/month."
         : "Connectez votre numéro en 2 minutes et envoyez vos premiers messages WhatsApp via API en 5 minutes. Sans validation BSP, sans frais cachés, à partir de 9€/mois.",
   }
 }
