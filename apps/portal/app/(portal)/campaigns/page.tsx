@@ -15,7 +15,7 @@ import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
 import { formatDate } from "@/lib/format"
-import type { Campaign, SubscriptionResponse, CreateCampaignPayload, MessageType, UploadedMedia } from "@usesendnow/types"
+import type { Campaign, SubscriptionResponse, CreateCampaignPayload, InstanceHealth, MessageType, UploadedMedia } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
 import Badge from "@/components/ui/Badge"
@@ -30,6 +30,7 @@ import EmptyState from "@/components/ui/EmptyState"
 import { SkeletonTableRow } from "@/components/ui/Skeleton"
 import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
+import WarmupWarningModal from "@/components/shared/WarmupWarningModal"
 import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, formatBytes } from "@/lib/messageComposer"
 import { isTemporaryMediaBlockedForRecurring, isTemporaryMediaExpiredForScheduledAt } from "@/lib/mediaValidation"
 import { Megaphone01Icon } from "hugeicons-react"
@@ -52,7 +53,7 @@ function canResume(status: string) { return ["paused", "paused_quota", "paused_p
 function canCancel(status: string) { return ["scheduled", "running", "paused", "paused_quota", "paused_plan"].includes(status) }
 function canDelete(status: string) { return ["scheduled", "running", "paused", "paused_quota", "paused_plan", "cancelled", "completed", "failed"].includes(status) }
 
-function getCampaignTotal(campaign: Campaign) {
+  function getCampaignTotal(campaign: Campaign) {
   return campaign.stats.planned
     ?? campaign.stats.queued
     + campaign.stats.sent
@@ -71,7 +72,6 @@ export default function CampaignsPage() {
   const { groups } = useContactGroups()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [planBlocked, setPlanBlocked] = useState(false)
-  const [createModalOpen, setCreateModalOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [cancelTarget, setCancelTarget] = useState<{ id: string; name: string } | null>(null)
   const [creating, setCreating] = useState(false)
@@ -86,9 +86,12 @@ export default function CampaignsPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [mediaError, setMediaError] = useState<string | null>(null)
   const [mediaNotice, setMediaNotice] = useState<string | null>(null)
+  const [warmupWarningOpen, setWarmupWarningOpen] = useState(false)
+  const [warmupWarningHealth, setWarmupWarningHealth] = useState<InstanceHealth | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadedMediaRef = useRef<UploadedMedia | null>(null)
   const shouldCleanupMediaRef = useRef(false)
+  const pendingRouteRef = useRef<string | null>(null)
 
   const [form, setForm] = useState<{
     name: string
@@ -159,6 +162,51 @@ export default function CampaignsPage() {
         ? prev[field].filter((item) => item !== value)
         : [...prev[field], value],
     }))
+  }
+
+  const openCampaignComposer = async () => {
+    const connectedInstances = instances.filter((instance) => instance.status === "connected")
+    if (connectedInstances.length === 0) {
+      router.push("/campaigns/new")
+      return
+    }
+
+    try {
+      const healthResults = await Promise.allSettled(
+        connectedInstances.map(async (instance) => ({
+          instance,
+          health: await apiClient.instances.getHealth(instance.id),
+        }))
+      )
+
+      type HealthCandidate = {
+        instance: (typeof connectedInstances)[number]
+        health: InstanceHealth
+      }
+
+      const bestCandidate = healthResults
+        .filter((result): result is PromiseFulfilledResult<HealthCandidate> => result.status === "fulfilled")
+        .map((result) => result.value)
+        .sort((a, b) => b.health.safetyScore - a.health.safetyScore)[0]
+
+      if (bestCandidate && bestCandidate.health.safetyScore > 60) {
+        setWarmupWarningHealth(bestCandidate.health)
+        pendingRouteRef.current = "/campaigns/new"
+        setWarmupWarningOpen(true)
+        return
+      }
+    } catch {
+      // If health fetch fails, continue normally.
+    }
+
+    router.push("/campaigns/new")
+  }
+
+  const continueToCampaignComposer = () => {
+    setWarmupWarningOpen(false)
+    const pending = pendingRouteRef.current
+    pendingRouteRef.current = null
+    router.push(pending ?? "/campaigns/new")
   }
 
   useEffect(() => {
@@ -333,7 +381,6 @@ export default function CampaignsPage() {
       const campaign = await apiClient.campaigns.create(payload)
       prependCampaign(campaign)
       toast.success(list.scheduled)
-      setCreateModalOpen(false)
       setCustomVariables([])
       shouldCleanupMediaRef.current = false
       resetMediaState()
@@ -356,7 +403,6 @@ export default function CampaignsPage() {
       if (err instanceof ApiClientError) {
         if (err.code === "CAMPAIGNS_NOT_AVAILABLE_ON_PLAN") {
           setPlanBlocked(true)
-          setCreateModalOpen(false)
         } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
           toast.error(list.monthlyQuota)
         } else if (err.code === "NOT_FOUND") {
@@ -456,7 +502,7 @@ export default function CampaignsPage() {
         description={list.description}
         action={
           !planBlocked && (
-            <Button variant="primary" onClick={() => router.push("/campaigns/new")}>
+            <Button variant="primary" onClick={() => void openCampaignComposer()}>
               {list.newCta}
             </Button>
           )
@@ -500,7 +546,7 @@ export default function CampaignsPage() {
               title={list.emptyTitle}
               description={list.emptyDescription}
               ctaLabel={list.newCta}
-              onCta={() => router.push("/campaigns/new")}
+              onCta={() => void openCampaignComposer()}
             />
           ) : (
             <>
@@ -598,8 +644,6 @@ export default function CampaignsPage() {
         </Card>
       )}
 
-      {/* Create modal */}
-
       {/* Cancel confirmation */}
       <Modal open={!!cancelTarget} onClose={() => setCancelTarget(null)} title={list.cancelModalTitle}>
         {cancelTarget && (
@@ -633,6 +677,16 @@ export default function CampaignsPage() {
           </>
         )}
       </Modal>
+
+      <WarmupWarningModal
+        open={warmupWarningOpen}
+        health={warmupWarningHealth}
+        onClose={() => {
+          setWarmupWarningOpen(false)
+          pendingRouteRef.current = null
+        }}
+        onContinue={continueToCampaignComposer}
+      />
     </motion.div>
   )
 }
