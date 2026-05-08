@@ -498,6 +498,8 @@ export default function ContactsPage() {
   const [exporting, setExporting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [bulkGroupId, setBulkGroupId] = useState("")
+  const [bulkAddingToGroup, setBulkAddingToGroup] = useState(false)
 
   // Contact groups lookup map
   const [contactGroups, setContactGroups] = useState<Map<string, Array<{ id: string; name: string; color?: string }>>>(new Map())
@@ -507,18 +509,25 @@ export default function ContactsPage() {
   }, [])
 
   // Load groups for each contact (batch)
-  useEffect(() => {
-    if (contacts.length === 0) return
+  const refreshContactGroups = useCallback((contactIds: string[]) => {
+    if (contactIds.length === 0) return
     const map = new Map<string, Array<{ id: string; name: string; color?: string }>>()
-    contacts.forEach((c) => {
-      apiClient.contacts.getGroups(c.id)
+    contactIds.forEach((contactId) => {
+      const contact = contacts.find((item) => item.id === contactId)
+      if (!contact) return
+      apiClient.contacts.getGroups(contactId)
         .then((res) => {
-          map.set(c.id, res.groups)
+          map.set(contact.id, res.groups)
           setContactGroups(new Map(map))
         })
         .catch(() => {})
     })
   }, [contacts])
+
+  useEffect(() => {
+    if (contacts.length === 0) return
+    refreshContactGroups(contacts.map((c) => c.id))
+  }, [contacts, refreshContactGroups])
 
   const maxContactGroups = subscription?.subscription?.plan?.limits?.maxContactGroups ?? -1
   const groupCount = groups.length
@@ -625,6 +634,38 @@ export default function ContactsPage() {
     }
   }
 
+  const handleBulkAddToGroup = async () => {
+    if (selectedIds.size === 0 || !bulkGroupId) return
+    setBulkAddingToGroup(true)
+    try {
+      const result = await apiClient.contactGroups.addMembers(bulkGroupId, Array.from(selectedIds))
+      await Promise.all(Array.from(selectedIds).map((id) => apiClient.contacts.getGroups(id)
+        .then((res) => {
+          setContactGroups((prev) => {
+            const next = new Map(prev)
+            next.set(id, res.groups)
+            return next
+          })
+        })
+        .catch(() => {})))
+      const successTpl =
+        result.added === 1
+          ? copy.contacts.bulkAssignGroupSuccessOne
+          : copy.contacts.bulkAssignGroupSuccessMany
+      toast.success(successTpl.replace("{{count}}", String(result.added)))
+      setBulkGroupId("")
+      setSelectedIds(new Set())
+    } catch (err) {
+      if (err instanceof ApiClientError && err.code === "NOT_FOUND") {
+        toast.error(copy.contacts.importGroupNotFound)
+      } else {
+        toast.error(copy.contacts.bulkAssignGroupFailed)
+      }
+    } finally {
+      setBulkAddingToGroup(false)
+    }
+  }
+
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
@@ -702,7 +743,7 @@ export default function ContactsPage() {
           <Card>
             {/* Bulk action bar */}
             {selectedIds.size > 0 && (
-              <div className="flex items-center justify-between px-5 py-3 bg-primary-subtle border border-primary/30 rounded-xl mb-4">
+              <div className="flex flex-col gap-3 px-5 py-3 bg-primary-subtle border border-primary/30 rounded-xl mb-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-3">
                   <CheckmarkCircle01Icon className="w-5 h-5 text-primary" />
                   <span className="text-sm text-text">
@@ -714,7 +755,32 @@ export default function ContactsPage() {
                     )}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                  <div className="flex flex-col gap-2 rounded-xl border border-border bg-bg px-2 py-2 sm:flex-row sm:items-center sm:py-1.5">
+                    <span className="text-xs font-medium text-text-secondary whitespace-nowrap">
+                      {copy.contacts.bulkAssignGroupLabel}
+                    </span>
+                    <select
+                      value={bulkGroupId}
+                      onChange={(e) => setBulkGroupId(e.target.value)}
+                      className="min-w-44 rounded-lg border border-border-strong bg-bg px-2 py-1 text-xs text-text outline-none sm:min-w-44 min-w-0"
+                    >
+                      <option value="">{copy.contacts.bulkAssignGroupPlaceholder}</option>
+                      {groups.map((g) => (
+                        <option key={g.id} value={g.id}>{g.name}</option>
+                      ))}
+                    </select>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      disabled={!bulkGroupId || groups.length === 0}
+                      loading={bulkAddingToGroup}
+                      onClick={handleBulkAddToGroup}
+                    >
+                      {copy.contacts.bulkAssignGroupButton}
+                    </Button>
+                  </div>
                   <Button variant="secondary" size="sm" onClick={() => setSelectedIds(new Set())}>
                     {copy.contacts.deselectAll}
                   </Button>
