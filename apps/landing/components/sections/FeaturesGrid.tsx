@@ -6,8 +6,12 @@ import {
   BubbleChatIcon,
   Calendar02Icon,
   FlowConnectionIcon,
+  File01Icon,
   Megaphone01Icon,
   Notification03Icon,
+  Key01Icon,
+  Shield01Icon,
+  BarChartIcon,
 } from "hugeicons-react"
 import { fadeUp, staggerContainer } from "../../lib/animations"
 import { useLandingI18n } from "../../lib/landing-i18n"
@@ -22,6 +26,10 @@ export function FeaturesGrid({}: FeaturesGridProps) {
     { ...messages.features.cards[2], icon: Megaphone01Icon },
     { ...messages.features.cards[3], icon: Notification03Icon },
     { ...messages.features.cards[4], icon: FlowConnectionIcon },
+    { ...messages.features.cards[5], icon: File01Icon },
+    { ...messages.features.cards[6], icon: Key01Icon },
+    { ...messages.features.cards[7], icon: Shield01Icon },
+    { ...messages.features.cards[8], icon: BarChartIcon },
   ]
 
   return (

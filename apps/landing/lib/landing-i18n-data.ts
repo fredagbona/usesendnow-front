@@ -276,6 +276,10 @@ const FR: LandingMessages = {
       { title: "Lancer des campagnes", description: "Listes de diffusion, suivi d’envoi et pilotage depuis l’API ou le portail." },
       { title: "Intégration webhooks WhatsApp", description: "Recevez livraisons, réponses et erreurs en temps réel pour orchestrer vos workflows." },
       { title: "n8n, Zapier, Make & backend", description: "Branchez n8n, Zapier, Make ou votre code : la même API REST pour tous vos scénarios." },
+      { title: "Messages médias", description: "Image, vidéo, audio, document et notes vocales, avec upload temporaire pour les envois immédiats." },
+      { title: "Clés API", description: "Séparez vos environnements, équipes ou services avec plusieurs clés d’accès." },
+      { title: "Protection Warmup", description: "Prévenez les utilisateurs avant les envois risqués et les campagnes quand la santé d’instance se dégrade." },
+      { title: "Suivi d’usage", description: "Suivez les quotas, les messages restants et le flux de livraison par instance au même endroit." },
     ],
     reasonsTitle: "Pourquoi les équipes tech choisissent msgflash",
     reasons: [
@@ -285,6 +289,8 @@ const FR: LandingMessages = {
       { title: "Pensé pour les makers", text: "Compatible avec vos outils backend, no-code et automatisations." },
       { title: "Tarification lisible", text: "Pas de licence cachée, pas de surcoût de plateforme surprise." },
       { title: "Trajectoire solide", text: "Pour un bot simple, une campagne ou un orchestrateur plus complet." },
+      { title: "Warmup safety", text: "Les contrôles de santé d’instance et les avertissements gardent les équipes en avance sur les envois à risque sans bloquer les flux V1." },
+      { title: "Médias temporaires", text: "Les uploads médias peuvent être gérés pour les envois immédiats avec une expiration explicite." },
     ],
   },
   howItWorks: {
@@ -695,6 +701,10 @@ const EN: LandingMessages = {
       { title: "Launch campaigns", description: "Manage broadcast lists, track sends, and operate from the API or the console." },
       { title: "WhatsApp webhook integration", description: "Stream deliveries, replies, and failures in real time to orchestrate your own workflows." },
       { title: "n8n, Zapier, Make & your stack", description: "Wire n8n, Zapier, Make, or custom code to the same REST API and webhook events." },
+      { title: "Media messages", description: "Send image, video, audio, document, and voice notes with temporary uploads for immediate sends." },
+      { title: "API keys", description: "Separate environments, teams, or services with multiple access keys." },
+      { title: "Warmup protection", description: "Warn users before risky sends and campaigns when instance health starts dropping." },
+      { title: "Usage tracking", description: "Track quotas, remaining messages, and delivery flow per instance in one place." },
     ],
     reasonsTitle: "Why engineering teams pick msgflash",
     reasons: [
@@ -704,6 +714,8 @@ const EN: LandingMessages = {
       { title: "Built for makers", text: "Compatible with backend, no-code, and automation tools." },
       { title: "Clear pricing", text: "No hidden license, no surprise platform surcharge." },
       { title: "Solid path", text: "For a simple bot, a campaign, or a more complete orchestrator." },
+      { title: "Warmup safety", text: "Instance health checks and warnings keep teams ahead of risky sends without blocking V1 flows." },
+      { title: "Temporary media", text: "Media uploads can be handled for immediate sends with explicit expiration handling." },
     ],
   },
   howItWorks: {

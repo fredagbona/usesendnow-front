@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { AlertCircleIcon } from "hugeicons-react"
+import { AlertCircleIcon, Shield01Icon, ChartHistogramIcon, InformationCircleIcon } from "hugeicons-react"
 import { Navbar } from "../../components/sections/Navbar"
 import { Footer } from "../../components/sections/Footer"
 import { Button } from "../../components/ui/Button"
@@ -16,6 +16,20 @@ const copy = {
     subtitle: "Nous ne sommes pas l'API officielle. Voici ce que ça signifie concrètement, et comment minimiser les risques.",
     primary: "Tester gratuitement",
     secondary: "Voir le comparatif",
+    warmupTitle: "Comment Warmup protège vos équipes",
+    warmupIntro:
+      "Warmup analyse l'état de l'instance avant l'envoi ou la création d'une campagne. Si le score de sécurité est élevé, MsgFlash prévient l'utilisateur avant l'action.",
+    warmupSteps: [
+      "Le système calcule un score de sécurité et un état warmup par instance.",
+      "Au moment du clic, le portal vérifie la santé de l'instance liée.",
+      "Si le score dépasse le seuil, un modal d'avertissement apparaît avec les risques et recommandations.",
+      "L'utilisateur peut continuer s'il accepte le risque, ou revenir en arrière sans rien envoyer.",
+    ],
+    warmupBenefits: [
+      "Prévenir avant d'exécuter, pas après l'échec",
+      "Rappeler les limites d'usage liées au warmup",
+      "Laisser la main à l'utilisateur sans bloquer en V1",
+    ],
     risks: [
       {
         title: "Risque 1 : Bannissement du numéro",
@@ -64,6 +78,20 @@ const copy = {
     subtitle: "We are not the official API. Here is what that means in practice, and how to minimize the risks.",
     primary: "Start free",
     secondary: "See the comparison",
+    warmupTitle: "How Warmup protects your team",
+    warmupIntro:
+      "Warmup checks instance health before sending a message or creating a campaign. If the safety score is high, MsgFlash warns the user before the action.",
+    warmupSteps: [
+      "The system computes a safety score and a warmup state per instance.",
+      "On click, the portal checks the health of the linked instance.",
+      "If the score is above the threshold, a warning modal appears with risks and recommendations.",
+      "The user can continue if they accept the risk, or go back without sending anything.",
+    ],
+    warmupBenefits: [
+      "Warn before execution, not after failure",
+      "Surface warmup usage limits clearly",
+      "Keep control with the user while remaining non-blocking in V1",
+    ],
     risks: [
       {
         title: "Risk 1: Number bans",
@@ -144,28 +172,59 @@ export default async function RisksPage() {
         </section>
 
         <section className="border-b border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <div className="mx-auto max-w-6xl border border-[#FFD600]/20 bg-[linear-gradient(180deg,rgba(255,214,0,0.08),rgba(18,18,18,0.98))] p-6 sm:p-8">
-            <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.14em] text-[#FFD600]">
-              Warmup
-            </p>
-            <h2 className="mt-3 font-(family-name:--font-geist-sans) text-2xl font-black uppercase tracking-[-0.04em] text-[#F0F0F0]">
-              {locale === "en" ? "Your first line of defense: MsgFlash warmup" : "Votre première ligne de défense : le warmup MsgFlash"}
-            </h2>
-            <p className="mt-4 max-w-3xl font-(family-name:--font-poppins) text-sm leading-7 text-[#B7B7B7]">
-              {locale === "en"
-                ? "The system scores the instance, starts on first connected, and warns you instead of blocking sends in V1."
-                : "Le système score l'instance, démarre au premier connected et vous alerte au lieu de bloquer les envois en V1."}
-            </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                locale === "en" ? "SafetyScore + status" : "SafetyScore + état",
-                locale === "en" ? "Warnings only V1" : "Warnings only V1",
-                locale === "en" ? "No hard block in sends" : "Pas de blocage dur des envois",
-              ].map((item) => (
-                <div key={item} className="rounded-2xl border border-white/8 bg-[#0F0F0F] px-4 py-4 text-sm text-[#D5D5D5]">
-                  {item}
+          <div className="mx-auto max-w-6xl border border-[#FFD600]/18 bg-[linear-gradient(180deg,rgba(255,214,0,0.08),rgba(18,18,18,0.98))] p-6 sm:p-8">
+            <div className="flex items-start gap-3">
+              <div className="rounded-2xl border border-[#FFD600]/25 bg-[#FFD600]/10 p-3">
+                <Shield01Icon className="h-6 w-6 text-[#FFD600]" />
+              </div>
+              <div>
+                <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.14em] text-[#FFD600]">
+                  Warmup
+                </p>
+                <h2 className="mt-2 font-(family-name:--font-geist-sans) text-2xl font-black uppercase tracking-[-0.04em] text-[#F0F0F0]">
+                  {page.warmupTitle}
+                </h2>
+                <p className="mt-3 max-w-3xl font-(family-name:--font-poppins) text-sm leading-7 text-[#B7B7B7]">
+                  {page.warmupIntro}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="rounded-2xl border border-white/8 bg-[#0F0F0F] p-5">
+                <div className="flex items-center gap-2">
+                  <ChartHistogramIcon className="h-5 w-5 text-[#FFD600]" />
+                  <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#F0F0F0]">
+                    {locale === "en" ? "How it works" : "Comment ça marche"}
+                  </p>
                 </div>
-              ))}
+                <ol className="mt-4 space-y-3 text-sm leading-7 text-[#D0D0D0]">
+                  {page.warmupSteps.map((step, index) => (
+                    <li key={step} className="flex gap-3">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#FFD600]/25 bg-[#FFD600]/10 font-(family-name:--font-geist-sans) text-xs font-bold text-[#FFD600]">
+                        {index + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-[#0F0F0F] p-5">
+                <div className="flex items-center gap-2">
+                  <InformationCircleIcon className="h-5 w-5 text-[#FFD600]" />
+                  <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#F0F0F0]">
+                    {locale === "en" ? "Why it helps" : "Pourquoi c'est utile"}
+                  </p>
+                </div>
+                <ul className="mt-4 space-y-2 text-sm leading-7 text-[#D0D0D0]">
+                  {page.warmupBenefits.map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <AlertCircleIcon className="mt-1 h-4 w-4 flex-none text-[#FFD600]" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </section>

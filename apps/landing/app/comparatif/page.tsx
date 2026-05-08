@@ -176,6 +176,35 @@ export default async function ComparatifPage() {
         </section>
 
         <section className="border-b border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="mx-auto max-w-6xl border border-[#FFD600]/18 bg-[linear-gradient(180deg,rgba(255,214,0,0.08),rgba(18,18,18,0.98))] p-6 sm:p-8">
+            <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.14em] text-[#FFD600]">
+              Warmup
+            </p>
+            <h2 className="mt-3 font-(family-name:--font-geist-sans) text-2xl font-black uppercase tracking-[-0.04em] text-[#F0F0F0]">
+              {locale === "en"
+                ? "How MsgFlash protects your team with Warmup"
+                : "Comment MsgFlash protège vos équipes avec Warmup"}
+            </h2>
+            <p className="mt-4 max-w-3xl font-(family-name:--font-poppins) text-sm leading-7 text-[#B7B7B7]">
+              {locale === "en"
+                ? "Before any risky send or campaign, MsgFlash checks instance health and shows a clear warning if the warmup score is too high. The user can still continue after confirmation."
+                : "Avant tout envoi ou campagne risquée, MsgFlash vérifie la santé de l'instance et affiche un avertissement clair si le score warmup est trop élevé. L'utilisateur peut continuer après confirmation."}
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              {[
+                locale === "en" ? "Health check before action" : "Vérification santé avant action",
+                locale === "en" ? "Warning modal, not a hard block" : "Modal d'alerte, pas de blocage dur",
+                locale === "en" ? "User keeps the final decision" : "L'utilisateur garde la décision finale",
+              ].map((item) => (
+                <div key={item} className="rounded-2xl border border-white/8 bg-[#0F0F0F] px-4 py-4 text-sm text-[#D5D5D5]">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="mx-auto max-w-6xl border border-[#FFD600]/20 bg-[linear-gradient(180deg,rgba(255,214,0,0.08),rgba(18,18,18,0.98))] p-6 sm:p-8">
             <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.14em] text-[#FFD600]">
               Warmup
