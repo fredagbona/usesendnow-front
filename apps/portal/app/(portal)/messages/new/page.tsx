@@ -23,7 +23,9 @@ import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { RecipientSelector, type RecipientMode } from "@/components/messages/RecipientSelector"
 import { SendStatusPanel } from "@/components/messages/SendStatusPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
+import WarmupWarningModal from "@/components/shared/WarmupWarningModal"
 import { isTemporaryMediaExpiredForScheduledAt } from "@/lib/mediaValidation"
+import type { InstanceHealth } from "@usesendnow/types"
 
 type ComposeMode = "freeform" | "template"
 
@@ -49,6 +51,9 @@ export default function NewMessagePage() {
   const [mediaError, setMediaError] = useState<string | null>(null)
   const [mediaNotice, setMediaNotice] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState(copy.messages.description)
+  const [warmupWarningOpen, setWarmupWarningOpen] = useState(false)
+  const [warmupWarningHealth, setWarmupWarningHealth] = useState<InstanceHealth | null>(null)
+  const pendingSendRef = useRef<(() => Promise<void>) | null>(null)
   const [sendForm, setSendForm] = useState({
     instanceId: "",
     to: "",
@@ -73,6 +78,15 @@ export default function NewMessagePage() {
     [selectedTemplate],
   )
   const temporaryMediaExpired = isTemporaryMediaExpiredForScheduledAt(uploadedMedia, sendForm.scheduledAt)
+
+  const confirmWarmupWarning = async () => {
+    setWarmupWarningOpen(false)
+    const pending = pendingSendRef.current
+    pendingSendRef.current = null
+    if (pending) {
+      await pending()
+    }
+  }
 
   useEffect(() => {
     uploadedMediaRef.current = uploadedMedia
@@ -274,67 +288,89 @@ export default function NewMessagePage() {
       return
     }
 
-    setSending(true)
-    setStatusMessage(sendForm.scheduledAt ? copy.messages.scheduling : copy.messages.sending)
+    const runSend = async () => {
+      setSending(true)
+      setStatusMessage(sendForm.scheduledAt ? copy.messages.scheduling : copy.messages.sending)
 
-    try {
-      const payload: SendMessagePayload = composeMode === "template"
-        ? {
-            instanceId: sendForm.instanceId,
-            to: sendForm.to,
-            templateId: sendForm.templateId,
-            contactId: sendForm.contactId || undefined,
-            variables: entriesToVariableMap(templateVariables),
-          }
-        : {
-            instanceId: sendForm.instanceId,
-            to: sendForm.to,
-            type: sendForm.type,
-            ...(sendForm.type === "text"
-              ? { text: sendForm.text }
-              : {
-                  mediaUrl: sendForm.mediaUrl,
-                  ...(sendForm.text ? { text: sendForm.text } : {}),
-                }),
-            ...(sendForm.scheduledAt ? { scheduledAt: sendForm.scheduledAt } : {}),
-          }
+      try {
+        const payload: SendMessagePayload = composeMode === "template"
+          ? {
+              instanceId: sendForm.instanceId,
+              to: sendForm.to,
+              templateId: sendForm.templateId,
+              contactId: sendForm.contactId || undefined,
+              variables: entriesToVariableMap(templateVariables),
+            }
+          : {
+              instanceId: sendForm.instanceId,
+              to: sendForm.to,
+              type: sendForm.type,
+              ...(sendForm.type === "text"
+                ? { text: sendForm.text }
+                : {
+                    mediaUrl: sendForm.mediaUrl,
+                    ...(sendForm.text ? { text: sendForm.text } : {}),
+                  }),
+              ...(sendForm.scheduledAt ? { scheduledAt: sendForm.scheduledAt } : {}),
+            }
 
-      await apiClient.messages.send(payload)
-      shouldCleanupMediaRef.current = false
-      toast.success(sendForm.scheduledAt ? copy.messages.scheduledSuccess : copy.messages.queuedSuccess)
-      router.push("/messages")
-      router.refresh()
-    } catch (err) {
-      if (err instanceof ApiClientError) {
-        if (err.code === "TEMPLATE_VARIABLES_MISSING") {
-          toast.error(m.sendErrorTemplateVars)
-        } else if (err.code === "TEMPLATE_CONTEXT_UNAVAILABLE") {
-          toast.error(m.sendErrorTemplateContext)
-        } else if (err.code === "TEMPLATE_INVALID") {
-          toast.error(m.sendErrorTemplateInvalid)
-        } else if (err.code === "MEDIA_URL_EXPIRED" || err.code === "MEDIA_URL_EXPIRES_BEFORE_EXECUTION") {
-          setMediaError(m.schedulePastExpiryError)
-        } else if (err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_RECURRING" || err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_CRON") {
-          setMediaError(m.mediaRecurringBlocked)
-        } else if (err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_TEMPLATE") {
-          setMediaError(m.mediaTemplateBlocked)
-        } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
-          toast.error(m.sendErrorQuota)
-        } else if (err.code === "NOT_FOUND") {
-          toast.error(m.sendErrorNotFound)
-        } else if (err.code === "VALIDATION_ERROR") {
-          toast.error(m.sendErrorValidation)
-        } else if (err.code === "UNSUPPORTED_FEATURE") {
-          toast.error(m.sendErrorUnsupportedFeature)
+        await apiClient.messages.send(payload)
+        shouldCleanupMediaRef.current = false
+        toast.success(sendForm.scheduledAt ? copy.messages.scheduledSuccess : copy.messages.queuedSuccess)
+        router.push("/messages")
+        router.refresh()
+      } catch (err) {
+        if (err instanceof ApiClientError) {
+          if (err.code === "TEMPLATE_VARIABLES_MISSING") {
+            toast.error(m.sendErrorTemplateVars)
+          } else if (err.code === "TEMPLATE_CONTEXT_UNAVAILABLE") {
+            toast.error(m.sendErrorTemplateContext)
+          } else if (err.code === "TEMPLATE_INVALID") {
+            toast.error(m.sendErrorTemplateInvalid)
+          } else if (err.code === "MEDIA_URL_EXPIRED" || err.code === "MEDIA_URL_EXPIRES_BEFORE_EXECUTION") {
+            setMediaError(m.schedulePastExpiryError)
+          } else if (err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_RECURRING" || err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_CRON") {
+            setMediaError(m.mediaRecurringBlocked)
+          } else if (err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_TEMPLATE") {
+            setMediaError(m.mediaTemplateBlocked)
+          } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
+            toast.error(m.sendErrorQuota)
+          } else if (err.code === "NOT_FOUND") {
+            toast.error(m.sendErrorNotFound)
+          } else if (err.code === "VALIDATION_ERROR") {
+            toast.error(m.sendErrorValidation)
+          } else if (err.code === "UNSUPPORTED_FEATURE") {
+            toast.error(m.sendErrorUnsupportedFeature)
+          } else {
+            toast.error(m.sendErrorGeneric)
+          }
         } else {
           toast.error(m.sendErrorGeneric)
         }
-      } else {
-        toast.error(m.sendErrorGeneric)
+        setStatusMessage(m.sendFailedStatusLine)
+      } finally {
+        setSending(false)
       }
-      setStatusMessage(m.sendFailedStatusLine)
-    } finally {
-      setSending(false)
+    }
+
+    try {
+      const health = await apiClient.instances.getHealth(sendForm.instanceId)
+      if (health.safetyScore > 60) {
+        setWarmupWarningHealth(health)
+        pendingSendRef.current = runSend
+        setWarmupWarningOpen(true)
+        return
+      }
+      await runSend()
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        if (err.code === "NOT_FOUND" || err.code === "VALIDATION_ERROR" || err.code === "UNSUPPORTED_FEATURE") {
+          toast.error(m.sendErrorGeneric)
+          setStatusMessage(m.sendFailedStatusLine)
+          return
+        }
+      }
+      await runSend()
     }
   }
 
@@ -565,6 +601,18 @@ export default function NewMessagePage() {
           </Card>
         </div>
       </div>
+
+      <WarmupWarningModal
+        open={warmupWarningOpen}
+        health={warmupWarningHealth}
+        onClose={() => {
+          setWarmupWarningOpen(false)
+          pendingSendRef.current = null
+        }}
+        onContinue={async () => {
+          await confirmWarmupWarning()
+        }}
+      />
     </div>
   )
 }

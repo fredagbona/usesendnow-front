@@ -5,6 +5,7 @@ export const portalCopy = {
     nav: {
       dashboard: "Tableau de bord",
       instances: "Instances",
+      health: "Warmup",
       messages: "Messages",
       campaigns: "Campagnes",
       contacts: "Contacts",
@@ -28,6 +29,7 @@ export const portalCopy = {
     titles: {
       dashboard: "Tableau de bord",
       instances: "Instances",
+      health: "Warmup",
       messages: "Messages",
       newMessage: "Nouveau message",
       campaigns: "Campagnes",
@@ -62,6 +64,18 @@ export const portalCopy = {
       currentLanguageName: "Français",
       localeCode: "FR",
       bytesMegabyte: "Mo",
+      warmupWarning: {
+        title: "Attention warmup",
+        introHigh: "Cette instance est encore en warmup.",
+        introLow: "Cette instance mérite une attention particulière.",
+        bodyHigh:
+          "Le rythme d'envoi doit rester progressif. Nous vous recommandons de prévenir l'utilisateur avant de continuer.",
+        bodyLow:
+          "Le score est acceptable, mais un rappel de prudence est utile avant l'envoi.",
+        subtitle: "Ce n'est pas bloquant. Vous pouvez fermer ce message et continuer si vous le souhaitez, mais vous avez été prévenu.",
+        continue: "J’ai compris, continuer",
+        close: "Fermer",
+      },
     },
     ui: {
       customVariable: {
@@ -1214,6 +1228,20 @@ export const portalCopy = {
           restricted: "Restreinte",
         },
       },
+      globalHealth: {
+        pageTitle: "Warmup global",
+        pageDescription: "Suivez la santé warmup de toutes vos instances connectées.",
+        emptyTitle: "Aucune instance connectée",
+        emptyDescription: "Connectez au moins une instance pour voir sa santé warmup ici.",
+        loadError: "Impossible de charger les données warmup.",
+        retry: "Réessayer",
+        connectedInstances: "Instances connectées",
+        scoreLabel: "Score",
+        stateLabel: "État",
+        firstConnectedLabel: "Première connexion",
+        recommendationsTitle: "Recommandations",
+        details: "Voir le détail",
+      },
       list: {
         pageTitle: "Instances WhatsApp",
         pageDescription: "Gérez vos numéros WhatsApp connectés",
@@ -1636,6 +1664,7 @@ export const portalCopy = {
     nav: {
       dashboard: "Dashboard",
       instances: "Instances",
+      health: "Warmup",
       messages: "Messages",
       campaigns: "Campaigns",
       contacts: "Contacts",
@@ -1659,6 +1688,7 @@ export const portalCopy = {
     titles: {
       dashboard: "Dashboard",
       instances: "Instances",
+      health: "Warmup",
       messages: "Messages",
       newMessage: "New Message",
       campaigns: "Campaigns",
@@ -1693,6 +1723,18 @@ export const portalCopy = {
       currentLanguageName: "English",
       localeCode: "EN",
       bytesMegabyte: "MB",
+      warmupWarning: {
+        title: "Warmup warning",
+        introHigh: "This instance is still warming up.",
+        introLow: "This instance deserves extra caution.",
+        bodyHigh:
+          "Keep send volume gradual. We recommend warning the user before continuing.",
+        bodyLow:
+          "The score is acceptable, but a caution note is still useful before sending.",
+        subtitle: "This is not blocking. You can close this message and continue if you want, but you have been warned.",
+        continue: "Got it, continue",
+        close: "Close",
+      },
     },
     ui: {
       customVariable: {
@@ -2834,6 +2876,20 @@ export const portalCopy = {
           at_risk: "At risk",
           restricted: "Restricted",
         },
+      },
+      globalHealth: {
+        pageTitle: "Global warmup",
+        pageDescription: "Track the warmup health of all your connected instances.",
+        emptyTitle: "No connected instances",
+        emptyDescription: "Connect at least one instance to see its warmup health here.",
+        loadError: "Unable to load warmup data.",
+        retry: "Retry",
+        connectedInstances: "Connected instances",
+        scoreLabel: "Score",
+        stateLabel: "State",
+        firstConnectedLabel: "First connected",
+        recommendationsTitle: "Recommendations",
+        details: "View details",
       },
       list: {
         pageTitle: "WhatsApp instances",

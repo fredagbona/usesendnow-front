@@ -57,6 +57,7 @@ import type {
   ImportContactsPayload,
   NumberLookupsListResponse,
   InstanceHealth,
+  SafetyAssessment,
 } from "@usesendnow/types"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -317,7 +318,7 @@ const campaigns = {
   pause: (id: string) => patch<{ success: boolean }>(`/api/campaigns/${id}/pause`),
 
   resume: (id: string) =>
-    patch<{ success: boolean }>(`/api/campaigns/${id}/resume`),
+    patch<{ success: boolean; safety?: SafetyAssessment }>(`/api/campaigns/${id}/resume`),
 
   cancel: (id: string) => patch<Campaign>(`/api/campaigns/${id}/cancel`),
 
