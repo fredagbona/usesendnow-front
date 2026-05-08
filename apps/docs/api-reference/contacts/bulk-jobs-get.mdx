@@ -1,0 +1,41 @@
+---
+title: GET Bulk contact job
+description: Return details for one asynchronous bulk contact job.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/contacts/bulk-jobs/{jobId}
+```
+
+## Parameters
+
+| Field | Type | Required | Location | Description |
+|---|---|---:|---|---|
+| `jobId` | UUID | yes | path | ID of the bulk job |
+
+## Success response `200`
+
+```json
+{
+  "data": {
+    "id": "job_abc123",
+    "operation": "add_to_group",
+    "status": "done",
+    "requestedCount": 4900,
+    "processedCount": 4900,
+    "progress": 100,
+    "groupId": "uuid-group",
+    "summary": {
+      "added": 4721,
+      "alreadyInGroup": 131,
+      "notFound": 48
+    },
+    "error": null,
+    "createdAt": "2026-05-08T10:00:00.000Z",
+    "updatedAt": "2026-05-08T10:00:12.000Z",
+    "completedAt": "2026-05-08T10:00:12.000Z"
+  }
+}
+```

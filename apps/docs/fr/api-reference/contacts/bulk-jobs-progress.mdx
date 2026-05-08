@@ -1,0 +1,46 @@
+---
+title: GET Progression d'un job bulk contacts
+description: Retourne la progression courante et le résumé partiel d'un job bulk contacts asynchrone.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/contacts/bulk-jobs/{jobId}/progress
+```
+
+## Paramètres
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---:|---|---|
+| `jobId` | UUID | oui | path | ID du job bulk |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "job_abc123",
+    "operation": "add_to_group",
+    "status": "processing",
+    "requestedCount": 4900,
+    "processedCount": 2300,
+    "progress": 47,
+    "groupId": "uuid-group",
+    "summary": {
+      "added": 2190,
+      "alreadyInGroup": 80,
+      "notFound": 30
+    },
+    "error": null,
+    "createdAt": "2026-05-08T10:00:00.000Z",
+    "updatedAt": "2026-05-08T10:00:08.000Z",
+    "completedAt": null
+  }
+}
+```
+
+## Notes
+
+- Poller cet endpoint toutes les `2s`
+- Arrêter le polling quand `status` devient `done`, `failed` ou `cancelled`

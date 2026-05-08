@@ -23,6 +23,7 @@ import Input from "@/components/ui/Input"
 import Alert from "@/components/ui/Alert"
 import EmptyState from "@/components/ui/EmptyState"
 import { SkeletonTableRow } from "@/components/ui/Skeleton"
+import { isBulkJobQueuedResponse, trackBulkJob } from "@/lib/bulkJobs"
 import {
   UserGroupIcon,
   Upload01Icon,
@@ -164,6 +165,7 @@ function ImportModal({
   const [result, setResult] = useState<ImportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showErrors, setShowErrors] = useState(false)
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null)
 
   const parsePreview = useCallback((f: File) => {
     const reader = new FileReader()
@@ -201,8 +203,18 @@ function ImportModal({
     if (!file) return
     setImporting(true)
     setError(null)
+    setImportProgress(null)
     try {
+      const rowsToProcess = Math.max(0, totalRows)
+      const shouldShowProgress = rowsToProcess >= 100
+      if (shouldShowProgress) {
+        setImportProgress({ current: 0, total: rowsToProcess })
+      }
+
       const res = await apiClient.contacts.import(file, groupId || undefined)
+      if (shouldShowProgress) {
+        setImportProgress({ current: rowsToProcess, total: rowsToProcess })
+      }
       setResult(res)
       setStep("result")
       onSuccess(res)
@@ -220,6 +232,7 @@ function ImportModal({
       }
     } finally {
       setImporting(false)
+      setImportProgress(null)
     }
   }
 
@@ -309,6 +322,23 @@ function ImportModal({
           </p>
 
           {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
+
+          {importProgress && (
+            <Alert
+              variant="info"
+              title={copy.contacts.importWizard.importProgressTitle
+                .replace("{{current}}", String(importProgress.current))
+                .replace("{{total}}", String(importProgress.total))}
+              message={copy.contacts.importWizard.importProgressMessage}
+            >
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#3B82F6]/15">
+                <div
+                  className="h-full rounded-full bg-[#3B82F6] transition-all"
+                  style={{ width: `${Math.min(100, Math.round((importProgress.current / importProgress.total) * 100))}%` }}
+                />
+              </div>
+            </Alert>
+          )}
 
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="secondary" onClick={onClose}>{copy.contacts.cancel}</Button>
@@ -500,6 +530,8 @@ export default function ContactsPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [bulkGroupId, setBulkGroupId] = useState("")
   const [bulkAddingToGroup, setBulkAddingToGroup] = useState(false)
+  const [bulkAddProgress, setBulkAddProgress] = useState<{ current: number; total: number } | null>(null)
+  const [bulkDeleteProgress, setBulkDeleteProgress] = useState<{ current: number; total: number } | null>(null)
 
   // Contact groups lookup map
   const [contactGroups, setContactGroups] = useState<Map<string, Array<{ id: string; name: string; color?: string }>>>(new Map())
@@ -601,20 +633,56 @@ export default function ContactsPage() {
     if (selectedIds.size === 0) return
     setBulkDeleting(true)
     try {
-      const result = await apiClient.contacts.deleteMany(Array.from(selectedIds))
-      selectedIds.forEach((id) => removeContact(id))
-      if (result.notFound && result.notFound.length > 0) {
-        toast.warning(
-          copy.contacts.bulkDeletePartial
-            .replace("{{deleted}}", String(result.deletedCount))
-            .replace("{{notFound}}", String(result.notFound.length)),
-        )
+      const contactIds = Array.from(selectedIds)
+      const response = await apiClient.contacts.deleteMany(contactIds)
+
+      if (isBulkJobQueuedResponse(response)) {
+        const total = response.requestedCount
+        setBulkDeleteProgress({ current: 0, total })
+        const trackResult = await trackBulkJob(response.jobId, (job) => {
+          setBulkDeleteProgress({
+            current: job.processedCount,
+            total: job.requestedCount,
+          })
+        })
+        const summary = trackResult.job.summary
+        const deletedCount = summary.deleted ?? 0
+        const notFoundCount = summary.notFound ?? 0
+        if (deletedCount > 0) {
+          selectedIds.forEach((id) => {
+            if (trackResult.job.status === "done") removeContact(id)
+          })
+        }
+        if (notFoundCount > 0) {
+          toast.warning(
+            copy.contacts.bulkDeletePartial
+              .replace("{{deleted}}", String(deletedCount))
+              .replace("{{notFound}}", String(notFoundCount)),
+          )
+        } else {
+          const tpl =
+            deletedCount === 1
+              ? copy.contacts.bulkDeleteSuccessOne
+              : copy.contacts.bulkDeleteSuccessMany
+          toast.success(tpl.replace("{{count}}", String(deletedCount)))
+        }
       } else {
-        const tpl =
-          result.deletedCount === 1
-            ? copy.contacts.bulkDeleteSuccessOne
-            : copy.contacts.bulkDeleteSuccessMany
-        toast.success(tpl.replace("{{count}}", String(result.deletedCount)))
+        const deletedCount = response.deletedCount
+        const notFoundIds = response.notFound ?? []
+        selectedIds.forEach((id) => removeContact(id))
+        if (notFoundIds.length > 0) {
+          toast.warning(
+            copy.contacts.bulkDeletePartial
+              .replace("{{deleted}}", String(deletedCount))
+              .replace("{{notFound}}", String(notFoundIds.length)),
+          )
+        } else {
+          const tpl =
+            deletedCount === 1
+              ? copy.contacts.bulkDeleteSuccessOne
+              : copy.contacts.bulkDeleteSuccessMany
+          toast.success(tpl.replace("{{count}}", String(deletedCount)))
+        }
       }
       setSelectedIds(new Set())
     } catch (err) {
@@ -631,6 +699,7 @@ export default function ContactsPage() {
       }
     } finally {
       setBulkDeleting(false)
+      setBulkDeleteProgress(null)
     }
   }
 
@@ -638,21 +707,57 @@ export default function ContactsPage() {
     if (selectedIds.size === 0 || !bulkGroupId) return
     setBulkAddingToGroup(true)
     try {
-      const result = await apiClient.contactGroups.addMembers(bulkGroupId, Array.from(selectedIds))
-      await Promise.all(Array.from(selectedIds).map((id) => apiClient.contacts.getGroups(id)
-        .then((res) => {
-          setContactGroups((prev) => {
-            const next = new Map(prev)
-            next.set(id, res.groups)
-            return next
+      const contactIds = Array.from(selectedIds)
+      const targetGroup = groups.find((group) => group.id === bulkGroupId) ?? null
+      const response = await apiClient.contactGroups.addMembers(bulkGroupId, contactIds)
+
+      if (isBulkJobQueuedResponse(response)) {
+        setBulkAddProgress({ current: 0, total: response.requestedCount })
+        const trackResult = await trackBulkJob(response.jobId, (job) => {
+          setBulkAddProgress({
+            current: job.processedCount,
+            total: job.requestedCount,
           })
         })
-        .catch(() => {})))
-      const successTpl =
-        result.added === 1
-          ? copy.contacts.bulkAssignGroupSuccessOne
-          : copy.contacts.bulkAssignGroupSuccessMany
-      toast.success(successTpl.replace("{{count}}", String(result.added)))
+        const summary = trackResult.job.summary
+        const addedCount = summary.added ?? 0
+        if (targetGroup && addedCount > 0) {
+          setContactGroups((prev) => {
+            const next = new Map(prev)
+            contactIds.forEach((id) => {
+              const current = next.get(id) ?? []
+              if (!current.some((group) => group.id === targetGroup.id)) {
+                next.set(id, [targetGroup, ...current])
+              }
+            })
+            return next
+          })
+        }
+        const successTpl =
+          addedCount === 1
+            ? copy.contacts.bulkAssignGroupSuccessOne
+            : copy.contacts.bulkAssignGroupSuccessMany
+        toast.success(successTpl.replace("{{count}}", String(addedCount)))
+      } else {
+        const addedCount = response.added
+        if (targetGroup && addedCount > 0) {
+          setContactGroups((prev) => {
+            const next = new Map(prev)
+            contactIds.forEach((id) => {
+              const current = next.get(id) ?? []
+              if (!current.some((group) => group.id === targetGroup.id)) {
+                next.set(id, [targetGroup, ...current])
+              }
+            })
+            return next
+          })
+        }
+        const successTpl =
+          addedCount === 1
+            ? copy.contacts.bulkAssignGroupSuccessOne
+            : copy.contacts.bulkAssignGroupSuccessMany
+        toast.success(successTpl.replace("{{count}}", String(addedCount)))
+      }
       setBulkGroupId("")
       setSelectedIds(new Set())
     } catch (err) {
@@ -663,6 +768,7 @@ export default function ContactsPage() {
       }
     } finally {
       setBulkAddingToGroup(false)
+      setBulkAddProgress(null)
     }
   }
 
@@ -789,6 +895,46 @@ export default function ContactsPage() {
                     {copy.contacts.deleteAction}
                   </Button>
                 </div>
+                {bulkAddProgress && (
+                  <div className="mt-1">
+                    <Alert
+                      variant="info"
+                      title={
+                        copy.contacts.bulkAddProgressTitle
+                          .replace("{{current}}", String(bulkAddProgress.current))
+                          .replace("{{total}}", String(bulkAddProgress.total))
+                      }
+                      message={copy.contacts.bulkAddProgressMessage}
+                    >
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#3B82F6]/15">
+                        <div
+                          className="h-full rounded-full bg-[#3B82F6] transition-all"
+                          style={{ width: `${Math.min(100, Math.round((bulkAddProgress.current / bulkAddProgress.total) * 100))}%` }}
+                        />
+                      </div>
+                    </Alert>
+                  </div>
+                )}
+                {bulkDeleteProgress && (
+                  <div className="mt-1">
+                    <Alert
+                      variant="info"
+                      title={
+                        copy.contacts.bulkDeleteProgressTitle
+                          .replace("{{current}}", String(bulkDeleteProgress.current))
+                          .replace("{{total}}", String(bulkDeleteProgress.total))
+                      }
+                      message={copy.contacts.bulkDeleteProgressMessage}
+                    >
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#3B82F6]/15">
+                        <div
+                          className="h-full rounded-full bg-[#3B82F6] transition-all"
+                          style={{ width: `${Math.min(100, Math.round((bulkDeleteProgress.current / bulkDeleteProgress.total) * 100))}%` }}
+                        />
+                      </div>
+                    </Alert>
+                  </div>
+                )}
               </div>
             )}
 

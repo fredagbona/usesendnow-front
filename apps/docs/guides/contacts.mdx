@@ -15,6 +15,10 @@ description: Manage MsgFlash contacts, contact groups, and bulk deletions throug
 | `PUT` | `/api/v1/contacts/{id}` |
 | `DELETE` | `/api/v1/contacts/{id}` |
 | `POST` | `/api/v1/contacts/bulk-delete` |
+| `GET` | `/api/v1/contacts/bulk-jobs` |
+| `GET` | `/api/v1/contacts/bulk-jobs/{jobId}` |
+| `GET` | `/api/v1/contacts/bulk-jobs/{jobId}/progress` |
+| `POST` | `/api/v1/contacts/bulk-jobs/{jobId}/cancel` |
 
 ### Parameters
 
@@ -41,7 +45,7 @@ description: Manage MsgFlash contacts, contact groups, and bulk deletions throug
 
 | Field | Type | Required | Location | Description |
 |---|---|---|---|---|
-| `contactIds` | UUID[] | yes | body | 1 to 500 IDs |
+| `contactIds` | UUID[] | yes | body | 1 to 10000 IDs |
 
 ### Create a contact
 
@@ -78,6 +82,21 @@ Response example:
     "requested": 2,
     "deleted": 1,
     "notFound": ["CONTACT_UUID_2"]
+  }
+}
+```
+
+Async response example (`>= 100` contacts):
+
+```json
+{
+  "data": {
+    "mode": "async",
+    "jobId": "job_abc123",
+    "status": "pending",
+    "operation": "bulk_delete_contacts",
+    "requestedCount": 900,
+    "progress": 0
   }
 }
 ```
@@ -122,7 +141,7 @@ Response example:
 | Field | Type | Required | Location | Description |
 |---|---|---|---|---|
 | `groupId` | UUID | yes | path | Group ID |
-| `contactIds` | UUID[] | yes | body | List of members to add |
+| `contactIds` | UUID[] | yes | body | 1 to 10000 members to add |
 
 #### `GET /api/v1/contacts/groups/{groupId}/members`
 
@@ -156,6 +175,12 @@ curl -X POST https://srv.msgflash.com/api/v1/contacts/groups/GROUP_ID/members \
     "contactIds": ["CONTACT_UUID_1", "CONTACT_UUID_2"]
   }'
 ```
+
+Async behavior:
+
+- `< 100` contacts: synchronous response
+- `>= 100` contacts: asynchronous `202` response with a `jobId`
+- Poll `GET /api/v1/contacts/bulk-jobs/{jobId}/progress` every `2s`
 
 ### List members
 

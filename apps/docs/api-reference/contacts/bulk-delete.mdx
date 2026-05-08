@@ -13,7 +13,7 @@ POST /api/v1/contacts/bulk-delete
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `contactIds` | UUID[] | yes | 1 à 500 IDs |
+| `contactIds` | UUID[] | yes | 1 to 10000 IDs |
 
 ## Success response `200`
 
@@ -26,3 +26,27 @@ POST /api/v1/contacts/bulk-delete
   }
 }
 ```
+
+## Async response `202`
+
+When `contactIds.length >= 100`, the operation runs in background.
+
+```json
+{
+  "data": {
+    "mode": "async",
+    "jobId": "job_abc123",
+    "status": "pending",
+    "operation": "bulk_delete_contacts",
+    "requestedCount": 900,
+    "progress": 0,
+    "message": "Bulk operation queued. Check status via GET /api/contacts/bulk-jobs/job_abc123"
+  }
+}
+```
+
+## Notes
+
+- `< 100` contacts: synchronous response
+- `>= 100` contacts: asynchronous response with HTTP `202`
+- Poll `GET /api/v1/contacts/bulk-jobs/{jobId}/progress` every `2s`

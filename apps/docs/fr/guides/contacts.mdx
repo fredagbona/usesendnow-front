@@ -15,6 +15,10 @@ description: Gérez vos contacts MsgFlash, vos groupes et les suppressions en lo
 | `PUT` | `/api/v1/contacts/{id}` |
 | `DELETE` | `/api/v1/contacts/{id}` |
 | `POST` | `/api/v1/contacts/bulk-delete` |
+| `GET` | `/api/v1/contacts/bulk-jobs` |
+| `GET` | `/api/v1/contacts/bulk-jobs/{jobId}` |
+| `GET` | `/api/v1/contacts/bulk-jobs/{jobId}/progress` |
+| `POST` | `/api/v1/contacts/bulk-jobs/{jobId}/cancel` |
 
 ### Paramètres
 
@@ -41,7 +45,7 @@ description: Gérez vos contacts MsgFlash, vos groupes et les suppressions en lo
 
 | Champ | Type | Requis | Emplacement | Description |
 |---|---|---|---|---|
-| `contactIds` | UUID[] | oui | body | 1 à 500 IDs |
+| `contactIds` | UUID[] | oui | body | 1 à 10000 IDs |
 
 ### Créer un contact
 
@@ -78,6 +82,21 @@ Exemple de réponse :
     "requested": 2,
     "deleted": 1,
     "notFound": ["CONTACT_UUID_2"]
+  }
+}
+```
+
+Exemple de réponse async (`>= 100` contacts) :
+
+```json
+{
+  "data": {
+    "mode": "async",
+    "jobId": "job_abc123",
+    "status": "pending",
+    "operation": "bulk_delete_contacts",
+    "requestedCount": 900,
+    "progress": 0
   }
 }
 ```
@@ -122,7 +141,7 @@ Exemple de réponse :
 | Champ | Type | Requis | Emplacement | Description |
 |---|---|---|---|---|
 | `groupId` | UUID | oui | path | ID du groupe |
-| `contactIds` | UUID[] | oui | body | Liste des membres à ajouter |
+| `contactIds` | UUID[] | oui | body | 1 à 10000 membres à ajouter |
 
 #### `GET /api/v1/contacts/groups/{groupId}/members`
 
@@ -156,6 +175,12 @@ curl -X POST https://srv.msgflash.com/api/v1/contacts/groups/GROUP_ID/members \
     "contactIds": ["CONTACT_UUID_1", "CONTACT_UUID_2"]
   }'
 ```
+
+Comportement async :
+
+- `< 100` contacts : réponse synchrone
+- `>= 100` contacts : réponse asynchrone `202` avec un `jobId`
+- Poller `GET /api/v1/contacts/bulk-jobs/{jobId}/progress` toutes les `2s`
 
 ### Lister les membres
 

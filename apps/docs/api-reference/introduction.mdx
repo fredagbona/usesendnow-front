@@ -155,6 +155,10 @@ See [Error codes](/resources/error-codes) for the main codes.
 | `PUT` | `/api/v1/contacts/{id}` | Update a contact |
 | `DELETE` | `/api/v1/contacts/{id}` | Delete a contact |
 | `POST` | `/api/v1/contacts/bulk-delete` | Bulk delete contacts |
+| `GET` | `/api/v1/contacts/bulk-jobs` | List bulk contact jobs |
+| `GET` | `/api/v1/contacts/bulk-jobs/{jobId}` | Bulk job details |
+| `GET` | `/api/v1/contacts/bulk-jobs/{jobId}/progress` | Bulk job progress |
+| `POST` | `/api/v1/contacts/bulk-jobs/{jobId}/cancel` | Cancel a bulk job |
 
 ### Contact groups
 
@@ -201,5 +205,4 @@ See [Error codes](/resources/error-codes) for the main codes.
 | `GET` | `/api/v1/billing/subscription` | Current subscription and billing period |
 | `GET` | `/api/v1/billing/usage` | Usage, limits, and features |
 | `GET` | `/api/v1/billing/payments` | Payment history |
-
 

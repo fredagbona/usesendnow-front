@@ -23,9 +23,11 @@ import {
   ArrowLeft01Icon,
   Download01Icon,
   UserAdd01Icon,
+  CheckmarkCircle01Icon,
 } from "hugeicons-react"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { renderWithStrongCount, renderWithStrongName } from "@/lib/render-copy-placeholders"
+import { isBulkJobQueuedResponse, trackBulkJob } from "@/lib/bulkJobs"
 
 const PRESET_COLORS = ["#FFD600", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6", "#EC4899"]
 
@@ -149,6 +151,7 @@ function AddMembersModal({
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [jobProgress, setJobProgress] = useState<{ current: number; total: number } | null>(null)
 
   useEffect(() => {
     apiClient.contacts.list()
@@ -178,16 +181,34 @@ function AddMembersModal({
     setAdding(true)
     setError(null)
     try {
-      const res = await apiClient.contactGroups.addMembers(groupId, [...selected])
-      const tpl =
-        res.added === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
-      toast.success(tpl.replace("{{count}}", String(res.added)))
-      onSuccess(res.added)
-      onClose()
+      const contactIds = [...selected]
+      const res = await apiClient.contactGroups.addMembers(groupId, contactIds)
+      if (isBulkJobQueuedResponse(res)) {
+        setJobProgress({ current: 0, total: res.requestedCount })
+        const tracked = await trackBulkJob(res.jobId, (job) => {
+          setJobProgress({
+            current: job.processedCount,
+            total: job.requestedCount,
+          })
+        })
+        const added = tracked.job.summary.added ?? 0
+        const tpl =
+          added === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
+        toast.success(tpl.replace("{{count}}", String(added)))
+        onSuccess(added)
+        onClose()
+      } else {
+        const tpl =
+          res.added === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
+        toast.success(tpl.replace("{{count}}", String(res.added)))
+        onSuccess(res.added)
+        onClose()
+      }
     } catch {
       setError(gCopy.addMembersFailed)
     } finally {
       setAdding(false)
+      setJobProgress(null)
     }
   }
 
@@ -223,6 +244,22 @@ function AddMembersModal({
           )}
         </div>
         {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
+        {jobProgress && (
+          <Alert
+            variant="info"
+            title={gCopy.addMembersJobProgressTitle
+              .replace("{{current}}", String(jobProgress.current))
+              .replace("{{total}}", String(jobProgress.total))}
+            message={gCopy.addMembersJobProgressMessage}
+          >
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#3B82F6]/15">
+              <div
+                className="h-full rounded-full bg-[#3B82F6] transition-all"
+                style={{ width: `${Math.min(100, Math.round((jobProgress.current / jobProgress.total) * 100))}%` }}
+              />
+            </div>
+          </Alert>
+        )}
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="secondary" onClick={onClose}>{gCopy.cancel}</Button>
           <Button variant="primary" loading={adding} disabled={selected.size === 0} onClick={handleAdd}>
@@ -254,6 +291,8 @@ export default function ContactGroupDetailPage() {
   const [deleteGroupOpen, setDeleteGroupOpen] = useState(false)
   const [addMembersOpen, setAddMembersOpen] = useState(false)
   const [removeTarget, setRemoveTarget] = useState<ContactGroupMember | null>(null)
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set())
+  const [bulkRemoving, setBulkRemoving] = useState(false)
   const [removing, setRemoving] = useState(false)
   const [deletingGroup, setDeletingGroup] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -372,6 +411,60 @@ export default function ContactGroupDetailPage() {
   }
 
   const memberIds = new Set(members.map((m) => m.id))
+  const allSelected = members.length > 0 && members.every((member) => selectedMemberIds.has(member.id))
+
+  const toggleSelectMember = (id: string) => {
+    setSelectedMemberIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAllMembers = () => {
+    if (allSelected) {
+      setSelectedMemberIds(new Set())
+    } else {
+      setSelectedMemberIds(new Set(members.map((member) => member.id)))
+    }
+  }
+
+  const handleBulkRemoveMembers = async () => {
+    if (selectedMemberIds.size === 0) return
+    setBulkRemoving(true)
+    try {
+      const ids = Array.from(selectedMemberIds)
+      const result = await apiClient.contactGroups.removeMembers(groupId, ids)
+
+      if (isBulkJobQueuedResponse(result)) {
+        const tracked = await trackBulkJob(result.jobId)
+        const removedCount = tracked.job.summary.removed ?? 0
+        setMembers((prev) => prev.filter((member) => !selectedMemberIds.has(member.id)))
+        setTotal((prev) => Math.max(0, prev - removedCount))
+        setGroup((prev) => prev ? { ...prev, contactCount: Math.max(0, prev.contactCount - removedCount) } : prev)
+        setSelectedMemberIds(new Set())
+        toast.success(
+          (removedCount === 1 ? gCopy.removeMembersSuccessOne : gCopy.removeMembersSuccessMany)
+            .replace("{{count}}", String(removedCount))
+        )
+      } else {
+        const removedCount = result.removed
+        setMembers((prev) => prev.filter((member) => !selectedMemberIds.has(member.id)))
+        setTotal((prev) => Math.max(0, prev - removedCount))
+        setGroup((prev) => prev ? { ...prev, contactCount: Math.max(0, prev.contactCount - removedCount) } : prev)
+        setSelectedMemberIds(new Set())
+        toast.success(
+          (removedCount === 1 ? gCopy.removeMembersSuccessOne : gCopy.removeMembersSuccessMany)
+            .replace("{{count}}", String(removedCount))
+        )
+      }
+    } catch {
+      toast.error(gCopy.removeMemberFailed)
+    } finally {
+      setBulkRemoving(false)
+    }
+  }
 
   if (loadingGroup) {
     return (
@@ -435,6 +528,27 @@ export default function ContactGroupDetailPage() {
         </Button>
       </div>
 
+      {selectedMemberIds.size > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <CheckmarkCircle01Icon className="h-5 w-5 text-primary" />
+            <span className="text-sm text-text">
+              {selectedMemberIds.size === 1
+                ? gCopy.bulkSelectedOne.replace("{{count}}", String(selectedMemberIds.size))
+                : gCopy.bulkSelectedMany.replace("{{count}}", String(selectedMemberIds.size))}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setSelectedMemberIds(new Set())}>
+              {gCopy.deselectAll}
+            </Button>
+            <Button variant="danger" size="sm" loading={bulkRemoving} onClick={handleBulkRemoveMembers}>
+              {gCopy.removeSelected}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Members table */}
       <Card>
         {loadingMembers && members.length === 0 ? (
@@ -443,7 +557,7 @@ export default function ContactGroupDetailPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    {[gCopy.table.name, gCopy.table.phone, gCopy.table.tags, gCopy.table.addedAt, ""].map((h) => (
+                    {["", gCopy.table.name, gCopy.table.phone, gCopy.table.tags, gCopy.table.addedAt, ""].map((h) => (
                       <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                     ))}
                   </tr>
@@ -486,6 +600,14 @@ export default function ContactGroupDetailPage() {
                 <tbody>
                   {members.map((member) => (
                     <tr key={member.id} className="border-b border-border last:border-0 hover:bg-bg-subtle">
+                      <td className="py-3 pr-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedMemberIds.has(member.id)}
+                          onChange={() => toggleSelectMember(member.id)}
+                          className="h-4 w-4 rounded border-border-strong accent-primary cursor-pointer"
+                        />
+                      </td>
                       <td className="py-3 pr-4 text-sm font-semibold text-text">{member.name}</td>
                       <td className="py-3 pr-4 text-sm font-mono text-text-body whitespace-nowrap">{member.phone}</td>
                       <td className="py-3 pr-4">
@@ -510,18 +632,26 @@ export default function ContactGroupDetailPage() {
             <div className="sm:hidden divide-y divide-border">
               {members.map((member) => (
                 <div key={member.id} className="py-3 flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-text truncate">{member.name}</p>
-                    <p className="text-xs font-mono text-text-muted">{member.phone}</p>
-                    {member.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {member.tags.slice(0, 3).map((tag) => (
-                          <Badge key={tag} variant="neutral">{tag}</Badge>
-                        ))}
-                        {member.tags.length > 3 && <Badge variant="neutral">+{member.tags.length - 3}</Badge>}
-                      </div>
-                    )}
-                    <p className="text-xs text-text-muted mt-1">{formatDate(member.addedAt)}</p>
+                  <div className="flex items-start gap-2 min-w-0 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedMemberIds.has(member.id)}
+                      onChange={() => toggleSelectMember(member.id)}
+                      className="h-4 w-4 mt-1 rounded border-border-strong accent-primary cursor-pointer shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-text truncate">{member.name}</p>
+                      <p className="text-xs font-mono text-text-muted">{member.phone}</p>
+                      {member.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {member.tags.slice(0, 3).map((tag) => (
+                            <Badge key={tag} variant="neutral">{tag}</Badge>
+                          ))}
+                          {member.tags.length > 3 && <Badge variant="neutral">+{member.tags.length - 3}</Badge>}
+                        </div>
+                      )}
+                      <p className="text-xs text-text-muted mt-1">{formatDate(member.addedAt)}</p>
+                    </div>
                   </div>
                   <Button size="sm" variant="ghost" onClick={() => setRemoveTarget(member)}>{gCopy.remove}</Button>
                 </div>

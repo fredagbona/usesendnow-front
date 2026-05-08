@@ -1,0 +1,47 @@
+---
+title: GET List bulk contact jobs
+description: List recent asynchronous bulk jobs triggered from contact bulk operations.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/contacts/bulk-jobs
+```
+
+## Query parameters
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `limit` | integer | no | Page size, default `20`, max `100` |
+| `cursor` | UUID | no | Cursor for pagination |
+
+## Success response `200`
+
+```json
+{
+  "data": {
+    "jobs": [
+      {
+        "id": "job_abc123",
+        "operation": "add_to_group",
+        "status": "processing",
+        "requestedCount": 4900,
+        "processedCount": 2300,
+        "progress": 47,
+        "groupId": "uuid-group",
+        "summary": {
+          "added": 2190,
+          "alreadyInGroup": 80,
+          "notFound": 30
+        },
+        "createdAt": "2026-05-08T10:00:00.000Z",
+        "updatedAt": "2026-05-08T10:00:08.000Z",
+        "completedAt": null
+      }
+    ],
+    "nextCursor": null,
+    "hasMore": false
+  }
+}
+```

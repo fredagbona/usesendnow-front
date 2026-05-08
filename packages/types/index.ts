@@ -595,6 +595,58 @@ export interface RemoveMembersResponse {
   notInGroup: number
 }
 
+export interface DeleteContactsResponse {
+  deletedCount: number
+  requested: number
+  notFound: string[]
+}
+
+export type BulkJobOperation = "add_to_group" | "remove_from_group" | "delete_contacts"
+export type BulkJobStatus = "pending" | "processing" | "done" | "failed" | "cancelled"
+
+export interface BulkJobSummary {
+  added?: number
+  removed?: number
+  deleted?: number
+  alreadyInGroup?: number
+  notInGroup?: number
+  notFound?: number
+}
+
+export interface BulkJob {
+  id: string
+  operation: BulkJobOperation
+  status: BulkJobStatus
+  requestedCount: number
+  processedCount: number
+  progress: number
+  groupId?: string | null
+  summary: BulkJobSummary
+  error: string | null
+  createdAt: string
+  updatedAt: string
+  completedAt?: string | null
+}
+
+export interface BulkJobQueuedResponse {
+  mode: "async"
+  jobId: string
+  status: BulkJobStatus
+  operation: BulkJobOperation
+  requestedCount: number
+  groupId?: string | null
+  progress: number
+  message: string
+}
+
+export interface BulkJobProgressResponse {
+  data: BulkJob
+}
+
+export interface BulkJobCancelResponse {
+  data: BulkJob
+}
+
 export interface ContactGroupsOfContact {
   groups: Array<{ id: string; name: string; color?: string }>
 }
@@ -632,6 +684,10 @@ export interface ImportResult {
   importId?: string
   status?: string
   message?: string
+}
+
+export interface ImportProgressResponse {
+  data: ContactImport
 }
 
 export interface ContactImportsResponse {

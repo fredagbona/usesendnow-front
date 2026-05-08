@@ -27,6 +27,10 @@ Extension du module contacts :
 | POST | /api/contacts/groups/:groupId/members | JWT | Ajouter des contacts |
 | DELETE | /api/contacts/groups/:groupId/members | JWT | Retirer des contacts |
 | GET | /api/contacts/groups/:groupId/members | JWT | Lister les contacts d'un groupe |
+| GET | /api/contacts/bulk-jobs | JWT | Lister les jobs bulk contacts |
+| GET | /api/contacts/bulk-jobs/:jobId | JWT | Lire un job bulk contact |
+| GET | /api/contacts/bulk-jobs/:jobId/progress | JWT | Suivre la progression d'un job bulk contact |
+| POST | /api/contacts/bulk-jobs/:jobId/cancel | JWT | Annuler un job bulk contact |
 | GET | /api/contacts/:id/groups | JWT | Groupes d'un contact |
 | POST | /api/contacts/import | JWT + multipart | Importer un CSV |
 | GET | /api/contacts/imports | JWT | Lister les imports |
@@ -131,7 +135,22 @@ Pagination cursor-based :
 - Liste avec checkboxes
 - Bouton "Add X contacts"
 - Appel : `POST /api/contacts/groups/:groupId/members` → `{ contactIds: [...] }`
-- Retour : toast "X contacts added" + refresh liste membres
+- Si sélection `< 100` contacts :
+  - réponse sync immédiate
+  - toast "X contacts added" + refresh liste membres
+- Si sélection `>= 100` contacts :
+  - réponse `202`
+  - afficher un état "Adding contacts in background..."
+  - lancer un polling sur `/api/contacts/bulk-jobs/:jobId/progress`
+  - fermer la modale possible sans perdre le suivi
+
+### Bulk selection rule
+À partir de `100` contacts sélectionnés, le backend bascule automatiquement en **mode async** pour :
+- ajout au groupe
+- retrait du groupe
+- suppression bulk de contacts
+
+Sous ce seuil, le comportement reste **sync** pour garder une UX immédiate.
 
 ---
 
@@ -215,7 +234,7 @@ groupId: <optional>
 ### Format CSV attendu (à documenter dans l'UI)
 ```
 phone,name,tags
-+41791234567,Kouassi Amara,vip|benin
++22901000000,Kouassi Amara,vip|benin
 +22501000000,Fatou Diallo,client
 +33612345678,Jean Dupont,
 ```
@@ -281,6 +300,97 @@ GET /api/contacts/imports?limit=10&cursor=<id>
 
 ---
 
+## 6. Bulk jobs contacts
+
+### Cas couverts
+- ajout massif de contacts à un groupe
+- retrait massif de contacts d'un groupe
+- suppression massive de contacts
+
+### Règle de bascule
+- `< 100` contacts : réponse sync habituelle
+- `>= 100` contacts : réponse async `202`
+
+### Réponse async type
+```json
+{
+  "data": {
+    "mode": "async",
+    "jobId": "job_abc123",
+    "status": "pending",
+    "operation": "add_to_group",
+    "requestedCount": 4900,
+    "groupId": "grp_123",
+    "progress": 0,
+    "message": "Bulk operation queued. Check status via GET /api/contacts/bulk-jobs/job_abc123"
+  }
+}
+```
+
+### GET /api/contacts/bulk-jobs/{jobId}/progress
+```json
+{
+  "data": {
+    "id": "job_abc123",
+    "operation": "add_to_group",
+    "status": "processing",
+    "requestedCount": 4900,
+    "processedCount": 2300,
+    "progress": 47,
+    "groupId": "grp_123",
+    "summary": {
+      "added": 2190,
+      "alreadyInGroup": 80,
+      "notFound": 30
+    },
+    "error": null,
+    "createdAt": "2026-05-08T10:00:00.000Z",
+    "updatedAt": "2026-05-08T10:00:08.000Z",
+    "completedAt": null
+  }
+}
+```
+
+### Statuts possibles
+- `pending`
+- `processing`
+- `done`
+- `failed`
+- `cancelled`
+
+### Polling front
+- démarrer le polling dès une réponse `202`
+- poller `GET /api/contacts/bulk-jobs/:jobId/progress` toutes les `2s`
+- arrêter sur `done`, `failed` ou `cancelled`
+- au succès :
+  - rafraîchir la liste des membres ou des contacts
+  - afficher un toast final basé sur `summary`
+
+### Annulation
+```http
+POST /api/contacts/bulk-jobs/:jobId/cancel
+```
+
+Réponse :
+```json
+{
+  "data": {
+    "id": "job_abc123",
+    "status": "cancelled",
+    "progress": 52,
+    "processedCount": 2550,
+    "summary": {
+      "added": 2431,
+      "alreadyInGroup": 91,
+      "notFound": 28
+    },
+    "completedAt": "2026-05-08T10:00:09.000Z"
+  }
+}
+```
+
+---
+
 ## 6. Export CSV
 
 ### Déclencheur
@@ -320,7 +430,7 @@ const handleExport = async (groupId?: string) => {
 ### Format CSV exporté
 ```
 phone,name,tags,groups,createdAt
-+41791234567,Kouassi Amara,vip|benin,Clients VIP|Bénin,2026-03-01T10:00:00Z
++22901000000,Kouassi Amara,vip|benin,Clients VIP|Bénin,2026-03-01T10:00:00Z
 +22501000000,Fatou Diallo,client,Clients VIP,2026-02-15T08:00:00Z
 ```
 
@@ -472,8 +582,18 @@ type CampaignRecipients =
 // Request
 { "contactIds": ["cnt_abc", "cnt_def", "cnt_xyz"] }
 
-// Response
+// Response sync (< 100 contacts)
 { "added": 3, "alreadyInGroup": 1, "notFound": 0, "total": 4 }
+
+// Response async (>= 100 contacts)
+{
+  "mode": "async",
+  "jobId": "job_abc123",
+  "status": "pending",
+  "operation": "add_to_group",
+  "requestedCount": 4900,
+  "groupId": "grp_abc"
+}
 ```
 
 ### DELETE /api/contacts/groups/:groupId/members
@@ -481,15 +601,25 @@ type CampaignRecipients =
 // Request
 { "contactIds": ["cnt_abc"] }
 
-// Response
+// Response sync (< 100 contacts)
 { "removed": 1, "notInGroup": 0 }
+
+// Response async (>= 100 contacts)
+{
+  "mode": "async",
+  "jobId": "job_def456",
+  "status": "pending",
+  "operation": "remove_from_group",
+  "requestedCount": 280,
+  "groupId": "grp_abc"
+}
 ```
 
 ### GET /api/contacts/groups/:groupId/members
 ```json
 {
   "contacts": [
-    { "id": "cnt_abc", "name": "Kouassi Amara", "phone": "+41791234567", "tags": ["vip"], "addedAt": "2026-03-27T10:00:00Z" }
+    { "id": "cnt_abc", "name": "Kouassi Amara", "phone": "+22901000000", "tags": ["vip"], "addedAt": "2026-03-27T10:00:00Z" }
   ],
   "nextCursor": "cnt_xyz",
   "hasMore": true,

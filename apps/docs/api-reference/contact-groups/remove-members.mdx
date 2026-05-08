@@ -19,7 +19,7 @@ DELETE /api/v1/contacts/groups/{groupId}/members
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `contactIds` | UUID[] | yes | Contacts à retirer |
+| `contactIds` | UUID[] | yes | 1 to 10000 contact IDs to remove |
 
 ## Success response `200`
 
@@ -31,3 +31,28 @@ DELETE /api/v1/contacts/groups/{groupId}/members
   }
 }
 ```
+
+## Async response `202`
+
+When `contactIds.length >= 100`, the operation runs in background.
+
+```json
+{
+  "data": {
+    "mode": "async",
+    "jobId": "job_def456",
+    "status": "pending",
+    "operation": "remove_from_group",
+    "requestedCount": 280,
+    "groupId": "uuid-group",
+    "progress": 0,
+    "message": "Bulk operation queued. Check status via GET /api/contacts/bulk-jobs/job_def456"
+  }
+}
+```
+
+## Notes
+
+- `< 100` contacts: synchronous response
+- `>= 100` contacts: asynchronous response with HTTP `202`
+- Poll `GET /api/v1/contacts/bulk-jobs/{jobId}/progress` every `2s`

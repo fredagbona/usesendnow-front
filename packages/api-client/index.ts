@@ -44,6 +44,9 @@ import type {
   ContactGroupMembersResponse,
   AddMembersResponse,
   RemoveMembersResponse,
+  DeleteContactsResponse,
+  BulkJob,
+  BulkJobQueuedResponse,
   ContactGroupsOfContact,
   ContactImport,
   ImportResult,
@@ -339,7 +342,7 @@ const contacts = {
   delete: (id: string) => del<{ deleted: boolean }>(`/api/contacts/${id}`),
 
   deleteMany: (contactIds: string[]) =>
-    request<{ deletedCount: number; requested: number; notFound: string[] }>("DELETE", "/api/contacts/bulk", { contactIds }),
+    request<DeleteContactsResponse | BulkJobQueuedResponse>("DELETE", "/api/contacts/bulk", { contactIds }),
 
   getGroups: (id: string) => get<ContactGroupsOfContact>(`/api/contacts/${id}/groups`),
 
@@ -385,6 +388,15 @@ const contacts = {
 
   getImport: (importId: string) =>
     get<ContactImport>(`/api/contacts/imports/${importId}`),
+
+  getBulkJob: (jobId: string) =>
+    get<BulkJob>(`/api/contacts/bulk-jobs/${jobId}`),
+
+  getBulkJobProgress: (jobId: string) =>
+    get<BulkJob>(`/api/contacts/bulk-jobs/${jobId}/progress`),
+
+  cancelBulkJob: (jobId: string) =>
+    post<BulkJob>(`/api/contacts/bulk-jobs/${jobId}/cancel`),
 }
 
 // ─── Contact Groups ────────────────────────────────────────────────────────────
@@ -411,10 +423,10 @@ const contactGroups = {
   },
 
   addMembers: (groupId: string, contactIds: string[]) =>
-    post<AddMembersResponse>(`/api/contacts/groups/${groupId}/members`, { contactIds }),
+    post<AddMembersResponse | BulkJobQueuedResponse>(`/api/contacts/groups/${groupId}/members`, { contactIds }),
 
   removeMembers: (groupId: string, contactIds: string[]) =>
-    request<RemoveMembersResponse>("DELETE", `/api/contacts/groups/${groupId}/members`, { contactIds }),
+    request<RemoveMembersResponse | BulkJobQueuedResponse>("DELETE", `/api/contacts/groups/${groupId}/members`, { contactIds }),
 }
 
 // ─── Templates ────────────────────────────────────────────────────────────────

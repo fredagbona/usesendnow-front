@@ -1,0 +1,38 @@
+---
+title: POST Cancel bulk contact job
+description: Cancel a pending or processing asynchronous bulk contact job.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/contacts/bulk-jobs/{jobId}/cancel
+```
+
+## Parameters
+
+| Field | Type | Required | Location | Description |
+|---|---|---:|---|---|
+| `jobId` | UUID | yes | path | ID of the bulk job |
+
+## Success response `200`
+
+```json
+{
+  "data": {
+    "id": "job_abc123",
+    "operation": "add_to_group",
+    "status": "cancelled",
+    "requestedCount": 4900,
+    "processedCount": 2550,
+    "progress": 52,
+    "groupId": "uuid-group",
+    "summary": {
+      "added": 2431,
+      "alreadyInGroup": 91,
+      "notFound": 28
+    },
+    "completedAt": "2026-05-08T10:00:09.000Z"
+  }
+}
+```
