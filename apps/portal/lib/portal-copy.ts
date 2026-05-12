@@ -1,5 +1,4 @@
 import type { PortalLocale } from "@/lib/portal-locale"
-import { teamsEn, teamsFr } from "@/lib/copy/teams"
 
 export const portalCopy = {
   fr: {
@@ -14,7 +13,6 @@ export const portalCopy = {
       numberLookups: "Number Lookups",
       apiKeys: "Clés API",
       billing: "Abonnement",
-      teams: teamsFr.navLabel,
     },
     topnav: {
       light: "Clair",
@@ -47,10 +45,6 @@ export const portalCopy = {
       templateDetail: "Détail template",
       groupDetail: "Détail groupe",
       portal: "Portail",
-      teams: teamsFr.listTitle,
-      teamsNew: teamsFr.createTitle,
-      teamDetail: teamsFr.detailTitle,
-      teamsInvite: teamsFr.invitePageTitle,
     },
     sidebar: {
       expandNav: "Développer la navigation",
@@ -58,6 +52,10 @@ export const portalCopy = {
       messagesRemaining: "Messages restants",
       quotaTooltip: "{{count}} messages restants",
       upgradePlanTooltip: "{{upgrade}} — Plan {{planName}}",
+    },
+    workspaceMenu: {
+      sectionLabel: "Espace de travail",
+      personalAccount: "Compte personnel",
     },
     common: {
       back: "Retour",
@@ -122,9 +120,6 @@ export const portalCopy = {
       billingLoadError: "Impossible de charger les données de facturation.",
       templatesLoadError: "Impossible de charger les modèles.",
       webhooksLoadError: "Impossible de charger les webhooks.",
-      teamsListLoadError: teamsFr.loadListError,
-      teamDetailLoadError: teamsFr.loadDetailError,
-      teamsInvitationsMineLoadError: teamsFr.loadInvitesError,
     },
     auth: {
       layoutMarketing: {
@@ -296,12 +291,6 @@ export const portalCopy = {
       },
       staticPages: [
         { id: "page-dashboard", title: "Tableau de bord", description: "Vue d'ensemble du portail", href: "/dashboard" },
-        {
-          id: "page-teams",
-          title: "Équipes",
-          description: "Espaces de travail partagés, invitations et clés d’équipe",
-          href: "/teams",
-        },
         { id: "page-instances", title: "Instances", description: "Gérer les connexions WhatsApp", href: "/instances" },
         { id: "page-messages", title: "Messages", description: "Envoyer et consulter les messages", href: "/messages" },
         { id: "page-campaigns", title: "Campagnes", description: "Piloter les envois en masse", href: "/campaigns" },
@@ -409,10 +398,6 @@ export const portalCopy = {
         webhooks: "Webhooks",
         voiceNotes: "Notes vocales",
       },
-      teamsJoinOnly:
-        "Équipes : pas de création d’espace équipe — vous pouvez rejoindre une équipe sur invitation.",
-      teamsPro: "Équipes : jusqu’à 2 espaces propriétaire, 4 sièges par équipe.",
-      teamsPlus: "Équipes : jusqu’à 4 espaces propriétaire, 8 sièges par équipe.",
       priceUnit: "€ / mois",
       yes: "oui",
       no: "non",
@@ -732,6 +717,18 @@ export const portalCopy = {
       bulkDeleteErrorForbidden: "Accès refusé pour supprimer ces contacts.",
       bulkDeleteErrorGeneric: "Impossible de supprimer les contacts.",
       loadMoreContacts: "Charger plus",
+      paginationSummary: "{{start}}–{{end}} sur {{total}}",
+      paginationPage: "Page {{page}}",
+      paginationPrev: "Page précédente",
+      paginationNext: "Page suivante",
+      backToTop: "Haut de page",
+      bulkAddToGroup: "Ajouter à un groupe",
+      addToGroupModalTitle: "Ajouter la sélection à un groupe",
+      addToGroupGroupLabel: "Groupe",
+      addToGroupPlaceholder: "Choisir un groupe…",
+      addToGroupNoGroups: "Créez d’abord un groupe (bouton Groupes).",
+      addToGroupSubmit: "Ajouter",
+      addToGroupFailed: "Impossible d’ajouter les contacts au groupe.",
       sortCreatedDesc: "Plus récents d'abord",
       sortNameAsc: "Nom (A–Z)",
       sortLabel: "Tri",
@@ -845,6 +842,8 @@ export const portalCopy = {
         save: "Enregistrer",
         cancel: "Annuler",
         loadMore: "Charger plus",
+        selectAllVisible: "Tout sélectionner (cette page)",
+        deselectAllPick: "Tout désélectionner",
         export: "Exporter",
         exporting: "Export en cours…",
         exportFailed: "Impossible d'exporter le groupe.",
@@ -1688,7 +1687,6 @@ export const portalCopy = {
       instanceDisconnected: "WhatsApp déconnecté",
       profileUpdated: "Profil mis à jour",
     },
-    teams: teamsFr,
   },
   en: {
     nav: {
@@ -1702,7 +1700,6 @@ export const portalCopy = {
       numberLookups: "Number Lookups",
       apiKeys: "API Keys",
       billing: "Billing",
-      teams: teamsEn.navLabel,
     },
     topnav: {
       light: "Light",
@@ -1735,10 +1732,6 @@ export const portalCopy = {
       templateDetail: "Template Details",
       groupDetail: "Group Details",
       portal: "Portal",
-      teams: teamsEn.listTitle,
-      teamsNew: teamsEn.createTitle,
-      teamDetail: teamsEn.detailTitle,
-      teamsInvite: teamsEn.invitePageTitle,
     },
     sidebar: {
       expandNav: "Expand navigation",
@@ -1746,6 +1739,10 @@ export const portalCopy = {
       messagesRemaining: "Messages remaining",
       quotaTooltip: "{{count}} messages remaining",
       upgradePlanTooltip: "{{upgrade}} — {{planName}} plan",
+    },
+    workspaceMenu: {
+      sectionLabel: "Workspace",
+      personalAccount: "Personal account",
     },
     common: {
       back: "Back",
@@ -1810,9 +1807,6 @@ export const portalCopy = {
       billingLoadError: "Unable to load billing data.",
       templatesLoadError: "Unable to load templates.",
       webhooksLoadError: "Unable to load webhooks.",
-      teamsListLoadError: teamsEn.loadListError,
-      teamDetailLoadError: teamsEn.loadDetailError,
-      teamsInvitationsMineLoadError: teamsEn.loadInvitesError,
     },
     auth: {
       layoutMarketing: {
@@ -1982,12 +1976,6 @@ export const portalCopy = {
       },
       staticPages: [
         { id: "page-dashboard", title: "Dashboard", description: "Overview of the portal", href: "/dashboard" },
-        {
-          id: "page-teams",
-          title: "Teams",
-          description: "Shared workspaces, invitations, and team keys",
-          href: "/teams",
-        },
         { id: "page-instances", title: "Instances", description: "Manage WhatsApp connections", href: "/instances" },
         { id: "page-messages", title: "Messages", description: "Send and review messages", href: "/messages" },
         { id: "page-campaigns", title: "Campaigns", description: "Run bulk sends", href: "/campaigns" },
@@ -2095,10 +2083,6 @@ export const portalCopy = {
         webhooks: "Webhooks",
         voiceNotes: "Voice notes",
       },
-      teamsJoinOnly:
-        "Teams: you cannot create a team workspace — you can join when invited.",
-      teamsPro: "Teams: up to 2 owner workspaces, 4 seats each.",
-      teamsPlus: "Teams: up to 4 owner workspaces, 8 seats each.",
       priceUnit: "€ / month",
       yes: "yes",
       no: "no",
@@ -2415,6 +2399,18 @@ export const portalCopy = {
       bulkDeleteErrorForbidden: "You are not allowed to delete these contacts.",
       bulkDeleteErrorGeneric: "Unable to delete contacts.",
       loadMoreContacts: "Load more",
+      paginationSummary: "{{start}}–{{end}} of {{total}}",
+      paginationPage: "Page {{page}}",
+      paginationPrev: "Previous page",
+      paginationNext: "Next page",
+      backToTop: "Back to top",
+      bulkAddToGroup: "Add to group",
+      addToGroupModalTitle: "Add selection to a group",
+      addToGroupGroupLabel: "Group",
+      addToGroupPlaceholder: "Choose a group…",
+      addToGroupNoGroups: "Create a group first (Groups button).",
+      addToGroupSubmit: "Add",
+      addToGroupFailed: "Unable to add contacts to the group.",
       sortCreatedDesc: "Newest first",
       sortNameAsc: "Name (A–Z)",
       sortLabel: "Sort",
@@ -2527,6 +2523,8 @@ export const portalCopy = {
         save: "Save",
         cancel: "Cancel",
         loadMore: "Load more",
+        selectAllVisible: "Select all on this page",
+        deselectAllPick: "Deselect all",
         export: "Export",
         exporting: "Export in progress...",
         exportFailed: "Unable to export group.",
@@ -3361,6 +3359,5 @@ export const portalCopy = {
       instanceDisconnected: "WhatsApp disconnected",
       profileUpdated: "Profile updated",
     },
-    teams: teamsEn,
   },
 } satisfies Record<PortalLocale, Record<string, unknown>>

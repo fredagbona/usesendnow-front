@@ -1,11 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Contact, ContactSort } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
-const DEFAULT_LIMIT = 50
+export const CONTACTS_LIST_PAGE_SIZE = 100
 
 export function useContactsList(searchQuery: string, sort: ContactSort = "createdAt_desc") {
   const { copy } = usePortalLocale()
@@ -18,58 +18,82 @@ export function useContactsList(searchQuery: string, sort: ContactSort = "create
 
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [hasMore, setHasMore] = useState(false)
   const [total, setTotal] = useState(0)
+  const [pageIndex, setPageIndex] = useState(0)
+  /** Cursor sent to the API to load page `i` (`null` = first page). */
+  const [startCursors, setStartCursors] = useState<(string | null)[]>([null])
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
+  const skipFilterReset = useRef(true)
 
-  const fetchFirstPage = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await apiClient.contacts.list({
-        limit: DEFAULT_LIMIT,
-        search: debouncedSearch.trim() || undefined,
-        sort,
-      })
-      setContacts(data.contacts)
-      setNextCursor(data.nextCursor ?? null)
-      setHasMore(data.hasMore)
-      setTotal(data.total)
-    } catch {
-      setError(copy.hooks.contactsLoadError)
-    } finally {
-      setLoading(false)
-    }
-  }, [copy.hooks.contactsLoadError, debouncedSearch, sort])
+  const canGoPrev = pageIndex > 0
+  const canGoNext = Boolean(nextCursor)
 
   useEffect(() => {
-    void fetchFirstPage()
-  }, [fetchFirstPage])
-
-  const loadMore = useCallback(async () => {
-    if (!hasMore || !nextCursor || loadingMore) return
-    setLoadingMore(true)
-    setError(null)
-    try {
-      const data = await apiClient.contacts.list({
-        limit: DEFAULT_LIMIT,
-        cursor: nextCursor,
-        search: debouncedSearch.trim() || undefined,
-        sort,
-      })
-      setContacts((prev) => [...prev, ...data.contacts])
-      setNextCursor(data.nextCursor ?? null)
-      setHasMore(data.hasMore)
-    } catch {
-      setError(copy.hooks.contactsLoadError)
-    } finally {
-      setLoadingMore(false)
+    if (skipFilterReset.current) {
+      skipFilterReset.current = false
+      return
     }
-  }, [copy.hooks.contactsLoadError, debouncedSearch, hasMore, loadingMore, nextCursor, sort])
+    setPageIndex(0)
+    setStartCursors([null])
+  }, [debouncedSearch, sort])
+
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const cursor = startCursors[pageIndex] ?? null
+        const data = await apiClient.contacts.list({
+          limit: CONTACTS_LIST_PAGE_SIZE,
+          cursor: cursor ?? undefined,
+          search: debouncedSearch.trim() || undefined,
+          sort,
+        })
+        if (cancelled) return
+        setContacts(data.contacts)
+        setNextCursor(data.nextCursor ?? null)
+        setTotal(data.total)
+      } catch {
+        if (!cancelled) {
+          setError(copy.hooks.contactsLoadError)
+          setContacts([])
+          setNextCursor(null)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [copy.hooks.contactsLoadError, debouncedSearch, pageIndex, reloadToken, sort, startCursors])
+
+  const goNextPage = useCallback(() => {
+    if (!nextCursor) return
+    const c = nextCursor
+    setStartCursors((prev) => {
+      const next = [...prev]
+      while (next.length <= pageIndex + 1) next.push(null)
+      next[pageIndex + 1] = c
+      return next
+    })
+    setPageIndex((p) => p + 1)
+  }, [nextCursor, pageIndex])
+
+  const goPrevPage = useCallback(() => {
+    setPageIndex((p) => Math.max(0, p - 1))
+  }, [])
+
+  const refetch = useCallback(() => {
+    setReloadToken((t) => t + 1)
+  }, [])
 
   const addContact = (contact: Contact) => {
+    if (pageIndex !== 0) return
     setContacts((prev) => [contact, ...prev])
     setTotal((prev) => prev + 1)
   }
@@ -83,15 +107,23 @@ export function useContactsList(searchQuery: string, sort: ContactSort = "create
     setTotal((prev) => Math.max(0, prev - 1))
   }
 
+  const rangeStart = total === 0 ? 0 : pageIndex * CONTACTS_LIST_PAGE_SIZE + 1
+  const rangeEnd = total === 0 ? 0 : pageIndex * CONTACTS_LIST_PAGE_SIZE + contacts.length
+
   return {
     contacts,
     loading,
-    loadingMore,
-    hasMore,
-    total,
     error,
-    refetch: fetchFirstPage,
-    loadMore,
+    total,
+    pageIndex,
+    pageSize: CONTACTS_LIST_PAGE_SIZE,
+    canGoPrev,
+    canGoNext,
+    goNextPage,
+    goPrevPage,
+    rangeStart,
+    rangeEnd,
+    refetch,
     addContact,
     updateContact,
     removeContact,

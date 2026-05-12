@@ -34,6 +34,9 @@ import {
   CheckmarkCircle01Icon,
   AlertCircleIcon,
   Delete01Icon,
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  ArrowUp01Icon,
 } from "hugeicons-react"
 
 // ─── Contact Modal ─────────────────────────────────────────────────────────────
@@ -460,6 +463,79 @@ function ImportModal({
   )
 }
 
+const ADD_MEMBERS_BATCH = 200
+
+function AddSelectionToGroupModal({
+  open,
+  groups,
+  selectedCount,
+  loading,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean
+  groups: ContactGroup[]
+  selectedCount: number
+  loading: boolean
+  onClose: () => void
+  onConfirm: (groupId: string) => void | Promise<void>
+}) {
+  const { copy } = usePortalLocale()
+  const [groupId, setGroupId] = useState("")
+
+  useEffect(() => {
+    if (open) setGroupId("")
+  }, [open])
+
+  if (!open) return null
+
+  return (
+    <Modal open={open} onClose={onClose} title={copy.contacts.addToGroupModalTitle}>
+      <div className="space-y-4">
+        <p className="text-sm text-text-secondary">
+          {renderWithStrongCount(
+            selectedCount === 1 ? copy.contacts.bulkSelectedOne : copy.contacts.bulkSelectedMany,
+            selectedCount,
+          )}
+        </p>
+        {groups.length === 0 ? (
+          <p className="text-sm text-text-muted">{copy.contacts.addToGroupNoGroups}</p>
+        ) : (
+          <label className="flex flex-col gap-1 text-xs text-text-secondary">
+            <span>{copy.contacts.addToGroupGroupLabel}</span>
+            <select
+              value={groupId}
+              onChange={(e) => setGroupId(e.target.value)}
+              className="border border-border-strong rounded-lg px-3 py-2 text-sm text-text bg-bg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            >
+              <option value="">{copy.contacts.addToGroupPlaceholder}</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            {copy.contacts.cancel}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            loading={loading}
+            disabled={!groupId || groups.length === 0}
+            onClick={() => void onConfirm(groupId)}
+          >
+            {copy.contacts.addToGroupSubmit}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ─── Import Status Badge ───────────────────────────────────────────────────────
 
 const IMPORT_STATUS_VARIANT: Record<string, "neutral" | "blue" | "success" | "error"> = {
@@ -496,21 +572,30 @@ export default function ContactsPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [importPickerGroups, setImportPickerGroups] = useState<ContactGroup[]>([])
+  const [addToGroupOpen, setAddToGroupOpen] = useState(false)
+  const [addToGroupSubmitting, setAddToGroupSubmitting] = useState(false)
+  const [addToGroupPickerGroups, setAddToGroupPickerGroups] = useState<ContactGroup[]>([])
   const [exporting, setExporting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [showBackToTop, setShowBackToTop] = useState(false)
 
   const {
     contacts,
     loading,
-    loadingMore,
-    hasMore,
     total,
-    loadMore,
+    pageIndex,
+    pageSize,
+    canGoPrev,
+    canGoNext,
+    goNextPage,
+    goPrevPage,
+    rangeStart,
+    rangeEnd,
+    refetch: refetchContacts,
     addContact,
     updateContact,
     removeContact,
-    refetch: refetchContacts,
   } = useContactsList(search, sort)
   const { groups, total: groupTotal } = useContactGroups()
   const { imports, loading: importsLoading } = useContactImports()
@@ -540,6 +625,39 @@ export default function ContactsPage() {
     }
   }, [importOpen])
 
+  useEffect(() => {
+    if (!addToGroupOpen) return
+    let cancelled = false
+    async function loadAll() {
+      const acc: ContactGroup[] = []
+      let cursor: string | undefined
+      try {
+        for (;;) {
+          const r = await apiClient.contactGroups.list({ limit: 100, cursor })
+          acc.push(...r.groups)
+          if (!r.hasMore || !r.nextCursor) break
+          cursor = r.nextCursor ?? undefined
+        }
+        if (!cancelled) setAddToGroupPickerGroups(acc)
+      } catch {
+        if (!cancelled) setAddToGroupPickerGroups([])
+      }
+    }
+    void loadAll()
+    return () => {
+      cancelled = true
+    }
+  }, [addToGroupOpen])
+
+  useEffect(() => {
+    const onScroll = () => {
+      setShowBackToTop(typeof window !== "undefined" && window.scrollY > 400)
+    }
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
   // Contact groups lookup map
   const [contactGroups, setContactGroups] = useState<Map<string, Array<{ id: string; name: string; color?: string }>>>(new Map())
 
@@ -565,6 +683,10 @@ export default function ContactsPage() {
   const groupCount = groupTotal
 
   const contactIds = useMemo(() => contacts.map((c) => c.id), [contacts])
+
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [pageIndex, sort])
 
   const allSelected = contacts.length > 0 && contactIds.every((id) => selectedIds.has(id))
 
@@ -622,9 +744,12 @@ export default function ContactsPage() {
   }
 
   const handleCancelBulkJob = async () => {
+    const wasGroupAdd = bulkJobPoll.variant === "groupAdd"
     try {
       await bulkJobPoll.cancel()
-      toast.success(copy.contacts.bulkJobCancelled)
+      toast.success(
+        wasGroupAdd ? copy.contacts.groups.addMembersBulkCancelled : copy.contacts.bulkJobCancelled,
+      )
     } catch {
       toast.error(copy.contacts.bulkJobCancelFailed)
     }
@@ -640,21 +765,25 @@ export default function ContactsPage() {
       const result = await apiClient.contacts.deleteMany(ids)
       if (isContactBulkJobAccepted(result)) {
         toast.info(copy.contacts.bulkJobStarted)
-        bulkJobPoll.start(result.jobId, {
-          onComplete: (progress) => {
-            const st = (progress.status ?? "").toLowerCase()
-            if (st === "failed" || st === "error") {
-              toast.error(copy.contacts.bulkJobFailed)
-            } else if (st === "cancelled" || st === "canceled") {
-              toast.info(copy.contacts.bulkJobEndedCancelled)
-            } else {
-              const count = progress.summary?.deleted ?? progress.processedCount ?? ids.length
-              toast.success(copy.contacts.bulkJobDoneDeleted.replace("{{count}}", String(count)))
-            }
-            setSelectedIds(new Set())
-            void refetchContacts()
+        bulkJobPoll.start(
+          result.jobId,
+          {
+            onComplete: (progress) => {
+              const st = (progress.status ?? "").toLowerCase()
+              if (st === "failed" || st === "error") {
+                toast.error(copy.contacts.bulkJobFailed)
+              } else if (st === "cancelled" || st === "canceled") {
+                toast.info(copy.contacts.bulkJobEndedCancelled)
+              } else {
+                const count = progress.summary?.deleted ?? progress.processedCount ?? ids.length
+                toast.success(copy.contacts.bulkJobDoneDeleted.replace("{{count}}", String(count)))
+              }
+              setSelectedIds(new Set())
+              void refetchContacts()
+            },
           },
-        })
+          { variant: "delete" },
+        )
         return
       }
 
@@ -687,6 +816,64 @@ export default function ContactsPage() {
       }
     } finally {
       setBulkDeleting(false)
+    }
+  }
+
+  const handleAddSelectionToGroup = async (groupId: string) => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0 || !groupId) return
+    const gCopy = copy.contacts.groups
+    setAddToGroupSubmitting(true)
+    let totalAdded = 0
+    let aborted = false
+    let fatalError = false
+    try {
+      for (let i = 0; i < ids.length; i += ADD_MEMBERS_BATCH) {
+        const chunk = ids.slice(i, i + ADD_MEMBERS_BATCH)
+        const res = await apiClient.contactGroups.addMembers(groupId, chunk)
+        if (isContactBulkJobAccepted(res)) {
+          toast.info(gCopy.addMembersBulkStarted)
+          setAddToGroupSubmitting(false)
+          await new Promise<void>((resolve) => {
+            bulkJobPoll.start(
+              res.jobId,
+              {
+                onComplete: (progress) => {
+                  const st = (progress.status ?? "").toLowerCase()
+                  if (st === "failed" || st === "error") {
+                    toast.error(gCopy.addMembersFailed)
+                    aborted = true
+                    fatalError = true
+                  } else if (st === "cancelled" || st === "canceled") {
+                    toast.info(gCopy.addMembersBulkEndedCancelled)
+                    aborted = true
+                  } else {
+                    const added = progress.summary?.added ?? progress.processedCount ?? chunk.length
+                    totalAdded += added
+                  }
+                  resolve()
+                },
+              },
+              { variant: "groupAdd" },
+            )
+          })
+          if (aborted) break
+          setAddToGroupSubmitting(true)
+        } else {
+          totalAdded += res.added
+        }
+      }
+      if (!fatalError && !aborted && totalAdded > 0) {
+        const tpl = totalAdded === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
+        toast.success(tpl.replace("{{count}}", String(totalAdded)))
+      }
+      setAddToGroupOpen(false)
+      setSelectedIds(new Set())
+      void refetchContacts()
+    } catch {
+      toast.error(copy.contacts.addToGroupFailed)
+    } finally {
+      setAddToGroupSubmitting(false)
     }
   }
 
@@ -779,9 +966,15 @@ export default function ContactsPage() {
             {bulkJobPoll.activeJobId && (
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3 mb-4 rounded-xl border border-border-strong bg-bg-subtle">
                 <div>
-                  <p className="text-sm font-medium text-text">{copy.contacts.bulkJobRunning}</p>
+                  <p className="text-sm font-medium text-text">
+                    {bulkJobPoll.variant === "groupAdd"
+                      ? copy.contacts.groups.addMembersBulkRunning
+                      : copy.contacts.bulkJobRunning}
+                  </p>
                   <p className="text-xs text-text-muted mt-0.5 font-mono">
-                    {copy.contacts.bulkJobProgress
+                    {(bulkJobPoll.variant === "groupAdd"
+                      ? copy.contacts.groups.addMembersBulkProgress
+                      : copy.contacts.bulkJobProgress)
                       .replace("{{percent}}", String(bulkJobPoll.snapshot.progress))
                       .replace("{{status}}", bulkJobPoll.snapshot.status)}
                   </p>
@@ -792,7 +985,9 @@ export default function ContactsPage() {
                   loading={bulkJobPoll.cancelling}
                   onClick={() => void handleCancelBulkJob()}
                 >
-                  {copy.contacts.bulkJobCancel}
+                  {bulkJobPoll.variant === "groupAdd"
+                    ? copy.contacts.groups.addMembersBulkCancel
+                    : copy.contacts.bulkJobCancel}
                 </Button>
               </div>
             )}
@@ -813,6 +1008,14 @@ export default function ContactsPage() {
                 <div className="flex items-center gap-2">
                   <Button variant="secondary" size="sm" onClick={() => setSelectedIds(new Set())}>
                     {copy.contacts.deselectAll}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={!!bulkJobPoll.activeJobId}
+                    onClick={() => setAddToGroupOpen(true)}
+                  >
+                    {copy.contacts.bulkAddToGroup}
                   </Button>
                   <Button
                     variant="danger"
@@ -988,13 +1191,38 @@ export default function ContactsPage() {
                   })}
                 </div>
 
-                {hasMore && (
-                  <div className="mt-4 flex justify-center">
-                    <Button variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>
-                      {copy.contacts.loadMoreContacts}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-2 py-3 border-t border-border">
+                  <p className="text-sm text-text-muted tabular-nums">
+                    {copy.contacts.paginationSummary
+                      .replace("{{start}}", String(rangeStart))
+                      .replace("{{end}}", String(rangeEnd))
+                      .replace("{{total}}", String(total))}
+                    <span className="mx-2 text-border-strong">·</span>
+                    {copy.contacts.paginationPage.replace("{{page}}", String(pageIndex + 1))}
+                  </p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={!canGoPrev || loading}
+                      onClick={goPrevPage}
+                      title={copy.contacts.paginationPrev}
+                    >
+                      <ArrowLeft01Icon className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={!canGoNext || loading}
+                      onClick={goNextPage}
+                      title={copy.contacts.paginationNext}
+                    >
+                      <ArrowRight01Icon className="w-4 h-4" />
                     </Button>
                   </div>
-                )}
+                </div>
               </>
             )}
           </Card>
@@ -1170,6 +1398,28 @@ export default function ContactsPage() {
           onSuccess={() => {}}
           onClose={() => setImportOpen(false)}
         />
+      )}
+
+      <AddSelectionToGroupModal
+        open={addToGroupOpen}
+        groups={addToGroupPickerGroups.length > 0 ? addToGroupPickerGroups : groups}
+        selectedCount={selectedIds.size}
+        loading={addToGroupSubmitting}
+        onClose={() => {
+          if (!addToGroupSubmitting && !bulkJobPoll.activeJobId) setAddToGroupOpen(false)
+        }}
+        onConfirm={handleAddSelectionToGroup}
+      />
+
+      {tab === "contacts" && showBackToTop && (
+        <button
+          type="button"
+          className="fixed bottom-6 right-6 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-border-strong bg-bg shadow-lg text-text-secondary hover:bg-bg-subtle hover:text-text transition-colors cursor-pointer"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          title={copy.contacts.backToTop}
+        >
+          <ArrowUp01Icon className="h-5 w-5" />
+        </button>
       )}
     </motion.div>
   )

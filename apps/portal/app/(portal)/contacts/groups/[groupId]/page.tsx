@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
@@ -132,7 +132,8 @@ function EditGroupModal({
 
 // ─── Add Members Modal ─────────────────────────────────────────────────────────
 
-const CONTACTS_PAGE_SIZE = 50
+const CONTACTS_PAGE_SIZE = 100
+const ADD_MEMBERS_BATCH = 200
 
 function AddMembersModal({
   groupId,
@@ -210,6 +211,9 @@ function AddMembersModal({
   }, [debouncedSearch, hasMore, loadingMore, nextCursor])
 
   const visible = contacts.filter((c) => !existingMemberIds.has(c.id))
+  const visibleIds = useMemo(() => visible.map((c) => c.id), [visible])
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -224,37 +228,57 @@ function AddMembersModal({
     if (selected.size === 0) return
     setAdding(true)
     setError(null)
+    const ids = [...selected]
+    let totalAdded = 0
+    let aborted = false
+    let fatalError = false
     try {
-      const ids = [...selected]
-      const res = await apiClient.contactGroups.addMembers(groupId, ids)
-      if (isContactBulkJobAccepted(res)) {
-        toast.info(gCopy.addMembersBulkStarted)
-        setAdding(false)
-        bulkJobPoll.start(res.jobId, {
-          onComplete: (progress) => {
-            const st = (progress.status ?? "").toLowerCase()
-            if (st === "failed" || st === "error") {
-              setError(gCopy.addMembersFailed)
-              return
-            }
-            if (st === "cancelled" || st === "canceled") {
-              toast.info(gCopy.addMembersBulkEndedCancelled)
-              onSuccess(0)
+      for (let i = 0; i < ids.length; i += ADD_MEMBERS_BATCH) {
+        const chunk = ids.slice(i, i + ADD_MEMBERS_BATCH)
+        const res = await apiClient.contactGroups.addMembers(groupId, chunk)
+        if (isContactBulkJobAccepted(res)) {
+          toast.info(gCopy.addMembersBulkStarted)
+          setAdding(false)
+          await new Promise<void>((resolve) => {
+            bulkJobPoll.start(
+              res.jobId,
+              {
+                onComplete: (progress) => {
+                  const st = (progress.status ?? "").toLowerCase()
+                  if (st === "failed" || st === "error") {
+                    setError(gCopy.addMembersFailed)
+                    aborted = true
+                    fatalError = true
+                  } else if (st === "cancelled" || st === "canceled") {
+                    toast.info(gCopy.addMembersBulkEndedCancelled)
+                    aborted = true
+                  } else {
+                    const added = progress.summary?.added ?? progress.processedCount ?? chunk.length
+                    totalAdded += added
+                  }
+                  resolve()
+                },
+              },
+              { variant: "groupAdd" },
+            )
+          })
+          if (aborted) {
+            if (!fatalError) {
+              onSuccess(totalAdded)
               onClose()
-              return
             }
-            const added = progress.summary?.added ?? progress.processedCount ?? ids.length
-            toast.success(gCopy.addMembersBulkDone.replace("{{count}}", String(added)))
-            onSuccess(added)
-            onClose()
-          },
-        })
-        return
+            return
+          }
+          setAdding(true)
+        } else {
+          totalAdded += res.added
+        }
       }
-      const tpl =
-        res.added === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
-      toast.success(tpl.replace("{{count}}", String(res.added)))
-      onSuccess(res.added)
+      if (totalAdded > 0) {
+        const tpl = totalAdded === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
+        toast.success(tpl.replace("{{count}}", String(totalAdded)))
+      }
+      onSuccess(totalAdded)
       onClose()
     } catch {
       setError(gCopy.addMembersFailed)
@@ -308,7 +332,29 @@ function AddMembersModal({
           onChange={(e) => setSearchInput(e.target.value)}
           autoFocus
         />
-        <div className="max-h-64 overflow-y-auto border border-border rounded-xl divide-y divide-border">
+        {visible.length > 0 && !loadingContacts ? (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setSelected((prev) => {
+                  const next = new Set(prev)
+                  if (allVisibleSelected) {
+                    visibleIds.forEach((id) => next.delete(id))
+                  } else {
+                    visibleIds.forEach((id) => next.add(id))
+                  }
+                  return next
+                })
+              }}
+            >
+              {allVisibleSelected ? gCopy.deselectAllPick : gCopy.selectAllVisible}
+            </Button>
+          </div>
+        ) : null}
+        <div className="max-h-72 overflow-y-auto border border-border rounded-xl divide-y divide-border">
           {loadingContacts ? (
             <div className="p-4 text-sm text-text-secondary text-center">{gCopy.loading}</div>
           ) : visible.length === 0 ? (

@@ -10,12 +10,19 @@ export interface ContactBulkJobPollHandlers {
   onComplete: (p: ContactBulkJobProgress) => void
 }
 
+export type ContactBulkJobVariant = "delete" | "groupAdd"
+
+export interface ContactBulkJobStartOptions {
+  variant?: ContactBulkJobVariant
+}
+
 /**
  * Polls `GET /api/contacts/bulk-jobs/:jobId/progress` while a job is active.
  * Use `cancel()` to call `POST .../cancel` and stop polling without `onComplete`.
  */
 export function useContactBulkJobPoll() {
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
+  const [variant, setVariant] = useState<ContactBulkJobVariant | null>(null)
   const [snapshot, setSnapshot] = useState({ progress: 0, status: "pending" })
   const [cancelling, setCancelling] = useState(false)
   const handlersRef = useRef<ContactBulkJobPollHandlers | null>(null)
@@ -24,6 +31,7 @@ export function useContactBulkJobPoll() {
   const stop = useCallback(() => {
     activeJobIdRef.current = null
     setActiveJobId(null)
+    setVariant(null)
     handlersRef.current = null
   }, [])
 
@@ -65,12 +73,16 @@ export function useContactBulkJobPoll() {
     }
   }, [activeJobId])
 
-  const start = useCallback((jobId: string, handlers: ContactBulkJobPollHandlers) => {
-    handlersRef.current = handlers
-    activeJobIdRef.current = jobId
-    setSnapshot({ progress: 0, status: "pending" })
-    setActiveJobId(jobId)
-  }, [])
+  const start = useCallback(
+    (jobId: string, handlers: ContactBulkJobPollHandlers, options?: ContactBulkJobStartOptions) => {
+      handlersRef.current = handlers
+      activeJobIdRef.current = jobId
+      setVariant(options?.variant ?? "delete")
+      setSnapshot({ progress: 0, status: "pending" })
+      setActiveJobId(jobId)
+    },
+    [],
+  )
 
   const cancel = useCallback(async () => {
     const id = activeJobIdRef.current
@@ -86,6 +98,7 @@ export function useContactBulkJobPoll() {
 
   return {
     activeJobId,
+    variant,
     snapshot,
     cancelling,
     start,
