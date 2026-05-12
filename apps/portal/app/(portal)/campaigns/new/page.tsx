@@ -14,7 +14,7 @@ import { useContactGroups } from "@/hooks/useContactGroups"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
 import { formatDate } from "@/lib/format"
-import type { Campaign, SubscriptionResponse, CreateCampaignPayload, MessageType, UploadedMedia, RepeatType, SafetyAssessment } from "@usesendnow/types"
+import type { Campaign, SubscriptionResponse, CreateCampaignPayload, MessageType, UploadedMedia, RepeatType, SafetyAssessment, InstanceHealth } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
 import Card from "@/components/ui/Card"
@@ -26,6 +26,8 @@ import PlanGateBanner from "@/components/ui/PlanGateBanner"
 import CampaignSafetyHints from "@/components/campaigns/CampaignSafetyHints"
 import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
+import WarmupWarningModal from "@/components/shared/WarmupWarningModal"
+import { shouldShowWarmupWarningBeforeSend } from "@/lib/warmupGate"
 import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, formatBytes } from "@/lib/messageComposer"
 import { Megaphone01Icon, ArrowLeft01Icon, InformationCircleIcon } from "hugeicons-react"
 
@@ -52,6 +54,9 @@ export default function NewCampaignPage() {
   const [mediaError, setMediaError] = useState<string | null>(null)
   const [mediaNotice, setMediaNotice] = useState<string | null>(null)
   const [safetyHints, setSafetyHints] = useState<SafetyAssessment | null>(null)
+  const [warmupModalOpen, setWarmupModalOpen] = useState(false)
+  const [warmupHealth, setWarmupHealth] = useState<InstanceHealth | null>(null)
+  const warmupBypassRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadedMediaRef = useRef<UploadedMedia | null>(null)
   const shouldCleanupMediaRef = useRef(false)
@@ -256,10 +261,7 @@ export default function NewCampaignPage() {
       .catch(() => setPlanBlocked(true))
   }, [])
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!canCreateCampaign) return
-
+  const runCreate = async () => {
     setCreating(true)
     try {
       const schedule = form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString()
@@ -301,8 +303,7 @@ export default function NewCampaignPage() {
       const campaign = await apiClient.campaigns.create(payload)
       prependCampaign(campaign)
 
-      // Check for safety warnings
-      const safetyData = (campaign as any)?.safety
+      const safetyData = (campaign as Campaign & { safety?: SafetyAssessment }).safety
       if (safetyData && safetyData.decision === "warn") {
         setSafetyHints(safetyData)
         toast.success(copy.campaigns.createdWarmup)
@@ -330,7 +331,40 @@ export default function NewCampaignPage() {
       }
     } finally {
       setCreating(false)
+      warmupBypassRef.current = false
     }
+  }
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!canCreateCampaign) return
+
+    if (!warmupBypassRef.current && form.instanceId) {
+      try {
+        const health = await apiClient.instances.getHealth(form.instanceId)
+        if (shouldShowWarmupWarningBeforeSend(health)) {
+          setWarmupHealth(health)
+          setWarmupModalOpen(true)
+          return
+        }
+      } catch {
+        /* health optional: proceed */
+      }
+    }
+
+    await runCreate()
+  }
+
+  const handleWarmupModalClose = () => {
+    setWarmupModalOpen(false)
+    setWarmupHealth(null)
+  }
+
+  const handleWarmupContinue = () => {
+    setWarmupModalOpen(false)
+    setWarmupHealth(null)
+    warmupBypassRef.current = true
+    void runCreate()
   }
 
   if (planBlocked) {
@@ -609,6 +643,13 @@ export default function NewCampaignPage() {
           </div>
         </div>
       </form>
+
+      <WarmupWarningModal
+        open={warmupModalOpen}
+        health={warmupHealth}
+        onClose={handleWarmupModalClose}
+        onContinue={handleWarmupContinue}
+      />
     </motion.div>
   )
 }

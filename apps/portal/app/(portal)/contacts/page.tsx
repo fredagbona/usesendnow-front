@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
@@ -159,6 +160,7 @@ function ImportModal({
   onClose: () => void
 }) {
   const { copy } = usePortalLocale()
+  const router = useRouter()
   const iw = copy.contacts.importWizard
   const [step, setStep] = useState<ImportStep>("upload")
   const [file, setFile] = useState<File | null>(null)
@@ -454,7 +456,18 @@ function ImportModal({
             </div>
           )}
 
-          <div className="flex justify-end pt-1">
+          <div className="flex justify-end flex-wrap gap-2 pt-1">
+            {result.mode === "async" && result.importId ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  onClose()
+                  router.push(`/contacts/imports/${result.importId}`)
+                }}
+              >
+                {iw.trackImportButton}
+              </Button>
+            ) : null}
             <Button variant="primary" onClick={onClose}>{iw.close}</Button>
           </div>
         </div>
@@ -566,6 +579,8 @@ export default function ContactsPage() {
     return ""
   })
   const [sort, setSort] = useState<ContactSort>("createdAt_desc")
+  const [groupFilterId, setGroupFilterId] = useState("")
+  const [groupFilterOptions, setGroupFilterOptions] = useState<ContactGroup[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Contact | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null)
@@ -596,7 +611,7 @@ export default function ContactsPage() {
     addContact,
     updateContact,
     removeContact,
-  } = useContactsList(search, sort)
+  } = useContactsList(search, sort, groupFilterId)
   const { groups, total: groupTotal } = useContactGroups()
   const { imports, loading: importsLoading } = useContactImports()
   const bulkJobPoll = useContactBulkJobPoll()
@@ -650,6 +665,30 @@ export default function ContactsPage() {
   }, [addToGroupOpen])
 
   useEffect(() => {
+    if (tab !== "contacts") return
+    let cancelled = false
+    async function loadAllGroups() {
+      const acc: ContactGroup[] = []
+      let cursor: string | undefined
+      try {
+        for (;;) {
+          const r = await apiClient.contactGroups.list({ limit: 100, cursor })
+          acc.push(...r.groups)
+          if (!r.hasMore || !r.nextCursor) break
+          cursor = r.nextCursor ?? undefined
+        }
+        if (!cancelled) setGroupFilterOptions(acc)
+      } catch {
+        if (!cancelled) setGroupFilterOptions([])
+      }
+    }
+    void loadAllGroups()
+    return () => {
+      cancelled = true
+    }
+  }, [tab])
+
+  useEffect(() => {
     const onScroll = () => {
       setShowBackToTop(typeof window !== "undefined" && window.scrollY > 400)
     }
@@ -658,26 +697,9 @@ export default function ContactsPage() {
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // Contact groups lookup map
-  const [contactGroups, setContactGroups] = useState<Map<string, Array<{ id: string; name: string; color?: string }>>>(new Map())
-
   useEffect(() => {
     apiClient.billing.getSubscription().then(setSubscription).catch(() => {})
   }, [])
-
-  // Load groups for each contact (batch)
-  useEffect(() => {
-    if (contacts.length === 0) return
-    const map = new Map<string, Array<{ id: string; name: string; color?: string }>>()
-    contacts.forEach((c) => {
-      apiClient.contacts.getGroups(c.id)
-        .then((res) => {
-          map.set(c.id, res.groups)
-          setContactGroups(new Map(map))
-        })
-        .catch(() => {})
-    })
-  }, [contacts])
 
   const maxContactGroups = subscription?.subscription?.plan?.limits?.maxContactGroups ?? -1
   const groupCount = groupTotal
@@ -686,7 +708,7 @@ export default function ContactsPage() {
 
   useEffect(() => {
     setSelectedIds(new Set())
-  }, [pageIndex, sort])
+  }, [pageIndex, sort, groupFilterId])
 
   const allSelected = contacts.length > 0 && contactIds.every((id) => selectedIds.has(id))
 
@@ -709,7 +731,7 @@ export default function ContactsPage() {
     setExporting(true)
     const toastId = toast.loading(copy.contacts.exportLoading)
     try {
-      const { blob, filename } = await apiClient.contacts.export()
+      const { blob, filename } = await apiClient.contacts.export(groupFilterId.trim() || undefined)
       const a = document.createElement("a")
       a.href = URL.createObjectURL(blob)
       a.download = filename
@@ -744,11 +766,11 @@ export default function ContactsPage() {
   }
 
   const handleCancelBulkJob = async () => {
-    const wasGroupAdd = bulkJobPoll.variant === "groupAdd"
+    const wasGroupOp = bulkJobPoll.variant === "groupAdd" || bulkJobPoll.variant === "groupRemove"
     try {
       await bulkJobPoll.cancel()
       toast.success(
-        wasGroupAdd ? copy.contacts.groups.addMembersBulkCancelled : copy.contacts.bulkJobCancelled,
+        wasGroupOp ? copy.contacts.groups.addMembersBulkCancelled : copy.contacts.bulkJobCancelled,
       )
     } catch {
       toast.error(copy.contacts.bulkJobCancelFailed)
@@ -942,13 +964,28 @@ export default function ContactsPage() {
 
       {tab === "contacts" && (
         <>
-          <div className="mb-5 flex flex-col sm:flex-row gap-3 sm:items-end">
+          <div className="mb-5 flex flex-col lg:flex-row gap-3 lg:items-end flex-wrap">
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={copy.contacts.searchPlaceholder}
-              className="max-w-sm flex-1"
+              className="max-w-sm flex-1 min-w-48"
             />
+            <label className="flex flex-col gap-1 text-xs text-text-secondary shrink-0 min-w-40">
+              <span>{copy.contacts.filterByGroup}</span>
+              <select
+                value={groupFilterId}
+                onChange={(e) => setGroupFilterId(e.target.value)}
+                className="border border-border-strong rounded-lg px-3 py-2 text-sm text-text bg-bg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-w-48"
+              >
+                <option value="">{copy.contacts.filterByGroupAll}</option>
+                {groupFilterOptions.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="flex flex-col gap-1 text-xs text-text-secondary shrink-0">
               <span>{copy.contacts.sortLabel}</span>
               <select
@@ -964,31 +1001,43 @@ export default function ContactsPage() {
 
           <Card>
             {bulkJobPoll.activeJobId && (
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3 mb-4 rounded-xl border border-border-strong bg-bg-subtle">
-                <div>
-                  <p className="text-sm font-medium text-text">
-                    {bulkJobPoll.variant === "groupAdd"
-                      ? copy.contacts.groups.addMembersBulkRunning
-                      : copy.contacts.bulkJobRunning}
-                  </p>
-                  <p className="text-xs text-text-muted mt-0.5 font-mono">
-                    {(bulkJobPoll.variant === "groupAdd"
-                      ? copy.contacts.groups.addMembersBulkProgress
-                      : copy.contacts.bulkJobProgress)
-                      .replace("{{percent}}", String(bulkJobPoll.snapshot.progress))
-                      .replace("{{status}}", bulkJobPoll.snapshot.status)}
-                  </p>
+              <div className="mb-4 space-y-2 rounded-xl border border-border-strong bg-bg-subtle px-5 py-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-text">
+                      {bulkJobPoll.variant === "groupAdd"
+                        ? copy.contacts.groups.addMembersBulkRunning
+                        : bulkJobPoll.variant === "groupRemove"
+                          ? copy.contacts.groups.removeMembersBulkRunning
+                          : copy.contacts.bulkJobRunning}
+                    </p>
+                    <p className="text-xs text-text-muted mt-0.5 font-mono">
+                      {(bulkJobPoll.variant === "groupAdd"
+                        ? copy.contacts.groups.addMembersBulkProgress
+                        : bulkJobPoll.variant === "groupRemove"
+                          ? copy.contacts.groups.removeMembersBulkProgress
+                          : copy.contacts.bulkJobProgress)
+                        .replace("{{percent}}", String(bulkJobPoll.snapshot.progress))
+                        .replace("{{status}}", bulkJobPoll.snapshot.status)}
+                    </p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    loading={bulkJobPoll.cancelling}
+                    onClick={() => void handleCancelBulkJob()}
+                  >
+                    {bulkJobPoll.variant === "groupAdd" || bulkJobPoll.variant === "groupRemove"
+                      ? copy.contacts.groups.addMembersBulkCancel
+                      : copy.contacts.bulkJobCancel}
+                  </Button>
                 </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  loading={bulkJobPoll.cancelling}
-                  onClick={() => void handleCancelBulkJob()}
+                <Link
+                  href={`/contacts/bulk-jobs/${bulkJobPoll.activeJobId}`}
+                  className="inline-block text-xs font-medium text-primary-ink hover:underline"
                 >
-                  {bulkJobPoll.variant === "groupAdd"
-                    ? copy.contacts.groups.addMembersBulkCancel
-                    : copy.contacts.bulkJobCancel}
-                </Button>
+                  {copy.contacts.trackBulkJobLink}
+                </Link>
               </div>
             )}
             {/* Bulk action bar */}
@@ -1044,12 +1093,12 @@ export default function ContactsPage() {
                             className="h-4 w-4 rounded border-border-strong accent-primary cursor-not-allowed"
                           />
                         </th>
-                        {[copy.contacts.contactTableName, copy.contacts.contactTablePhone, copy.contacts.contactTableTags, copy.contacts.contactTableGroups, copy.contacts.contactTableCreatedAt, ""].map((h) => (
+                        {[copy.contacts.contactTableName, copy.contacts.contactTablePhone, copy.contacts.contactTableTags, copy.contacts.contactTableCreatedAt, ""].map((h) => (
                           <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody>{[1, 2, 3].map((i) => <SkeletonTableRow key={i} cols={7} />)}</tbody>
+                    <tbody>{[1, 2, 3].map((i) => <SkeletonTableRow key={i} cols={6} />)}</tbody>
                   </table>
                 </div>
                 <div className="sm:hidden space-y-2">
@@ -1067,10 +1116,10 @@ export default function ContactsPage() {
             ) : contacts.length === 0 ? (
               <EmptyState
                 icon={<UserGroupIcon className="w-8 h-8" />}
-                title={search ? copy.contacts.noContactFound : copy.contacts.emptyTitle}
-                description={search ? "" : copy.contacts.emptyDescription}
-                ctaLabel={search ? undefined : copy.contacts.newContact}
-                onCta={search ? undefined : () => setCreateOpen(true)}
+                title={search || groupFilterId ? copy.contacts.noContactFound : copy.contacts.emptyTitle}
+                description={search || groupFilterId ? "" : copy.contacts.emptyDescription}
+                ctaLabel={search || groupFilterId ? undefined : copy.contacts.newContact}
+                onCta={search || groupFilterId ? undefined : () => setCreateOpen(true)}
               />
             ) : (
               <>
@@ -1087,15 +1136,13 @@ export default function ContactsPage() {
                             className="h-4 w-4 rounded border-border-strong accent-primary cursor-pointer"
                           />
                         </th>
-                        {[copy.contacts.contactTableName, copy.contacts.contactTablePhone, copy.contacts.contactTableTags, copy.contacts.contactTableGroups, copy.contacts.contactTableCreatedAt, ""].map((h) => (
+                        {[copy.contacts.contactTableName, copy.contacts.contactTablePhone, copy.contacts.contactTableTags, copy.contacts.contactTableCreatedAt, ""].map((h) => (
                           <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {contacts.map((contact) => {
-                        const cGroups = contactGroups.get(contact.id) ?? []
-                        return (
+                      {contacts.map((contact) => (
                           <tr key={contact.id} className="border-b border-border last:border-0 hover:bg-bg-subtle">
                             <td className="py-3 pr-4">
                               <input
@@ -1115,22 +1162,6 @@ export default function ContactsPage() {
                                 {contact.tags.length > 3 && <Badge variant="neutral">+{contact.tags.length - 3}</Badge>}
                               </div>
                             </td>
-                            <td className="py-3 pr-4">
-                              <div className="flex flex-wrap gap-1">
-                                {cGroups.slice(0, 2).map((g) => (
-                                  <button
-                                    key={g.id}
-                                    type="button"
-                                    onClick={() => router.push(`/contacts/groups/${g.id}`)}
-                                    className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium transition-colors hover:opacity-80 whitespace-nowrap"
-                                    style={{ backgroundColor: g.color ? `${g.color}20` : "#F3F4F6", color: g.color ?? "#6B7280" }}
-                                  >
-                                    {g.name}
-                                  </button>
-                                ))}
-                                {cGroups.length > 2 && <span className="text-xs text-text-muted">+{cGroups.length - 2}</span>}
-                              </div>
-                            </td>
                             <td className="py-3 pr-4 text-sm text-text-muted whitespace-nowrap">{formatDate(contact.createdAt)}</td>
                             <td className="py-3">
                               <div className="flex items-center gap-2">
@@ -1139,17 +1170,14 @@ export default function ContactsPage() {
                               </div>
                             </td>
                           </tr>
-                        )
-                      })}
+                      ))}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Mobile cards */}
                 <div className="sm:hidden divide-y divide-border">
-                  {contacts.map((contact) => {
-                    const cGroups = contactGroups.get(contact.id) ?? []
-                    return (
+                  {contacts.map((contact) => (
                       <div key={contact.id} className="py-3">
                         <div className="flex items-start gap-2 mb-1">
                           <input
@@ -1167,28 +1195,16 @@ export default function ContactsPage() {
                             <Button size="sm" variant="danger" loading={deleting === contact.id} onClick={() => setDeleteTarget(contact)}>{copy.contacts.deleteAction}</Button>
                           </div>
                         </div>
-                        {(contact.tags.length > 0 || cGroups.length > 0) && (
+                        {contact.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {contact.tags.slice(0, 2).map((tag) => (
                               <Badge key={tag} variant="neutral">{tag}</Badge>
                             ))}
                             {contact.tags.length > 2 && <Badge variant="neutral">+{contact.tags.length - 2}</Badge>}
-                            {cGroups.slice(0, 1).map((g) => (
-                              <button
-                                key={g.id}
-                                type="button"
-                                onClick={() => router.push(`/contacts/groups/${g.id}`)}
-                                className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium hover:opacity-80"
-                                style={{ backgroundColor: g.color ? `${g.color}20` : "#F3F4F6", color: g.color ?? "#6B7280" }}
-                              >
-                                {g.name}
-                              </button>
-                            ))}
                           </div>
                         )}
                       </div>
-                    )
-                  })}
+                  ))}
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-2 py-3 border-t border-border">

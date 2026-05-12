@@ -10,7 +10,7 @@ export interface ContactBulkJobPollHandlers {
   onComplete: (p: ContactBulkJobProgress) => void
 }
 
-export type ContactBulkJobVariant = "delete" | "groupAdd"
+export type ContactBulkJobVariant = "delete" | "groupAdd" | "groupRemove"
 
 export interface ContactBulkJobStartOptions {
   variant?: ContactBulkJobVariant

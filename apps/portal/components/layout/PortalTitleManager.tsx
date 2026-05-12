@@ -11,6 +11,7 @@ export default function PortalTitleManager() {
   const staticTitles = {
     "/dashboard": copy.titles.dashboard,
     "/instances": copy.titles.instances,
+    "/health": copy.instances.globalHealth.pageTitle,
     "/contacts": copy.titles.contacts,
     "/contacts/groups": "Groupes de contacts",
     "/messages": copy.titles.messages,
@@ -25,6 +26,7 @@ export default function PortalTitleManager() {
 
   function getPortalTitle() {
     if (pathname.startsWith("/teams")) return copy.titles.dashboard
+    if (pathname.startsWith("/contacts/bulk-jobs/")) return copy.titles.bulkJobDetail
     if (pathname.startsWith("/instances/")) return copy.titles.instanceDetail
     if (pathname.startsWith("/messages/")) return copy.titles.messagesDetail
     if (pathname.startsWith("/templates/")) return copy.titles.templateDetail

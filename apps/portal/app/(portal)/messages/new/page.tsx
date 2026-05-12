@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "@/lib/toast"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
-import type { MessageType, SendMessagePayload, Template, UploadedMedia } from "@usesendnow/types"
+import type { MessageType, SendMessagePayload, Template, UploadedMedia, InstanceHealth } from "@usesendnow/types"
 import { useContacts } from "@/hooks/useContacts"
 import { useInstances } from "@/hooks/useInstances"
 import { useTemplates } from "@/hooks/useTemplates"
@@ -23,6 +23,8 @@ import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { RecipientSelector, type RecipientMode } from "@/components/messages/RecipientSelector"
 import { SendStatusPanel } from "@/components/messages/SendStatusPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
+import WarmupWarningModal from "@/components/shared/WarmupWarningModal"
+import { shouldShowWarmupWarningBeforeSend } from "@/lib/warmupGate"
 
 type ComposeMode = "freeform" | "template"
 
@@ -48,6 +50,9 @@ export default function NewMessagePage() {
   const [mediaError, setMediaError] = useState<string | null>(null)
   const [mediaNotice, setMediaNotice] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState(copy.messages.description)
+  const [warmupModalOpen, setWarmupModalOpen] = useState(false)
+  const [warmupHealth, setWarmupHealth] = useState<InstanceHealth | null>(null)
+  const warmupBypassRef = useRef(false)
   const [sendForm, setSendForm] = useState({
     instanceId: "",
     to: "",
@@ -259,23 +264,7 @@ export default function NewMessagePage() {
     }
   }
 
-  const handleSend = async (event: React.FormEvent) => {
-    event.preventDefault()
-
-    if (composeMode === "freeform" && FILE_UPLOAD_TYPES.includes(sendForm.type) && !sendForm.mediaUrl) {
-      setMediaError(m.noFileSelected)
-      return
-    }
-
-    if (composeMode === "freeform" && sendForm.scheduledAt && uploadedMedia) {
-      const scheduledAt = new Date(sendForm.scheduledAt)
-      const expiresAt = new Date(uploadedMedia.expiresAt)
-      if (scheduledAt.getTime() > expiresAt.getTime()) {
-        setMediaError(m.schedulePastExpiryError)
-        return
-      }
-    }
-
+  const runSend = async () => {
     setSending(true)
     setStatusMessage(sendForm.scheduledAt ? copy.messages.scheduling : copy.messages.sending)
 
@@ -331,7 +320,53 @@ export default function NewMessagePage() {
       setStatusMessage(m.sendFailedStatusLine)
     } finally {
       setSending(false)
+      warmupBypassRef.current = false
     }
+  }
+
+  const handleSend = async (event: React.FormEvent) => {
+    event.preventDefault()
+
+    if (composeMode === "freeform" && FILE_UPLOAD_TYPES.includes(sendForm.type) && !sendForm.mediaUrl) {
+      setMediaError(m.noFileSelected)
+      return
+    }
+
+    if (composeMode === "freeform" && sendForm.scheduledAt && uploadedMedia) {
+      const scheduledAt = new Date(sendForm.scheduledAt)
+      const expiresAt = new Date(uploadedMedia.expiresAt)
+      if (scheduledAt.getTime() > expiresAt.getTime()) {
+        setMediaError(m.schedulePastExpiryError)
+        return
+      }
+    }
+
+    if (!warmupBypassRef.current && sendForm.instanceId) {
+      try {
+        const health = await apiClient.instances.getHealth(sendForm.instanceId)
+        if (shouldShowWarmupWarningBeforeSend(health)) {
+          setWarmupHealth(health)
+          setWarmupModalOpen(true)
+          return
+        }
+      } catch {
+        /* optional */
+      }
+    }
+
+    await runSend()
+  }
+
+  const handleWarmupModalClose = () => {
+    setWarmupModalOpen(false)
+    setWarmupHealth(null)
+  }
+
+  const handleWarmupContinue = () => {
+    setWarmupModalOpen(false)
+    setWarmupHealth(null)
+    warmupBypassRef.current = true
+    void runSend()
   }
 
   const isFileUploadType = FILE_UPLOAD_TYPES.includes(sendForm.type)
@@ -557,6 +592,13 @@ export default function NewMessagePage() {
           </Card>
         </div>
       </div>
+
+      <WarmupWarningModal
+        open={warmupModalOpen}
+        health={warmupHealth}
+        onClose={handleWarmupModalClose}
+        onContinue={handleWarmupContinue}
+      />
     </div>
   )
 }

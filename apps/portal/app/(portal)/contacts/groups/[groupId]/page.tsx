@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
+import Link from "next/link"
 import { useRouter, useParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
@@ -24,6 +25,7 @@ import {
   ArrowLeft01Icon,
   Download01Icon,
   UserAdd01Icon,
+  CheckmarkCircle01Icon,
 } from "hugeicons-react"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { renderWithStrongCount, renderWithStrongName } from "@/lib/render-copy-placeholders"
@@ -307,23 +309,31 @@ function AddMembersModal({
     <Modal open onClose={handleModalClose} title={gCopy.addMembersTitle} maxWidth="max-w-lg">
       <div className="space-y-4">
         {bulkJobPoll.activeJobId ? (
-          <div className="rounded-xl border border-border-strong bg-bg-subtle p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-text">{gCopy.addMembersBulkRunning}</p>
-              <p className="text-xs text-text-muted mt-0.5 font-mono">
-                {gCopy.addMembersBulkProgress
-                  .replace("{{percent}}", String(bulkJobPoll.snapshot.progress))
-                  .replace("{{status}}", bulkJobPoll.snapshot.status)}
-              </p>
+          <div className="space-y-2 rounded-xl border border-border-strong bg-bg-subtle p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-text">{gCopy.addMembersBulkRunning}</p>
+                <p className="text-xs text-text-muted mt-0.5 font-mono">
+                  {gCopy.addMembersBulkProgress
+                    .replace("{{percent}}", String(bulkJobPoll.snapshot.progress))
+                    .replace("{{status}}", bulkJobPoll.snapshot.status)}
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={bulkJobPoll.cancelling}
+                onClick={() => void handleCancelBulkAdd()}
+              >
+                {gCopy.addMembersBulkCancel}
+              </Button>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              loading={bulkJobPoll.cancelling}
-              onClick={() => void handleCancelBulkAdd()}
+            <Link
+              href={`/contacts/bulk-jobs/${bulkJobPoll.activeJobId}`}
+              className="inline-block text-xs font-medium text-primary-ink hover:underline"
             >
-              {gCopy.addMembersBulkCancel}
-            </Button>
+              {copy.contacts.trackBulkJobLink}
+            </Link>
           </div>
         ) : null}
         <Input
@@ -402,10 +412,13 @@ function AddMembersModal({
   )
 }
 
+const REMOVE_MEMBERS_BATCH = 200
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ContactGroupDetailPage() {
   const { copy } = usePortalLocale()
+  const cCopy = copy.contacts
   const gCopy = copy.contacts.groups
   const router = useRouter()
   const { groupId } = useParams<{ groupId: string }>()
@@ -427,6 +440,10 @@ export default function ContactGroupDetailPage() {
   const [deletingGroup, setDeletingGroup] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set())
+  const [bulkRemoveConfirmOpen, setBulkRemoveConfirmOpen] = useState(false)
+  const [bulkRemoving, setBulkRemoving] = useState(false)
+  const memberBulkPoll = useContactBulkJobPoll()
 
   const fetchGroup = useCallback(async () => {
     try {
@@ -473,6 +490,10 @@ export default function ContactGroupDetailPage() {
     void fetchMembersFirstPage()
   }, [fetchMembersFirstPage])
 
+  useEffect(() => {
+    setSelectedMemberIds(new Set())
+  }, [debouncedMemberSearch])
+
   const handleLoadMore = async () => {
     if (!nextCursor) return
     setLoadingMore(true)
@@ -499,6 +520,11 @@ export default function ContactGroupDetailPage() {
       setTotal((prev) => Math.max(0, prev - 1))
       setGroup((prev) => prev ? { ...prev, contactCount: Math.max(0, prev.contactCount - 1) } : prev)
       toast.success(gCopy.removeMemberSuccess)
+      setSelectedMemberIds((prev) => {
+        const n = new Set(prev)
+        n.delete(removeTarget.id)
+        return n
+      })
       setRemoveTarget(null)
     } catch {
       toast.error(gCopy.removeMemberFailed)
@@ -535,6 +561,104 @@ export default function ContactGroupDetailPage() {
       toast.error(gCopy.exportFailed)
     } finally {
       setExporting(false)
+    }
+  }
+
+  const memberRowIds = useMemo(() => members.map((m) => m.id), [members])
+  const allMembersSelected =
+    memberRowIds.length > 0 && memberRowIds.every((id) => selectedMemberIds.has(id))
+
+  const toggleSelectMember = (id: string) => {
+    if (memberBulkPoll.activeJobId) return
+    setSelectedMemberIds((prev) => {
+      const n = new Set(prev)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
+  }
+
+  const toggleSelectAllMembers = () => {
+    if (memberBulkPoll.activeJobId) return
+    if (allMembersSelected) setSelectedMemberIds(new Set())
+    else setSelectedMemberIds(new Set(memberRowIds))
+  }
+
+  const handleCancelMemberBulk = async () => {
+    try {
+      await memberBulkPoll.cancel()
+      toast.success(gCopy.addMembersBulkCancelled)
+    } catch {
+      toast.error(gCopy.addMembersBulkCancelFailed)
+    }
+    setSelectedMemberIds(new Set())
+    void fetchMembersFirstPage()
+    void fetchGroup()
+  }
+
+  const executeBulkRemove = async () => {
+    const ids = Array.from(selectedMemberIds)
+    if (ids.length === 0) return
+    setBulkRemoveConfirmOpen(false)
+    setBulkRemoving(true)
+    let totalRemoved = 0
+    let aborted = false
+    let fatalError = false
+    try {
+      for (let i = 0; i < ids.length; i += REMOVE_MEMBERS_BATCH) {
+        const chunk = ids.slice(i, i + REMOVE_MEMBERS_BATCH)
+        const res = await apiClient.contactGroups.removeMembers(groupId, chunk)
+        if (isContactBulkJobAccepted(res)) {
+          toast.info(gCopy.removeMembersBulkStarted)
+          setBulkRemoving(false)
+          await new Promise<void>((resolve) => {
+            memberBulkPoll.start(
+              res.jobId,
+              {
+                onComplete: (progress) => {
+                  const st = (progress.status ?? "").toLowerCase()
+                  if (st === "failed" || st === "error") {
+                    toast.error(gCopy.removeMemberFailed)
+                    aborted = true
+                    fatalError = true
+                  } else if (st === "cancelled" || st === "canceled") {
+                    toast.info(gCopy.addMembersBulkEndedCancelled)
+                    aborted = true
+                  } else {
+                    const rm =
+                      progress.summary?.removed ?? progress.processedCount ?? chunk.length
+                    totalRemoved += rm
+                  }
+                  resolve()
+                },
+              },
+              { variant: "groupRemove" },
+            )
+          })
+          if (aborted) {
+            if (!fatalError && totalRemoved > 0) {
+              toast.success(gCopy.removeMembersBulkDone.replace("{{count}}", String(totalRemoved)))
+            }
+            setSelectedMemberIds(new Set())
+            void fetchMembersFirstPage()
+            void fetchGroup()
+            return
+          }
+          setBulkRemoving(true)
+        } else {
+          totalRemoved += res.removed
+        }
+      }
+      if (totalRemoved > 0) {
+        toast.success(gCopy.removeMembersBulkDone.replace("{{count}}", String(totalRemoved)))
+      }
+      setSelectedMemberIds(new Set())
+      void fetchMembersFirstPage()
+      void fetchGroup()
+    } catch {
+      toast.error(gCopy.removeMemberFailed)
+    } finally {
+      setBulkRemoving(false)
     }
   }
 
@@ -602,6 +726,67 @@ export default function ContactGroupDetailPage() {
         </Button>
       </div>
 
+      {memberBulkPoll.activeJobId ? (
+        <div className="space-y-2 rounded-xl border border-border-strong bg-bg-subtle p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-text">{gCopy.removeMembersBulkRunning}</p>
+              <p className="text-xs text-text-muted mt-0.5 font-mono">
+                {gCopy.removeMembersBulkProgress
+                  .replace("{{percent}}", String(memberBulkPoll.snapshot.progress))
+                  .replace("{{status}}", memberBulkPoll.snapshot.status)}
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={memberBulkPoll.cancelling}
+              onClick={() => void handleCancelMemberBulk()}
+            >
+              {gCopy.addMembersBulkCancel}
+            </Button>
+          </div>
+          <Link
+            href={`/contacts/bulk-jobs/${memberBulkPoll.activeJobId}`}
+            className="inline-block text-xs font-medium text-primary-ink hover:underline"
+          >
+            {cCopy.trackBulkJobLink}
+          </Link>
+        </div>
+      ) : null}
+
+      {selectedMemberIds.size > 0 && !memberBulkPoll.activeJobId ? (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3 bg-primary-subtle border border-primary/30 rounded-xl">
+          <div className="flex items-center gap-3 min-w-0">
+            <CheckmarkCircle01Icon className="w-5 h-5 text-primary shrink-0" />
+            <span className="text-sm text-text">
+              {renderWithStrongCount(
+                selectedMemberIds.size === 1 ? gCopy.bulkRemoveSelectedOne : gCopy.bulkRemoveSelectedMany,
+                selectedMemberIds.size,
+              )}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={bulkRemoving}
+              onClick={() => setSelectedMemberIds(new Set())}
+            >
+              {cCopy.deselectAll}
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              loading={bulkRemoving}
+              onClick={() => setBulkRemoveConfirmOpen(true)}
+            >
+              {gCopy.bulkRemoveButton}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Members table */}
       <Card>
         {loadingMembers && members.length === 0 ? (
@@ -610,12 +795,19 @@ export default function ContactGroupDetailPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
+                    <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4 w-10">
+                      <input
+                        type="checkbox"
+                        disabled
+                        className="h-4 w-4 rounded border-border-strong accent-primary cursor-not-allowed"
+                      />
+                    </th>
                     {[gCopy.table.name, gCopy.table.phone, gCopy.table.tags, gCopy.table.addedAt, ""].map((h) => (
                       <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>{[1, 2, 3].map((i) => <SkeletonTableRow key={i} cols={5} />)}</tbody>
+                <tbody>{[1, 2, 3].map((i) => <SkeletonTableRow key={i} cols={6} />)}</tbody>
               </table>
             </div>
             <div className="sm:hidden space-y-2">
@@ -645,6 +837,15 @@ export default function ContactGroupDetailPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
+                    <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={allMembersSelected}
+                        onChange={toggleSelectAllMembers}
+                        disabled={!!memberBulkPoll.activeJobId || bulkRemoving || loadingMembers}
+                        className="h-4 w-4 rounded border-border-strong accent-primary cursor-pointer disabled:cursor-not-allowed"
+                      />
+                    </th>
                     {[gCopy.table.name, gCopy.table.phone, gCopy.table.tags, gCopy.table.addedAt, ""].map((h) => (
                       <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                     ))}
@@ -653,6 +854,15 @@ export default function ContactGroupDetailPage() {
                 <tbody>
                   {members.map((member) => (
                     <tr key={member.id} className="border-b border-border last:border-0 hover:bg-bg-subtle">
+                      <td className="py-3 pr-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedMemberIds.has(member.id)}
+                          onChange={() => toggleSelectMember(member.id)}
+                          disabled={!!memberBulkPoll.activeJobId || bulkRemoving}
+                          className="h-4 w-4 rounded border-border-strong accent-primary cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </td>
                       <td className="py-3 pr-4 text-sm font-semibold text-text">{member.name}</td>
                       <td className="py-3 pr-4 text-sm font-mono text-text-body whitespace-nowrap">{member.phone}</td>
                       <td className="py-3 pr-4">
@@ -676,7 +886,14 @@ export default function ContactGroupDetailPage() {
             {/* Mobile cards */}
             <div className="sm:hidden divide-y divide-border">
               {members.map((member) => (
-                <div key={member.id} className="py-3 flex items-start justify-between gap-2">
+                <div key={member.id} className="py-3 flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedMemberIds.has(member.id)}
+                    onChange={() => toggleSelectMember(member.id)}
+                    disabled={!!memberBulkPoll.activeJobId || bulkRemoving}
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-border-strong accent-primary cursor-pointer disabled:cursor-not-allowed"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-text truncate">{member.name}</p>
                     <p className="text-xs font-mono text-text-muted">{member.phone}</p>
@@ -748,6 +965,21 @@ export default function ContactGroupDetailPage() {
           onClose={() => setAddMembersOpen(false)}
         />
       )}
+
+      {/* Bulk remove confirmation */}
+      <Modal
+        open={bulkRemoveConfirmOpen}
+        onClose={() => setBulkRemoveConfirmOpen(false)}
+        title={gCopy.bulkRemoveConfirmTitle}
+      >
+        <p className="text-sm text-text-body mb-6">{gCopy.bulkRemoveConfirmIntro}</p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setBulkRemoveConfirmOpen(false)}>{gCopy.cancel}</Button>
+          <Button variant="danger" loading={bulkRemoving} onClick={() => void executeBulkRemove()}>
+            {gCopy.bulkRemoveButton}
+          </Button>
+        </div>
+      </Modal>
 
       {/* Remove member confirmation */}
       <Modal open={!!removeTarget} onClose={() => setRemoveTarget(null)} title={gCopy.removeModalTitle}>
