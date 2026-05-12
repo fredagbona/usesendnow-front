@@ -28,4 +28,16 @@ description: Common questions about MsgFlash, plans, API keys, and webhooks.
   <Accordion title="What happens when I cancel my subscription?">
     The subscription remains usable until the end of the current billing period, then the account falls back to the Free plan and its limits.
   </Accordion>
+
+  <Accordion title="What is the difference between personal and team workspace?">
+    Personal uses your own plan and instances. Team workspace uses the team owner’s plan and instances (with assignments for collaborators). Switch the active workspace in the portal when the UI is connected to the Teams APIs.
+  </Accordion>
+
+  <Accordion title="Who pays for messages sent in a team?">
+    Outbound usage is counted on the **team owner’s** subscription for that billing month.
+  </Accordion>
+
+  <Accordion title="What is a team API key vs my personal API key?">
+    Personal keys start with `msgf_live_` and only access your personal workspace. Team keys start with `msgf_team_` and require the `X-Team-Id` header matching the team. They cannot be mixed.
+  </Accordion>
 </AccordionGroup>

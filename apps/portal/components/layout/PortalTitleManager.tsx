@@ -22,16 +22,20 @@ export default function PortalTitleManager() {
     "/webhooks": copy.titles.webhooks,
     "/billing": copy.titles.billing,
     "/profile": copy.titles.profile,
+    "/teams": copy.titles.teams,
+    "/teams/new": copy.titles.teamsNew,
+    "/teams/invite": copy.titles.teamsInvite,
   } as const
 
   function getPortalTitle() {
-    if (pathname.startsWith("/teams")) return copy.titles.dashboard
     if (pathname.startsWith("/contacts/bulk-jobs/")) return copy.titles.bulkJobDetail
     if (pathname.startsWith("/instances/")) return copy.titles.instanceDetail
     if (pathname.startsWith("/messages/")) return copy.titles.messagesDetail
     if (pathname.startsWith("/templates/")) return copy.titles.templateDetail
     if (pathname.startsWith("/campaigns/")) return copy.titles.campaignDetail
     if (pathname.startsWith("/contacts/groups/")) return copy.titles.groupDetail
+    if (pathname.startsWith("/teams/") && pathname !== "/teams/new" && pathname !== "/teams/invite")
+      return copy.titles.teamDetail
     return staticTitles[pathname as keyof typeof staticTitles] ?? copy.titles.portal
   }
 

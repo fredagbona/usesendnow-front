@@ -1,4 +1,5 @@
 import type { PortalLocale } from "@/lib/portal-locale"
+import { teamsEn, teamsFr } from "@/lib/copy/teams"
 
 export const portalCopy = {
   fr: {
@@ -14,6 +15,7 @@ export const portalCopy = {
       numberLookups: "Number Lookups",
       apiKeys: "Clés API",
       billing: "Abonnement",
+      teams: teamsFr.navLabel,
     },
     topnav: {
       light: "Clair",
@@ -47,6 +49,10 @@ export const portalCopy = {
       groupDetail: "Détail groupe",
       bulkJobDetail: "Traitement en masse",
       portal: "Portail",
+      teams: teamsFr.listTitle,
+      teamsNew: teamsFr.createTitle,
+      teamDetail: teamsFr.detailTitle,
+      teamsInvite: teamsFr.invitePageTitle,
     },
     sidebar: {
       expandNav: "Développer la navigation",
@@ -122,6 +128,9 @@ export const portalCopy = {
       billingLoadError: "Impossible de charger les données de facturation.",
       templatesLoadError: "Impossible de charger les modèles.",
       webhooksLoadError: "Impossible de charger les webhooks.",
+      teamsListLoadError: teamsFr.loadListError,
+      teamDetailLoadError: teamsFr.loadDetailError,
+      teamsInvitationsMineLoadError: teamsFr.loadInvitesError,
     },
     auth: {
       layoutMarketing: {
@@ -293,6 +302,12 @@ export const portalCopy = {
       },
       staticPages: [
         { id: "page-dashboard", title: "Tableau de bord", description: "Vue d'ensemble du portail", href: "/dashboard" },
+        {
+          id: "page-teams",
+          title: "Équipes",
+          description: "Espaces de travail partagés, invitations et clés d’équipe",
+          href: "/teams",
+        },
         { id: "page-instances", title: "Instances", description: "Gérer les connexions WhatsApp", href: "/instances" },
         { id: "page-warmup", title: "Warmup global", description: "Score de sécurité et recommandations par instance", href: "/health" },
         { id: "page-messages", title: "Messages", description: "Envoyer et consulter les messages", href: "/messages" },
@@ -401,6 +416,10 @@ export const portalCopy = {
         webhooks: "Webhooks",
         voiceNotes: "Notes vocales",
       },
+      teamsJoinOnly:
+        "Équipes : pas de création d’espace équipe — vous pouvez rejoindre une équipe sur invitation.",
+      teamsPro: "Équipes : jusqu’à 2 espaces propriétaire, 4 sièges par équipe.",
+      teamsPlus: "Équipes : jusqu’à 4 espaces propriétaire, 8 sièges par équipe.",
       priceUnit: "€ / mois",
       yes: "oui",
       no: "non",
@@ -1711,6 +1730,7 @@ export const portalCopy = {
       instanceDisconnected: "WhatsApp déconnecté",
       profileUpdated: "Profil mis à jour",
     },
+    teams: teamsFr,
   },
   en: {
     nav: {
@@ -1725,6 +1745,7 @@ export const portalCopy = {
       numberLookups: "Number Lookups",
       apiKeys: "API Keys",
       billing: "Billing",
+      teams: teamsEn.navLabel,
     },
     topnav: {
       light: "Light",
@@ -1758,6 +1779,10 @@ export const portalCopy = {
       groupDetail: "Group Details",
       bulkJobDetail: "Bulk operation",
       portal: "Portal",
+      teams: teamsEn.listTitle,
+      teamsNew: teamsEn.createTitle,
+      teamDetail: teamsEn.detailTitle,
+      teamsInvite: teamsEn.invitePageTitle,
     },
     sidebar: {
       expandNav: "Expand navigation",
@@ -1833,6 +1858,9 @@ export const portalCopy = {
       billingLoadError: "Unable to load billing data.",
       templatesLoadError: "Unable to load templates.",
       webhooksLoadError: "Unable to load webhooks.",
+      teamsListLoadError: teamsEn.loadListError,
+      teamDetailLoadError: teamsEn.loadDetailError,
+      teamsInvitationsMineLoadError: teamsEn.loadInvitesError,
     },
     auth: {
       layoutMarketing: {
@@ -2002,6 +2030,12 @@ export const portalCopy = {
       },
       staticPages: [
         { id: "page-dashboard", title: "Dashboard", description: "Overview of the portal", href: "/dashboard" },
+        {
+          id: "page-teams",
+          title: "Teams",
+          description: "Shared workspaces, invitations, and team keys",
+          href: "/teams",
+        },
         { id: "page-instances", title: "Instances", description: "Manage WhatsApp connections", href: "/instances" },
         { id: "page-warmup", title: "Global warmup", description: "Safety score and recommendations per instance", href: "/health" },
         { id: "page-messages", title: "Messages", description: "Send and review messages", href: "/messages" },
@@ -2110,6 +2144,10 @@ export const portalCopy = {
         webhooks: "Webhooks",
         voiceNotes: "Voice notes",
       },
+      teamsJoinOnly:
+        "Teams: you cannot create a team workspace — you can join when invited.",
+      teamsPro: "Teams: up to 2 owner workspaces, 4 seats each.",
+      teamsPlus: "Teams: up to 4 owner workspaces, 8 seats each.",
       priceUnit: "€ / month",
       yes: "yes",
       no: "no",
@@ -3407,5 +3445,6 @@ export const portalCopy = {
       instanceDisconnected: "WhatsApp disconnected",
       profileUpdated: "Profile updated",
     },
+    teams: teamsEn,
   },
 } satisfies Record<PortalLocale, Record<string, unknown>>

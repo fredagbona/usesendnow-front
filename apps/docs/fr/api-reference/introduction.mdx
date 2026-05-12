@@ -33,6 +33,10 @@ curl https://srv.msgflash.com/api/v1/usage \
 
 Voir [Authentification](/fr/authentication) pour le format exact et les règles de sécurité.
 
+### Espace équipe (`msgf_team_…`)
+
+Les clés d'équipe exigent **`X-Team-Id`** cohérent avec l'équipe de la clé ; les routes **`/api/v1/*`** sur les données utilisent alors l'espace partagé et le plan du propriétaire d'équipe. Les clés personnelles ne doivent pas envoyer `X-Team-Id` (`TEAM_KEY_REQUIRED`). Le compte, l'usage compact et la plupart des lectures facturation exigent une clé personnelle (`TEAM_KEY_NOT_ALLOWED` avec une clé d'équipe). Détails : [Contexte équipe](/fr/api-reference/teams/team-context).
+
 ---
 
 ## Rate limiting

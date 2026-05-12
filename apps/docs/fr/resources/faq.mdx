@@ -28,4 +28,16 @@ description: Questions fréquentes sur MsgFlash, les plans, les clés API et les
   <Accordion title="Que se passe-t-il quand j'annule mon abonnement ?">
     L'abonnement reste exploitable jusqu'à la fin de la période en cours, puis le compte revient sur le plan Free et ses limites.
   </Accordion>
+
+  <Accordion title="Quelle est la différence entre l'espace personnel et l'équipe ?">
+    L'espace personnel suit votre plan et vos instances. L'espace équipe suit le plan et les instances du **propriétaire d'équipe** (avec assignations pour les collaborateurs). Changez le contexte actif dans le portail une fois l'UI reliée aux API équipes.
+  </Accordion>
+
+  <Accordion title="Qui paie les messages envoyés dans une équipe ?">
+    La consommation sortante est imputée à l'abonnement du **propriétaire d'équipe** pour le mois en cours.
+  </Accordion>
+
+  <Accordion title="Clé API d'équipe vs clé personnelle ?">
+    Les clés personnelles commencent par `msgf_live_` et n'accèdent qu'à votre espace personnel. Les clés d'équipe commencent par `msgf_team_` et exigent l'en-tête `X-Team-Id` correspondant à l'équipe. On ne les mélange pas.
+  </Accordion>
 </AccordionGroup>

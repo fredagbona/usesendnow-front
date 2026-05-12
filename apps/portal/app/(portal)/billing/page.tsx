@@ -118,6 +118,15 @@ function getPlanFeatures(plan: Plan, locale: "fr" | "en", billingCopy: ReturnTyp
         ? `${contactGroupsLimit} ${billingCopy.contactGroupsSuffix}`
         : undefined
 
+  const teamsFeatureLine =
+    plan.code === "pro"
+      ? billingCopy.teamsPro
+      : plan.code === "plus"
+        ? billingCopy.teamsPlus
+        : plan.code === "free" || plan.code === "starter"
+          ? billingCopy.teamsJoinOnly
+          : undefined
+
   return [
     `${limits.maxInstances} ${limits.maxInstances > 1 ? billingCopy.instances : billingCopy.instance}`,
     `${displayedMonthlyOutboundQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.messagesPerMonth}`,
@@ -129,6 +138,7 @@ function getPlanFeatures(plan: Plan, locale: "fr" | "en", billingCopy: ReturnTyp
     `${billingCopy.features.statuses} : ${features.statuses ? billingCopy.yes : billingCopy.no}`,
     `${billingCopy.features.webhooks} : ${features.webhooks ? billingCopy.yes : billingCopy.no}`,
     `${billingCopy.features.voiceNotes} : ${features.voiceNotes ? billingCopy.yes : billingCopy.no}`,
+    teamsFeatureLine,
   ].filter((feature): feature is string => Boolean(feature))
 }
 
