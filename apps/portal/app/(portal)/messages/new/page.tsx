@@ -37,7 +37,10 @@ export default function NewMessagePage() {
   const { instances } = useInstances()
   const { templates } = useTemplates()
   const { contacts } = useContacts()
-  const connectedInstances = instances.filter((instance) => instance.status === "connected")
+  const connectedInstances = useMemo(
+    () => instances.filter((instance) => instance.status === "connected"),
+    [instances],
+  )
   const [composeMode, setComposeMode] = useState<ComposeMode>("freeform")
   const [recipientMode, setRecipientMode] = useState<RecipientMode>("manual")
   const [sending, setSending] = useState(false)
@@ -52,7 +55,6 @@ export default function NewMessagePage() {
   const [statusMessage, setStatusMessage] = useState(copy.messages.description)
   const [warmupModalOpen, setWarmupModalOpen] = useState(false)
   const [warmupHealth, setWarmupHealth] = useState<InstanceHealth | null>(null)
-  const warmupBypassRef = useRef(false)
   const [sendForm, setSendForm] = useState({
     instanceId: "",
     to: "",
@@ -87,6 +89,28 @@ export default function NewMessagePage() {
       void apiClient.media.delete(uploadedMediaRef.current.id).catch(() => {})
     }
   }, [])
+
+  /** Warmup warning when opening this page (first connected instance as reference). Non-blocking. */
+  useEffect(() => {
+    const instanceId = connectedInstances[0]?.id
+    if (!instanceId) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const health = await apiClient.instances.getHealth(instanceId)
+        if (cancelled) return
+        if (shouldShowWarmupWarningBeforeSend(health)) {
+          setWarmupHealth(health)
+          setWarmupModalOpen(true)
+        }
+      } catch {
+        /* optional guidance */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [connectedInstances])
 
   const resetMediaState = () => {
     setUploadedMedia(null)
@@ -320,7 +344,6 @@ export default function NewMessagePage() {
       setStatusMessage(m.sendFailedStatusLine)
     } finally {
       setSending(false)
-      warmupBypassRef.current = false
     }
   }
 
@@ -341,19 +364,6 @@ export default function NewMessagePage() {
       }
     }
 
-    if (!warmupBypassRef.current && sendForm.instanceId) {
-      try {
-        const health = await apiClient.instances.getHealth(sendForm.instanceId)
-        if (shouldShowWarmupWarningBeforeSend(health)) {
-          setWarmupHealth(health)
-          setWarmupModalOpen(true)
-          return
-        }
-      } catch {
-        /* optional */
-      }
-    }
-
     await runSend()
   }
 
@@ -365,8 +375,6 @@ export default function NewMessagePage() {
   const handleWarmupContinue = () => {
     setWarmupModalOpen(false)
     setWarmupHealth(null)
-    warmupBypassRef.current = true
-    void runSend()
   }
 
   const isFileUploadType = FILE_UPLOAD_TYPES.includes(sendForm.type)

@@ -1,6 +1,6 @@
 import type { InstanceHealth } from "@usesendnow/types"
 
-/** Pre-submit warmup guidance (V1): warn when the instance is not stable or the score is elevated */
+/** True when the instance health API suggests showing the warmup guidance modal (entry pages or future uses). */
 export function shouldShowWarmupWarningBeforeSend(health: InstanceHealth): boolean {
   return health.safetyState !== "stable" || health.safetyScore > 60
 }

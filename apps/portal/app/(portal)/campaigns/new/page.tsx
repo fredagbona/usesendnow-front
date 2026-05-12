@@ -41,6 +41,10 @@ export default function NewCampaignPage() {
   const { prependCampaign } = useCampaigns()
   const { contacts } = useContacts()
   const { instances } = useInstances()
+  const connectedInstances = useMemo(
+    () => instances.filter((instance) => instance.status === "connected"),
+    [instances],
+  )
   const { templates } = useTemplates()
   const { groups } = useContactGroups()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
@@ -56,7 +60,6 @@ export default function NewCampaignPage() {
   const [safetyHints, setSafetyHints] = useState<SafetyAssessment | null>(null)
   const [warmupModalOpen, setWarmupModalOpen] = useState(false)
   const [warmupHealth, setWarmupHealth] = useState<InstanceHealth | null>(null)
-  const warmupBypassRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadedMediaRef = useRef<UploadedMedia | null>(null)
   const shouldCleanupMediaRef = useRef(false)
@@ -261,6 +264,29 @@ export default function NewCampaignPage() {
       .catch(() => setPlanBlocked(true))
   }, [])
 
+  /** Warmup warning when opening this page (first connected instance as reference). Non-blocking. */
+  useEffect(() => {
+    if (planBlocked) return
+    const instanceId = connectedInstances[0]?.id
+    if (!instanceId) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const health = await apiClient.instances.getHealth(instanceId)
+        if (cancelled) return
+        if (shouldShowWarmupWarningBeforeSend(health)) {
+          setWarmupHealth(health)
+          setWarmupModalOpen(true)
+        }
+      } catch {
+        /* optional guidance */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [planBlocked, connectedInstances])
+
   const runCreate = async () => {
     setCreating(true)
     try {
@@ -331,27 +357,12 @@ export default function NewCampaignPage() {
       }
     } finally {
       setCreating(false)
-      warmupBypassRef.current = false
     }
   }
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canCreateCampaign) return
-
-    if (!warmupBypassRef.current && form.instanceId) {
-      try {
-        const health = await apiClient.instances.getHealth(form.instanceId)
-        if (shouldShowWarmupWarningBeforeSend(health)) {
-          setWarmupHealth(health)
-          setWarmupModalOpen(true)
-          return
-        }
-      } catch {
-        /* health optional: proceed */
-      }
-    }
-
     await runCreate()
   }
 
@@ -363,8 +374,6 @@ export default function NewCampaignPage() {
   const handleWarmupContinue = () => {
     setWarmupModalOpen(false)
     setWarmupHealth(null)
-    warmupBypassRef.current = true
-    void runCreate()
   }
 
   if (planBlocked) {
@@ -409,7 +418,7 @@ export default function NewCampaignPage() {
 
             <Select label={np.instanceLabel} value={form.instanceId} onChange={(e) => setForm((prev) => ({ ...prev, instanceId: e.target.value }))} required>
               <option value="">{np.instancePlaceholder}</option>
-              {instances.filter((i) => i.status === "connected").map((i) => (
+              {connectedInstances.map((i) => (
                 <option key={i.id} value={i.id}>{i.name}</option>
               ))}
             </Select>
