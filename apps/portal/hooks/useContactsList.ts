@@ -7,7 +7,11 @@ import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
 export const CONTACTS_LIST_PAGE_SIZE = 100
 
-export function useContactsList(searchQuery: string, sort: ContactSort = "createdAt_desc") {
+export function useContactsList(
+  searchQuery: string,
+  sort: ContactSort = "createdAt_desc",
+  groupIdFilter = "",
+) {
   const { copy } = usePortalLocale()
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
 
@@ -37,7 +41,7 @@ export function useContactsList(searchQuery: string, sort: ContactSort = "create
     }
     setPageIndex(0)
     setStartCursors([null])
-  }, [debouncedSearch, sort])
+  }, [debouncedSearch, sort, groupIdFilter])
 
   useEffect(() => {
     let cancelled = false
@@ -51,6 +55,7 @@ export function useContactsList(searchQuery: string, sort: ContactSort = "create
           cursor: cursor ?? undefined,
           search: debouncedSearch.trim() || undefined,
           sort,
+          groupId: groupIdFilter.trim() || undefined,
         })
         if (cancelled) return
         setContacts(data.contacts)
@@ -70,7 +75,15 @@ export function useContactsList(searchQuery: string, sort: ContactSort = "create
     return () => {
       cancelled = true
     }
-  }, [copy.hooks.contactsLoadError, debouncedSearch, pageIndex, reloadToken, sort, startCursors])
+  }, [
+    copy.hooks.contactsLoadError,
+    debouncedSearch,
+    groupIdFilter,
+    pageIndex,
+    reloadToken,
+    sort,
+    startCursors,
+  ])
 
   const goNextPage = useCallback(() => {
     if (!nextCursor) return

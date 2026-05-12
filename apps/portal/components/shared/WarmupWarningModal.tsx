@@ -33,7 +33,7 @@ export default function WarmupWarningModal({
   const s = copy.campaigns.safety
   const cw = copy.common.warmupWarning
 
-  if (!health) return null
+  if (!open || !health) return null
 
   const riskLevel = health.safetyScore > 85 ? "high" : health.safetyScore > 70 ? "medium" : "low"
   const riskLabel =

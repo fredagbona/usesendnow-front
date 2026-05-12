@@ -414,12 +414,15 @@ const contacts = {
     cursor?: string
     search?: string
     sort?: ContactSort
+    /** When set, list only contacts belonging to this contact group. */
+    groupId?: string
   }): Promise<ContactListResponse> => {
     const q = new URLSearchParams()
     if (params?.limit) q.set("limit", String(params.limit))
     if (params?.cursor) q.set("cursor", params.cursor)
     if (params?.search) q.set("search", params.search)
     if (params?.sort) q.set("sort", params.sort)
+    if (params?.groupId) q.set("groupId", params.groupId)
     const qs = q.toString()
     return get<ContactListResponse>(qs ? `/api/contacts?${qs}` : "/api/contacts")
   },
