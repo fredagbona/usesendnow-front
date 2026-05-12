@@ -15,8 +15,8 @@ export function useContacts() {
     setLoading(true)
     setError(null)
     try {
-      const data = await apiClient.contacts.list()
-      setContacts(data)
+      const data = await apiClient.contacts.list({ limit: 200, sort: "name_asc" })
+      setContacts(data.contacts)
     } catch {
       setError(copy.hooks.contactsLoadError)
     } finally {

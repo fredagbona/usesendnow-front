@@ -15,11 +15,9 @@ import Badge from "@/components/ui/Badge"
 import Card from "@/components/ui/Card"
 import Modal from "@/components/ui/Modal"
 import Alert from "@/components/ui/Alert"
-import WarmupWarningModal from "@/components/shared/WarmupWarningModal"
 import { SkeletonCard, SkeletonTableRow } from "@/components/ui/Skeleton"
 import { ArrowLeft01Icon, AlertDiamondIcon, CreditCardIcon } from "hugeicons-react"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
-import type { InstanceHealth } from "@usesendnow/types"
 
 const STATUS_VARIANT: Record<string, "neutral" | "yellow" | "blue" | "orange" | "success" | "error" | "purple"> = {
   draft: "neutral",
@@ -131,9 +129,6 @@ export default function CampaignDetailPage() {
   const [deleting, setDeleting] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
-  const [warmupWarningOpen, setWarmupWarningOpen] = useState(false)
-  const [warmupWarningHealth, setWarmupWarningHealth] = useState<InstanceHealth | null>(null)
-  const pendingResumeRef = useRef<(() => Promise<void>) | null>(null)
 
   const messageFilterOptions = useMemo(
     () =>
@@ -240,40 +235,19 @@ export default function CampaignDetailPage() {
   }
 
   const handleResume = async () => {
-    if (!campaign) return
-    const runResume = async () => {
-      setResuming(true)
-      try {
-        const response = await apiClient.campaigns.resume(id)
-        const safetyData = response?.safety
-        updateStatus("running")
-        if (safetyData && safetyData.decision === "warn") {
-          toast.success(list.resumedWarmup)
-        } else {
-          toast.success(list.resumed)
-        }
-      } catch (err) {
-        if (err instanceof ApiClientError && err.code === "BAD_REQUEST") {
-          toast.error(d.toastResumeNotAllowed)
-        } else {
-          toast.error(list.resumeFailed)
-        }
-      } finally {
-        setResuming(false)
-      }
-    }
-
+    setResuming(true)
     try {
-      const health = await apiClient.instances.getHealth(campaign.instanceId)
-      if (health.safetyScore > 60) {
-        setWarmupWarningHealth(health)
-        pendingResumeRef.current = runResume
-        setWarmupWarningOpen(true)
-        return
+      await apiClient.campaigns.resume(id)
+      updateStatus("running")
+      toast.success(list.resumed)
+    } catch (err) {
+      if (err instanceof ApiClientError && err.code === "BAD_REQUEST") {
+        toast.error(d.toastResumeNotAllowed)
+      } else {
+        toast.error(list.resumeFailed)
       }
-      await runResume()
-    } catch {
-      await runResume()
+    } finally {
+      setResuming(false)
     }
   }
 
@@ -665,23 +639,6 @@ export default function CampaignDetailPage() {
           <Button variant="danger" loading={deleting} onClick={handleDelete}>{list.delete}</Button>
         </div>
       </Modal>
-
-      <WarmupWarningModal
-        open={warmupWarningOpen}
-        health={warmupWarningHealth}
-        onClose={() => {
-          setWarmupWarningOpen(false)
-          pendingResumeRef.current = null
-        }}
-        onContinue={async () => {
-          setWarmupWarningOpen(false)
-          const pending = pendingResumeRef.current
-          pendingResumeRef.current = null
-          if (pending) {
-            await pending()
-          }
-        }}
-      />
     </motion.div>
   )
 }

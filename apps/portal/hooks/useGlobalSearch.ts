@@ -1,8 +1,8 @@
 "use client"
 
-import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react"
+import { useDeferredValue, useEffect, useMemo, useState } from "react"
 import { apiClient } from "@usesendnow/api-client"
-import type { Campaign, Contact, ContactGroup, Instance, Message } from "@usesendnow/types"
+import type { GlobalSearchResponse } from "@usesendnow/types"
 import { portalCopy } from "@/lib/portal-copy"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import type { PortalLocale } from "@/lib/portal-locale"
@@ -17,15 +17,7 @@ export interface GlobalSearchResult {
   href: string
 }
 
-interface SearchDataset {
-  instances: Instance[]
-  messages: Message[]
-  campaigns: Campaign[]
-  contacts: Contact[]
-  groups: ContactGroup[]
-}
-
-type LocaleCopy = (typeof portalCopy)["fr"]
+type LocaleCopy = (typeof portalCopy)[PortalLocale]
 
 function normalize(value: string) {
   return value
@@ -44,12 +36,7 @@ function truncate(value: string | null | undefined, length = 64) {
   return value.length > length ? `${value.slice(0, length - 1)}…` : value
 }
 
-function buildResults(
-  query: string,
-  dataset: SearchDataset | null,
-  copy: LocaleCopy,
-  locale: PortalLocale
-): GlobalSearchResult[] {
+function filteredStaticPages(query: string, copy: LocaleCopy): GlobalSearchResult[] {
   const gs = copy.globalSearch
   const pageResults: GlobalSearchResult[] = (gs.staticPages ?? []).map((p) => ({
     id: p.id,
@@ -58,124 +45,112 @@ function buildResults(
     description: p.description,
     href: p.href,
   }))
+  return pageResults.filter((item) => includesQuery([item.title, item.description], query))
+}
 
-  const filteredPageResults = pageResults.filter((item) =>
-    includesQuery([item.title, item.description], query)
-  )
-
-  if (!dataset) return filteredPageResults
-
+function mapApiSearch(resp: GlobalSearchResponse, copy: LocaleCopy, locale: PortalLocale): GlobalSearchResult[] {
+  const gs = copy.globalSearch
   const localeTag = locale === "fr" ? "fr-FR" : "en-US"
-
-  const instanceResults = dataset.instances
-    .filter((instance) => includesQuery([instance.name, instance.waNumber, instance.status], query))
-    .slice(0, 5)
-    .map<GlobalSearchResult>((instance) => ({
-      id: `instance-${instance.id}`,
-      category: "instance",
-      title: instance.name,
-      description: instance.waNumber ?? gs.fallbackInstanceDescription,
-      href: `/instances/${instance.id}`,
-    }))
-
-  const messageResults = dataset.messages
-    .filter((message) => includesQuery([message.to, message.body, message.status, message.type], query))
-    .slice(0, 5)
-    .map<GlobalSearchResult>((message) => ({
-      id: `message-${message.id}`,
-      category: "message",
-      title: message.to,
-      description: truncate(message.body) || gs.messagePreview.replace("{{type}}", message.type),
-      href: `/messages/${message.id}`,
-    }))
-
-  const campaignResults = dataset.campaigns
-    .filter((campaign) => includesQuery([campaign.name, campaign.status], query))
-    .slice(0, 5)
-    .map<GlobalSearchResult>((campaign) => ({
-      id: `campaign-${campaign.id}`,
-      category: "campaign",
-      title: campaign.name,
-      description: gs.campaignWithStatus.replace("{{status}}", campaign.status),
-      href: `/campaigns/${campaign.id}`,
-    }))
-
-  const contactResults = dataset.contacts
-    .filter((contact) => includesQuery([contact.name, contact.phone, contact.tags.join(" ")], query))
-    .slice(0, 5)
-    .map<GlobalSearchResult>((contact) => ({
-      id: `contact-${contact.id}`,
-      category: "contact",
-      title: contact.name,
-      description: contact.phone,
-      href: `/contacts?search=${encodeURIComponent(contact.phone)}`,
-    }))
-
-  const groupSuffix =
-    copy.contacts.groups.detailsCountSuffix
+  const groupSuffix = copy.contacts.groups.detailsCountSuffix
   const groupSuffixPlural = copy.contacts.groups.detailsCountSuffixPlural
+  const out: GlobalSearchResult[] = []
 
-  const groupResults = dataset.groups
-    .filter((group) => includesQuery([group.name, group.description], query))
-    .slice(0, 5)
-    .map<GlobalSearchResult>((group) => ({
-      id: `group-${group.id}`,
+  for (const instance of resp.sections.instances ?? []) {
+    const id = typeof instance.id === "string" ? instance.id : ""
+    if (!id) continue
+    out.push({
+      id: `instance-${id}`,
+      category: "instance",
+      title: String(instance.name ?? ""),
+      description: String(instance.waNumber ?? gs.fallbackInstanceDescription),
+      href: `/instances/${id}`,
+    })
+  }
+
+  for (const message of resp.sections.messages ?? []) {
+    const id = typeof message.id === "string" ? message.id : ""
+    if (!id) continue
+    const body = typeof message.body === "string" ? message.body : ""
+    const type = typeof message.type === "string" ? message.type : ""
+    out.push({
+      id: `message-${id}`,
+      category: "message",
+      title: String(message.to ?? ""),
+      description: truncate(body) || gs.messagePreview.replace("{{type}}", type),
+      href: `/messages/${id}`,
+    })
+  }
+
+  for (const campaign of resp.sections.campaigns ?? []) {
+    const id = typeof campaign.id === "string" ? campaign.id : ""
+    if (!id) continue
+    const status = String(campaign.status ?? "")
+    out.push({
+      id: `campaign-${id}`,
+      category: "campaign",
+      title: String(campaign.name ?? ""),
+      description: gs.campaignWithStatus.replace("{{status}}", status),
+      href: `/campaigns/${id}`,
+    })
+  }
+
+  for (const contact of resp.sections.contacts ?? []) {
+    const id = typeof contact.id === "string" ? contact.id : ""
+    if (!id) continue
+    const phone = String(contact.phone ?? "")
+    out.push({
+      id: `contact-${id}`,
+      category: "contact",
+      title: String(contact.name ?? ""),
+      description: phone,
+      href: `/contacts?search=${encodeURIComponent(phone)}`,
+    })
+  }
+
+  for (const group of resp.sections.groups ?? []) {
+    const id = typeof group.id === "string" ? group.id : ""
+    if (!id) continue
+    const desc = typeof group.description === "string" ? group.description : ""
+    const count = typeof group.contactCount === "number" ? group.contactCount : 0
+    out.push({
+      id: `group-${id}`,
       category: "group",
-      title: group.name,
+      title: String(group.name ?? ""),
       description:
-        group.description ||
-        `${group.contactCount.toLocaleString(localeTag)} ${
-          group.contactCount !== 1 ? groupSuffixPlural : groupSuffix
-        }`,
-      href: `/contacts/groups/${group.id}`,
-    }))
+        desc ||
+        `${count.toLocaleString(localeTag)} ${count !== 1 ? groupSuffixPlural : groupSuffix}`,
+      href: `/contacts/groups/${id}`,
+    })
+  }
 
-  return [
-    ...filteredPageResults,
-    ...instanceResults,
-    ...messageResults,
-    ...campaignResults,
-    ...contactResults,
-    ...groupResults,
-  ]
+  return out
 }
 
 export function useGlobalSearch(rawQuery: string) {
   const { copy, locale } = usePortalLocale()
-  const deferredQuery = useDeferredValue(rawQuery)
-  const [dataset, setDataset] = useState<SearchDataset | null>(null)
+  const deferredQuery = useDeferredValue(rawQuery.trim())
   const [loading, setLoading] = useState(false)
-  const [results, setResults] = useState<GlobalSearchResult[]>([])
+  const [apiResults, setApiResults] = useState<GlobalSearchResult[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const query = useMemo(() => normalize(deferredQuery), [deferredQuery])
 
   useEffect(() => {
-    if (query.length < 2 || dataset || loading) return
+    if (!query || query.length < 2) {
+      setApiResults([])
+      setLoading(false)
+      setError(null)
+      return
+    }
 
     let cancelled = false
-
-    async function load() {
+    const handle = async () => {
       setLoading(true)
       setError(null)
       try {
-        const [instances, messageResponse, campaigns, contacts, groupsResponse] = await Promise.all([
-          apiClient.instances.list(),
-          apiClient.messages.list({ limit: 50 }),
-          apiClient.campaigns.list(),
-          apiClient.contacts.list(),
-          apiClient.contactGroups.list(),
-        ])
-
+        const resp = await apiClient.search.query(deferredQuery, 5)
         if (cancelled) return
-
-        setDataset({
-          instances,
-          messages: messageResponse.messages,
-          campaigns,
-          contacts,
-          groups: groupsResponse.groups,
-        })
+        setApiResults(mapApiSearch(resp, copy, locale))
       } catch {
         if (!cancelled) setError(copy.hooks.globalSearchLoadError)
       } finally {
@@ -183,23 +158,22 @@ export function useGlobalSearch(rawQuery: string) {
       }
     }
 
-    void load()
+    const t = setTimeout(() => {
+      void handle()
+    }, 300)
 
     return () => {
       cancelled = true
+      clearTimeout(t)
     }
-  }, [copy.hooks.globalSearchLoadError, dataset, loading, query])
+  }, [query, deferredQuery, copy, locale])
 
-  useEffect(() => {
-    if (!query) {
-      setResults([])
-      return
-    }
-
-    startTransition(() => {
-      setResults(buildResults(query, dataset, copy, locale))
-    })
-  }, [copy, dataset, locale, query])
+  const results = useMemo(() => {
+    if (!query) return []
+    const pages = filteredStaticPages(query, copy)
+    if (query.length < 2) return pages
+    return [...pages, ...apiResults]
+  }, [query, copy, apiResults])
 
   return { query, results, loading, error }
 }

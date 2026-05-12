@@ -94,10 +94,10 @@ export default function LookupHistoryTable({
                       <button
                         type="button"
                         onClick={() => onView(lookup)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text hover:border-primary hover:bg-primary-subtle transition-colors cursor-pointer"
+                        title={ht.viewDetails}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-text-secondary hover:text-text hover:bg-bg-subtle transition-colors cursor-pointer"
                       >
-                        <EyeIcon className="w-3.5 h-3.5" />
-                        <span>{ht.viewDetails}</span>
+                        <EyeIcon className="w-4 h-4" />
                       </button>
                       {canImport ? (
                         <button
@@ -145,10 +145,10 @@ export default function LookupHistoryTable({
                   <button
                     type="button"
                     onClick={() => onView(lookup)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-text-secondary hover:text-text hover:border-primary hover:bg-primary-subtle transition-colors cursor-pointer"
+                    title={ht.viewDetails}
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-text-secondary hover:text-text hover:bg-bg-subtle transition-colors cursor-pointer"
                   >
-                    <EyeIcon className="w-3.5 h-3.5" />
-                    <span>{ht.viewDetails}</span>
+                    <EyeIcon className="w-4 h-4" />
                   </button>
                   {canImport ? (
                     <button

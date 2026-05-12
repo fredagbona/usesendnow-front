@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "../components/sections/Navbar";
 import { HeroSection } from "../components/sections/HeroSection";
+import { LogosBar } from "../components/sections/LogosBar";
 import { FeaturesGrid } from "../components/sections/FeaturesGrid";
 import { HowItWorks } from "../components/sections/HowItWorks";
 import { WordPressSection } from "../components/sections/WordPressSection";
@@ -16,12 +17,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title:
       locale === "en"
-        ? "msgflash — WhatsApp API for makers who do not wait on Meta"
-        : "msgflash — WhatsApp API pour les makers qui n'attendent pas Meta",
+        ? "msgflash — WhatsApp API for Developers | REST, Webhooks, n8n, Zapier, Make"
+        : "msgflash — API WhatsApp pour développeurs | REST, webhooks, n8n, Zapier, Make",
     description:
       locale === "en"
-        ? "Connect your number in 2 minutes and send your first WhatsApp messages via API in 5 minutes. No BSP approval, no hidden fees, starting at €9/month."
-        : "Connectez votre numéro en 2 minutes et envoyez vos premiers messages WhatsApp via API en 5 minutes. Sans validation BSP, sans frais cachés, à partir de 9€/mois.",
+        ? "Send WhatsApp messages via REST API without a heavy BSP workflow. WhatsApp webhook integration, QR code onboarding, and automation with n8n, Zapier, and Make. Free tier available."
+        : "Envoyez des messages WhatsApp via une API REST sans parcours BSP lourd. Intégration webhooks, connexion QR code et automation avec n8n, Zapier et Make. Offre gratuite disponible.",
   }
 }
 
@@ -36,17 +37,12 @@ export default async function Home() {
         <HeroSection />
         <section className="border-t border-white/8 px-4 py-8 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
-            <div className="grid gap-4 sm:grid-cols-3">
-              {messages.hero.proof.map((item) => (
-                <div key={item} className="border border-white/8 bg-[#121212] px-4 py-4">
-                  <p className="font-(family-name:--font-geist-sans) text-sm font-bold uppercase tracking-[0.06em] text-[#FFD600]">
-                    {item}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <h2 className="font-(family-name:--font-geist-sans) text-xl font-black uppercase tracking-[-0.03em] text-[#F0F0F0] sm:text-2xl">
+              {messages.homeSeo.developerH2}
+            </h2>
           </div>
         </section>
+        <LogosBar />
         <FeaturesGrid />
         <section className="border-t border-white/8 px-4 py-8 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">

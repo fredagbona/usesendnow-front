@@ -187,7 +187,9 @@ export default function ContactGroupsPage() {
   const { copy } = usePortalLocale()
   const gCopy = copy.contacts.groups
   const router = useRouter()
-  const { groups, total, loading, addGroup, updateGroup, removeGroup } = useContactGroups()
+  const [groupSearch, setGroupSearch] = useState("")
+  const { groups, total, loading, loadingMore, hasMore, loadMore, addGroup, updateGroup, removeGroup } =
+    useContactGroups(groupSearch)
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<ContactGroup | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ContactGroup | null>(null)
@@ -230,6 +232,15 @@ export default function ContactGroupsPage() {
           </div>
         }
       />
+
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between mb-5">
+        <Input
+          value={groupSearch}
+          onChange={(e) => setGroupSearch(e.target.value)}
+          placeholder={gCopy.searchGroupsPlaceholder}
+          className="max-w-sm"
+        />
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -283,6 +294,14 @@ export default function ContactGroupsPage() {
               </div>
             </Card>
           ))}
+        </div>
+      )}
+
+      {!loading && hasMore && (
+        <div className="mt-6 flex justify-center">
+          <Button variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>
+            {gCopy.loadMore}
+          </Button>
         </div>
       )}
 

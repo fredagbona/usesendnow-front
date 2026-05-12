@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { fadeIn } from "@/lib/animations"
 import PageHeader from "@/components/layout/PageHeader"
@@ -9,15 +8,17 @@ import LookupComposer from "@/components/number-lookups/LookupComposer"
 import LookupSummaryCards from "@/components/number-lookups/LookupSummaryCards"
 import LookupResultsTabs from "@/components/number-lookups/LookupResultsTabs"
 import LookupHistoryTable from "@/components/number-lookups/LookupHistoryTable"
+import LookupDetailModal from "@/components/number-lookups/LookupDetailModal"
 import ImportContactsPanel from "@/components/number-lookups/ImportContactsPanel"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { useNumberLookups } from "@/hooks/useNumberLookups"
 import { useInstances } from "@/hooks/useInstances"
 import { useContactGroups } from "@/hooks/useContactGroups"
 import { SkeletonCard } from "@/components/ui/Skeleton"
+import type { NumberLookup } from "@usesendnow/types"
+import { apiClient } from "@usesendnow/api-client"
 
 export default function NumberLookupsPage() {
-  const router = useRouter()
   const { copy } = usePortalLocale()
   const { instances, loading: instancesLoading } = useInstances()
   const { groups, loading: groupsLoading } = useContactGroups()
@@ -28,12 +29,14 @@ export default function NumberLookupsPage() {
     submitting,
     importing,
     submitLookup,
+    viewLookup,
     importContacts,
     setActiveLookup,
     refetch: refetchLookups,
   } = useNumberLookups()
 
   const [selectedInstanceId, setSelectedInstanceId] = useState("")
+  const [detailLookup, setDetailLookup] = useState<NumberLookup | null>(null)
 
   const handleSubmit = async (instanceId: string, numbers: string[]) => {
     await submitLookup(instanceId, numbers)
@@ -44,8 +47,15 @@ export default function NumberLookupsPage() {
     return importContacts(activeLookup.id, groupId, tag)
   }
 
-  const handleViewLookup = (lookupId: string) => {
-    router.push(`/number-lookups/${lookupId}`)
+  const handleViewLookup = async (lookup: NumberLookup) => {
+    if (lookup.result) {
+      // Already have full data from list
+      setDetailLookup(lookup)
+    } else {
+      // Fetch full details
+      const data = await apiClient.numberLookups.get(lookup.id)
+      setDetailLookup(data)
+    }
   }
 
   const handleImportFromHistory = async (id: string) => {
@@ -139,11 +149,18 @@ export default function NumberLookupsPage() {
         <h2 className="text-sm font-medium text-text mb-4">{copy.numberLookups.history}</h2>
         <LookupHistoryTable
           lookups={lookups}
-          onView={(lookup) => handleViewLookup(lookup.id)}
+          onView={handleViewLookup}
           onImport={handleImportFromHistory}
           importingId={importing ? activeLookup?.id ?? null : null}
         />
       </div>
+
+      {/* Detail modal */}
+      <LookupDetailModal
+        lookup={detailLookup}
+        onClose={() => setDetailLookup(null)}
+        onImport={handleImportFromHistory}
+      />
     </motion.div>
   )
 }

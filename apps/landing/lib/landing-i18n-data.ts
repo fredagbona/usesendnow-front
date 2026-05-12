@@ -17,14 +17,6 @@ type LandingMessages = {
     description: string
     primaryCta: string
     secondaryCta: string
-    proof: string[]
-    problemTitle: string
-    problemBullets: string[]
-    solutionTitle: string
-    solutionBullets: string[]
-    codeTitle: string
-    codeSample: string
-    codeCaption: string
   }
   logos: string[]
   features: {
@@ -81,6 +73,7 @@ type LandingMessages = {
     useCases: Array<{ title: string; text: string; imageAlt: string }>
     title: string
     subtitle: string
+    teamsFootnote: string
     plans: Array<{
       name: string
       price: string
@@ -94,67 +87,6 @@ type LandingMessages = {
     docsCta: string
     apiCta: string
     codeSample: string
-  }
-  comparatif: {
-    metaTitle: string
-    metaDescription: string
-    eyebrow: string
-    title: string
-    subtitle: string
-    primary: string
-    secondary: string
-    tableHeaders: string[]
-    rows: Array<{
-      criterion: string
-      msgflash: string
-      twilio: string
-      dialog360: string
-      wati: string
-    }>
-    winTitle: string
-    winPoints: string[]
-    loseTitle: string
-    losePoints: string[]
-    faqTitle: string
-    faqItems: Array<{ question: string; answer: string }>
-  }
-  risques: {
-    metaTitle: string
-    metaDescription: string
-    eyebrow: string
-    title: string
-    subtitle: string
-    primary: string
-    secondary: string
-    risks: Array<{
-      title: string
-      label: string
-      description: string
-      mitigation: string[]
-    }>
-    mythTitle: string
-    mythRows: Array<{ myth: string; reality: string }>
-    closingTitle: string
-    closingText: string
-  }
-  useCasesPage: {
-    metaTitle: string
-    metaDescription: string
-    eyebrow: string
-    title: string
-    subtitle: string
-    primary: string
-    secondary: string
-    cases: Array<{
-      title: string
-      label: string
-      problem: string
-      solution: string
-      result: string
-      limits: string[]
-    }>
-    summaryTitle: string
-    summaryRows: Array<{ useCase: string; trigger: string; benefit: string }>
   }
   faq: {
     title: string
@@ -175,15 +107,11 @@ type LandingMessages = {
       automations: string
       campaigns: string
       wordpress: string
-      comparatif: string
-      risques: string
-      useCases: string
       pricing: string
       api: string
       docs: string
       webhook: string
       status: string
-      blog: string
       privacy: string
       terms: string
       contact: string
@@ -247,25 +175,11 @@ const FR: LandingMessages = {
     language: "Langue",
   },
   hero: {
-    title: "WhatsApp API pour les makers qui n'attendent pas Meta.",
+    title: "API WHATSAPP POUR DÉVELOPPEURS — REST, WEBHOOKS, SANS APPROBATION META",
     description:
-      "Connectez votre numéro en 2 minutes. Envoyez vos premiers messages via API en 5 minutes. Sans validation BSP. Sans frais cachés. À partir de 9€/mois.",
-    primaryCta: "Tester gratuitement — 20 messages offerts",
+      "Envoyez des messages WhatsApp via une API REST, sans parcours BSP. Webhooks fiables, connexion par QR code, intégration n8n, Zapier et Make — pour une automatisation WhatsApp orientée produit.",
+    primaryCta: "Commencer",
     secondaryCta: "Voir la documentation",
-    proof: ["500k+ messages envoyés ce mois", "99.2% taux de délivrabilité", "Temps moyen premier message : 4 min 30s"],
-    problemTitle: "Obtenir l'API WhatsApp officielle, c'est :",
-    problemBullets: ["2 semaines d'attente", "500€/mois minimum", "Une validation Meta arbitraire", "Des templates à approuver un par un"],
-    solutionTitle: "MsgFlash, c'est :",
-    solutionBullets: ["QR code → numéro connecté → API prête", "9€/mois, pas de surprise", "Pas de validation externe", "Vos messages, vos règles"],
-    codeTitle: "Preuve technique",
-    codeSample: `curl -X POST https://api.msgflash.com/v1/messages \\
-  -H "Authorization: Bearer YOUR_TOKEN" \\
-  -d '{
-    "to": "+33612345678",
-    "body": "Votre commande #123 est expédiée.",
-    "type": "text"
-  }'`,
-    codeCaption: "Un seul endpoint. Pas de SDK obese. Pas de configuration XML.",
   },
   logos: ["API REST WhatsApp", "Webhooks & événements", "Messages texte + médias", "QR code & intégration rapide"],
   features: {
@@ -276,10 +190,6 @@ const FR: LandingMessages = {
       { title: "Lancer des campagnes", description: "Listes de diffusion, suivi d’envoi et pilotage depuis l’API ou le portail." },
       { title: "Intégration webhooks WhatsApp", description: "Recevez livraisons, réponses et erreurs en temps réel pour orchestrer vos workflows." },
       { title: "n8n, Zapier, Make & backend", description: "Branchez n8n, Zapier, Make ou votre code : la même API REST pour tous vos scénarios." },
-      { title: "Messages médias", description: "Image, vidéo, audio, document et notes vocales, avec upload temporaire pour les envois immédiats." },
-      { title: "Clés API", description: "Séparez vos environnements, équipes ou services avec plusieurs clés d’accès." },
-      { title: "Protection Warmup", description: "Prévenez les utilisateurs avant les envois risqués et les campagnes quand la santé d’instance se dégrade." },
-      { title: "Suivi d’usage", description: "Suivez les quotas, les messages restants et le flux de livraison par instance au même endroit." },
     ],
     reasonsTitle: "Pourquoi les équipes tech choisissent msgflash",
     reasons: [
@@ -289,8 +199,6 @@ const FR: LandingMessages = {
       { title: "Pensé pour les makers", text: "Compatible avec vos outils backend, no-code et automatisations." },
       { title: "Tarification lisible", text: "Pas de licence cachée, pas de surcoût de plateforme surprise." },
       { title: "Trajectoire solide", text: "Pour un bot simple, une campagne ou un orchestrateur plus complet." },
-      { title: "Warmup safety", text: "Les contrôles de santé d’instance et les avertissements gardent les équipes en avance sur les envois à risque sans bloquer les flux V1." },
-      { title: "Médias temporaires", text: "Les uploads médias peuvent être gérés pour les envois immédiats avec une expiration explicite." },
     ],
   },
   howItWorks: {
@@ -376,12 +284,14 @@ const FR: LandingMessages = {
       { title: "Notifications commande", text: "Tenez vos clients au courant de chaque étape avec messages et réponses en temps réel.", imageAlt: "Aperçu du cas d'usage de notifications de commande sur WhatsApp" },
     ],
     title: "Des plans simples pour démarrer et évoluer",
-    subtitle: "Choisissez le volume qui correspond à votre croissance.",
+    subtitle: "Choisissez le volume qui correspond à votre croissance — avec équipes partagées sur Pro et Plus.",
+    teamsFootnote:
+      "Gratuit & Starter : pas de création d’équipe — vous pouvez rejoindre une équipe existante sur invitation. Pro : 2 équipes × 4 sièges. Plus : 4 équipes × 8 sièges (en tant que propriétaire). Les quotas WhatsApp restent ceux du propriétaire de l’équipe.",
     plans: [
-      { name: "Gratuit", price: "0 €", secondaryPrice: "", desc: "Pour tester l’infrastructure et brancher un premier numéro.", cta: "Commencer", features: ["1 instance", "20 messages / statuts par mois", "1 000 requêtes API / mois", "1 clé API", "0 endpoint webhook", "2 groupes de contacts", "Campagnes : non", "Webhooks : non", "Notes vocales : oui"] },
-      { name: "Starter", price: "9 €", secondaryPrice: "", desc: "Pour lancer vos premiers automatismes en production.", cta: "Commencer", features: ["2 instances", "5 000 messages / statuts par mois", "10 000 requêtes API / mois", "3 clés API", "3 endpoints webhook", "10 groupes de contacts", "Campagnes : oui", "Webhooks : oui", "Notes vocales : oui"] },
-      { name: "Pro", price: "19 €", secondaryPrice: "", desc: "Pour les équipes qui envoient plus, automatisent plus et monitorent mieux.", cta: "S’abonner", features: ["5 instances", "25 000 messages / statuts par mois", "100 000 requêtes API / mois", "10 clés API", "10 endpoints webhook", "50 groupes de contacts", "Campagnes : oui", "Webhooks : oui", "Notes vocales : oui"] },
-      { name: "Plus", price: "39 €", secondaryPrice: "", desc: "Pour les volumes élevés, les workflows avancés et les opérations multi-numéros.", cta: "Contacter", features: ["20 instances", "150 000 messages / statuts par mois", "500 000 requêtes API / mois", "10 clés API", "50 endpoints webhook", "Groupes de contacts illimités", "Campagnes : oui", "Webhooks : oui", "Notes vocales : oui"] },
+      { name: "Gratuit", price: "0 €", secondaryPrice: "", desc: "Pour tester l’infrastructure et brancher un premier numéro.", cta: "Commencer", features: ["1 instance", "20 messages / statuts par mois", "1 000 requêtes API / mois", "1 clé API", "0 endpoint webhook", "2 groupes de contacts", "Campagnes : non", "Statuts WhatsApp : non", "Webhooks : non", "Notes vocales : oui", "Équipes : pas de création — rejoignez une équipe sur invitation"] },
+      { name: "Starter", price: "9 €", secondaryPrice: "", desc: "Pour lancer vos premiers automatismes en production.", cta: "Commencer", features: ["2 instances", "5 000 messages / statuts par mois", "10 000 requêtes API / mois", "3 clés API", "3 endpoints webhook", "10 groupes de contacts", "Campagnes : oui", "Statuts WhatsApp : non", "Webhooks : oui", "Notes vocales : oui", "Équipes : pas de création — rejoignez une équipe sur invitation"] },
+      { name: "Pro", price: "19 €", secondaryPrice: "", desc: "Pour les équipes qui envoient plus, automatisent plus et monitorent mieux.", cta: "S’abonner", features: ["5 instances", "5 000 messages / statuts par mois", "50 000 requêtes API / mois", "10 clés API", "10 endpoints webhook", "50 groupes de contacts", "Campagnes : oui", "Statuts WhatsApp : oui", "Webhooks : oui", "Notes vocales : oui", "Équipes : jusqu’à 2 espaces dont vous êtes propriétaire, 4 sièges par équipe"] },
+      { name: "Plus", price: "39 €", secondaryPrice: "", desc: "Pour les volumes élevés, les workflows avancés et les opérations multi-numéros.", cta: "Contacter", features: ["20 instances", "150 000 messages / statuts par mois", "500 000 requêtes API / mois", "10 clés API", "50 endpoints webhook", "Groupes de contacts illimités", "Campagnes : oui", "Statuts WhatsApp : oui", "Webhooks : oui", "Notes vocales : oui", "Équipes : jusqu’à 4 espaces dont vous êtes propriétaire, 8 sièges par équipe"] },
     ],
     integrationTitle: "Pensé pour l’intégration dès le départ",
     integrationText: "Une API REST lisible, sécurisée et performante. Stable à brancher avec vos backends, votre CRM, votre bot ou votre orchestrateur.",
@@ -394,188 +304,6 @@ const FR: LandingMessages = {
   "message": "Votre commande #123 est prête.",
   "instanceId": "main"
 }`,
-  },
-  comparatif: {
-    metaTitle: "MsgFlash vs Twilio, 360dialog, Wati : le comparatif honnête (2026)",
-    metaDescription:
-      "Comparatif transparent entre MsgFlash, Twilio, 360dialog et Wati : prix, setup, webhooks, risques et usages réels.",
-    eyebrow: "Comparatif",
-    title: "MsgFlash vs Twilio, 360dialog, Wati : le comparatif honnête (2026)",
-    subtitle:
-      "Pas de bullshit. On montre où on gagne, où on perd, et pourquoi certains choisissent l'API officielle malgré le prix.",
-    primary: "Voir les risques",
-    secondary: "Tester gratuitement",
-    tableHeaders: ["Critère", "MsgFlash", "Twilio", "360dialog", "Wati"],
-    rows: [
-      { criterion: "Prix mensuel", msgflash: "9 € à 79 €", twilio: "0 $ + 0.005 $ / msg", dialog360: "49 € / mois + Meta", wati: "49 $ / mois + Meta" },
-      { criterion: "Coût par message (France)", msgflash: "Inclus dans l'abonnement", twilio: "~0.143 $ marketing + 0.005 $ markup", dialog360: "~0.143 $ marketing + 0.005 $ markup", wati: "Meta pass-through + plan" },
-      { criterion: "Setup", msgflash: "2 min (QR code)", twilio: "1-2 semaines (validation)", dialog360: "1-2 semaines (validation)", wati: "< 1 heure" },
-      { criterion: "Validation Meta", msgflash: "Non requise", twilio: "Requise", dialog360: "Requise", wati: "Requise" },
-      { criterion: "Green tick", msgflash: "Non", twilio: "Oui", dialog360: "Oui", wati: "Oui" },
-      { criterion: "Templates pré-approuvés", msgflash: "Non", twilio: "Oui", dialog360: "Oui", wati: "Oui" },
-      { criterion: "Warmup & protection anti-ban", msgflash: "SafetyScore + warnings", twilio: "Non", dialog360: "Non", wati: "Non" },
-      { criterion: "Webhooks", msgflash: "Livraison, réponses, erreurs", twilio: "Complets", dialog360: "Complets", wati: "Basiques" },
-      { criterion: "n8n / Zapier / Make", msgflash: "Natif", twilio: "Via HTTP", dialog360: "Non", wati: "Limité" },
-      { criterion: "SLA / Uptime", msgflash: "99% (Pro+)", twilio: "99.99%", dialog360: "99.9%", wati: "99.9%" },
-      { criterion: "Support", msgflash: "Discord + Email", twilio: "Enterprise", dialog360: "Email", wati: "Chat" },
-      { criterion: "Ban risk", msgflash: "Moyen (warmup actif)", twilio: "Faible", dialog360: "Faible", wati: "Faible" },
-      { criterion: "Idéal pour", msgflash: "Devs, makers, automations", twilio: "Enterprise, devs custom", dialog360: "Devs API-first", wati: "SMB no-code" },
-    ],
-    winTitle: "Quand choisir MsgFlash",
-    winPoints: [
-      "Vous voulez shipper aujourd'hui, pas dans 2 semaines",
-      "Vous envoyez < 15 000 messages/mois",
-      "Vous intégrez n8n, Zapier, ou votre backend custom",
-      "Vous préférez un coût fixe prévisible",
-      "Vous voulez un système qui vous protège de vos propres erreurs",
-      "Vous utilisez WhatsApp pour des notifications transactionnelles",
-    ],
-    loseTitle: "Quand NE PAS choisir MsgFlash",
-    losePoints: [
-      "Vous avez besoin du green tick vérifié",
-      "Vous envoyez > 50 000 messages/mois",
-      "Vous opérez dans la santé ou la finance",
-      "Vous ne pouvez pas vous permettre de perdre un numéro",
-      "Vous avez besoin de templates pré-approuvés",
-    ],
-    faqTitle: "FAQ Comparatif",
-    faqItems: [
-      { question: "Le warmup bloque mes envois ?", answer: "Non. La V1 est en warnings only : elle calcule le risque, vous alerte, mais ne bloque pas systématiquement." },
-      { question: "Puis-je passer de MsgFlash à Twilio plus tard ?", answer: "Oui, mais vous devrez re-valider votre numéro chez Meta et recréer vos templates. Prévoyez 2 semaines de transition." },
-      { question: "MsgFlash est-il illégal ?", answer: "Non. Nous utilisons le protocole WhatsApp Web. Ce n'est pas officiel, ce n'est pas illégal." },
-      { question: "Pourquoi 360dialog coûte 49 € / mois sans interface ?", answer: "Parce qu'ils paient Meta pour être BSP officiel. Vous payez cette certification, pas la technologie." },
-    ],
-  },
-  risques: {
-    metaTitle: "Les risques de MsgFlash — qu'on ne vous cache rien",
-    metaDescription:
-      "Nous listons clairement les risques, limites et mitigations de MsgFlash : ban, green tick, templates, dépendance protocole.",
-    eyebrow: "Risques",
-    title: "Les risques de MsgFlash — qu'on ne vous cache rien",
-    subtitle:
-      "Nous ne sommes pas l'API officielle. Voici ce que ça signifie concrètement, et comment notre système de warmup vous protège de vos propres erreurs.",
-    primary: "Tester gratuitement",
-    secondary: "Voir le comparatif",
-    risks: [
-      {
-        title: "Risque 1 : Bannissement du numéro",
-        label: "🟡",
-        description:
-          "WhatsApp détecte les comportements automatisés et bannit le numéro.",
-        mitigation: [
-          "Utilisez un numéro dédié",
-          "Variez le contenu",
-          "Respectez les horaires",
-          "Laissez des délais",
-          "Suivez les recommandations du warmup",
-        ],
-      },
-      {
-        title: "Risque 2 : Pas de green tick vérifié",
-        label: "🟡",
-        description:
-          "Le green tick certifie que votre numéro appartient bien à votre marque.",
-        mitigation: ["Réservez MsgFlash aux usages où la vérification n'est pas critique", "Préférez l'API officielle pour les marques publiques ou régulées"],
-      },
-      {
-        title: "Risque 3 : Pas de templates pré-approuvés",
-        label: "🟡",
-        description:
-          "L'API officielle oblige à soumettre chaque message marketing à Meta pour validation.",
-        mitigation: ["Évitez le spam", "Restez sur des usages transactionnels", "Contrôlez la qualité et la fréquence"],
-      },
-      {
-        title: "Risque 4 : Dépendance au protocole WhatsApp Web",
-        label: "🟡",
-        description:
-          "MsgFlash repose sur le protocole WhatsApp Web. Si Meta change ce protocole, nous devons adapter la stack rapidement.",
-        mitigation: ["Monitoring 24/7", "Tests sur les versions bêta", "Communication transparente", "Backup technique"],
-      },
-    ],
-    mythTitle: "Ce qui n'est pas un risque",
-    mythRows: [
-      { myth: "C'est illégal", reality: "Non. Nous utilisons le protocole WhatsApp Web." },
-      { myth: "Vos données sont volées", reality: "Non. Nous ne stockons pas le contenu, seulement les métadonnées utiles." },
-      { myth: "Meta va vous poursuivre", reality: "Non. Meta bannit les numéros, elle ne poursuit pas les utilisateurs de librairies tierces." },
-      { myth: "Le warmup bloque tout", reality: "Non. La V1 est warnings only." },
-    ],
-    closingTitle: "Notre recommandation finale",
-    closingText:
-      "Utilisez MsgFlash si vous acceptez le risque de ban comme coût de faire business, si vous avez un numéro dédié, et si vous voulez itérer vite. N'utilisez pas MsgFlash si votre numéro WhatsApp est critique ou si vous avez besoin du green tick.",
-  },
-  useCasesPage: {
-    metaTitle: "Cas d'usage MsgFlash — ce que nos utilisateurs construisent",
-    metaDescription: "Découvrez des cas d'usage concrets MsgFlash : e-commerce, SaaS, agences, santé, événements et logistique.",
-    eyebrow: "Cas d'usage",
-    title: "Cas d'usage MsgFlash — ce que nos utilisateurs construisent",
-    subtitle: "Pas de théorie. Des implémentations concrètes avec du code, des résultats, et des limites.",
-    primary: "Voir les tarifs",
-    secondary: "Lire la documentation",
-    cases: [
-      {
-        title: "E-commerce — Notifications de commande",
-        label: "Use Case 1",
-        problem: "Les emails de confirmation ont un taux d'ouverture de 20%. Les SMS coûtent cher. Vous voulez informer vos clients sans payer une fortune.",
-        solution:
-          "Webhook Shopify → n8n → MsgFlash → WhatsApp\n\n```javascript\n{\n  \"to\": \"{{$json.customer.phone}}\",\n  \"type\": \"text\",\n  \"message\": \"✅ Commande #{{$json.order_number}} confirmée !\\n\\n📦 Livraison prévue : {{$json.delivery_date}}\\n🚚 Suivi : {{$json.tracking_url}}\\n\\nDes questions ? Répondez à ce message.\",\n  \"instanceId\": \"shopify-prod\"\n}\n```",
-        result: "Taux d'ouverture ~95%, coût bas, mise en place rapide.",
-        limits: ["Pas de catalogue produit intégré", "Pas de paiement in-chat", "Le client doit avoir opt-in"],
-      },
-      {
-        title: "SaaS — Alertes monitoring & DevOps",
-        label: "Use Case 2",
-        problem: "Votre serveur tombe à 3h du matin. L'email d'alerte est noyé dans la boîte de réception. Vous voulez être réveillé immédiatement.",
-        solution:
-          "Datadog/UptimeRobot → webhook → MsgFlash API → WhatsApp\n\n```bash\ncurl -X POST https://api.msgflash.com/v1/messages \\\n  -H \"Authorization: Bearer $MSGFLASH_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"to\": \"+33612345678\",\n    \"type\": \"text\",\n    \"message\": \"🚨 ALERTE CRITIQUE\\n\\nServeur: prod-db-01\\nStatus: DOWN\\nError: Connection timeout\\nTime: 2026-05-07 03:24 UTC\\n\\nDashboard: https://status.monapp.com\",\n    \"instanceId\": \"monitoring\"\n  }'\n```",
-        result: "Temps de réaction < 2 minutes.",
-        limits: ["Pas d'escalade automatique native", "Pas d'intégration PagerDuty native"],
-      },
-      {
-        title: "Agences — Multi-comptes clients",
-        label: "Use Case 3",
-        problem: "Vous gérez plusieurs clients, plusieurs numéros et plusieurs contextes. Vous voulez un cadre propre.",
-        solution:
-          "Un compte par client, ou une instance dédiée par opération. Les tags et les groupes permettent d'isoler les flux sans multiplier les outils.",
-        result: "Moins de confusion, plus de contrôle, onboarding plus rapide.",
-        limits: ["Gouvernance à définir", "Bonnes pratiques d'accès à mettre en place"],
-      },
-      {
-        title: "Santé — Rappels de rendez-vous",
-        label: "Use Case 4",
-        problem: "Les patients oublient leurs rendez-vous et les no-shows coûtent cher.",
-        solution:
-          "Un CRM ou un agenda envoie un rappel WhatsApp avec date, heure et lien de confirmation. Les équipes réduisent les oublis sans ajouter de canal compliqué.",
-        result: "Moins de no-shows et plus de confirmations.",
-        limits: ["Sujet sensible sur la conformité", "Opt-in indispensable"],
-      },
-      {
-        title: "Événementiel — Communication participants",
-        label: "Use Case 5",
-        problem: "Les changements de dernière minute n'arrivent pas à tout le monde.",
-        solution:
-          "Envoyez les infos de session, les changements de salle et les instructions pratiques par WhatsApp, avec suivi des statuts pour savoir qui a reçu quoi.",
-        result: "Une meilleure diffusion des informations utiles.",
-        limits: ["Gestion de gros volumes à cadrer", "Opt-in recommandé"],
-      },
-      {
-        title: "Logistique — Suivi de livraison",
-        label: "Use Case 6",
-        problem: "Les clients demandent sans cesse où est leur colis.",
-        solution:
-          "À chaque changement de statut, un message WhatsApp informe le client avec son numéro de suivi et les dernières étapes.",
-        result: "Moins de tickets support et plus de visibilité.",
-        limits: ["Connexion aux systèmes logistiques à prévoir"],
-      },
-    ],
-    summaryTitle: "Résumé des cas d'usage",
-    summaryRows: [
-      { useCase: "E-commerce", trigger: "Achat / abandon de panier", benefit: "Plus de récupération" },
-      { useCase: "SaaS", trigger: "Incident / alerte", benefit: "Réaction plus rapide" },
-      { useCase: "Agences", trigger: "Flux multi-clients", benefit: "Plus de gouvernance" },
-      { useCase: "Santé", trigger: "Rendez-vous", benefit: "Moins de no-shows" },
-      { useCase: "Événementiel", trigger: "Info participant", benefit: "Diffusion utile" },
-      { useCase: "Logistique", trigger: "Changement de statut", benefit: "Moins de tickets" },
-    ],
   },
   faq: {
     title: "Questions fréquentes",
@@ -600,15 +328,11 @@ const FR: LandingMessages = {
       automations: "Automations",
       campaigns: "Campagnes",
       wordpress: "WordPress",
-      comparatif: "Comparatif",
-      risques: "Risques",
-      useCases: "Cas d’usage",
       pricing: "Tarifs",
       api: "API",
       docs: "Documentation",
       webhook: "Webhook",
       status: "Statut",
-      blog: "Blog",
       privacy: "Confidentialité",
       terms: "Conditions",
       contact: "Contact",
@@ -672,25 +396,11 @@ const EN: LandingMessages = {
     language: "Language",
   },
   hero: {
-    title: "WhatsApp API for makers who do not wait on Meta.",
+    title: "WHATSAPP API FOR DEVELOPERS — REST, WEBHOOKS, NO META APPROVAL HASSLE",
     description:
-      "Connect your number in 2 minutes. Send your first messages via API in 5 minutes. No BSP approval. No hidden fees. Starting at $9/month.",
-    primaryCta: "Start free — 20 messages included",
+      "Send WhatsApp messages via a REST API without a heavy BSP workflow. Reliable webhooks, QR code onboarding, and native fits for n8n, Zapier, and Make — built for product-minded automation.",
+    primaryCta: "Get started",
     secondaryCta: "View documentation",
-    proof: ["500k+ messages sent this month", "99.2% delivery rate", "Average time to first message: 4 min 30s"],
-    problemTitle: "Getting the official WhatsApp API means:",
-    problemBullets: ["2 weeks of waiting", "$500/month minimum", "Arbitrary Meta validation", "Templates approved one by one"],
-    solutionTitle: "MsgFlash means:",
-    solutionBullets: ["QR code → connected number → API ready", "$9/month, no surprises", "No external validation", "Your messages, your rules"],
-    codeTitle: "Technical proof",
-    codeSample: `curl -X POST https://api.msgflash.com/v1/messages \\
-  -H "Authorization: Bearer YOUR_TOKEN" \\
-  -d '{
-    "to": "+33612345678",
-    "body": "Your order #123 has shipped.",
-    "type": "text"
-  }'`,
-    codeCaption: "One endpoint. No obese SDK. No XML configuration.",
   },
   logos: ["WhatsApp REST API", "Webhooks & events", "Text + media messages", "QR code & fast connect"],
   features: {
@@ -701,10 +411,6 @@ const EN: LandingMessages = {
       { title: "Launch campaigns", description: "Manage broadcast lists, track sends, and operate from the API or the console." },
       { title: "WhatsApp webhook integration", description: "Stream deliveries, replies, and failures in real time to orchestrate your own workflows." },
       { title: "n8n, Zapier, Make & your stack", description: "Wire n8n, Zapier, Make, or custom code to the same REST API and webhook events." },
-      { title: "Media messages", description: "Send image, video, audio, document, and voice notes with temporary uploads for immediate sends." },
-      { title: "API keys", description: "Separate environments, teams, or services with multiple access keys." },
-      { title: "Warmup protection", description: "Warn users before risky sends and campaigns when instance health starts dropping." },
-      { title: "Usage tracking", description: "Track quotas, remaining messages, and delivery flow per instance in one place." },
     ],
     reasonsTitle: "Why engineering teams pick msgflash",
     reasons: [
@@ -714,8 +420,6 @@ const EN: LandingMessages = {
       { title: "Built for makers", text: "Compatible with backend, no-code, and automation tools." },
       { title: "Clear pricing", text: "No hidden license, no surprise platform surcharge." },
       { title: "Solid path", text: "For a simple bot, a campaign, or a more complete orchestrator." },
-      { title: "Warmup safety", text: "Instance health checks and warnings keep teams ahead of risky sends without blocking V1 flows." },
-      { title: "Temporary media", text: "Media uploads can be handled for immediate sends with explicit expiration handling." },
     ],
   },
   howItWorks: {
@@ -801,12 +505,14 @@ const EN: LandingMessages = {
       { title: "Order notifications", text: "Keep customers informed at every step with real-time messages and replies.", imageAlt: "Preview of the order notification use case on WhatsApp" },
     ],
     title: "Simple plans to start and grow",
-    subtitle: "Choose the volume that matches your growth.",
+    subtitle: "Pick the volume that fits your growth — shared teams included on Pro and Plus.",
+    teamsFootnote:
+      "Free & Starter: you cannot create a team workspace — you can still join one when invited. Pro: 2 teams × 4 seats. Plus: 4 teams × 8 seats (as owner). WhatsApp quotas follow the team owner’s plan.",
     plans: [
-      { name: "Free", price: "0 €", secondaryPrice: "", desc: "Test the infrastructure and connect a first number.", cta: "Get started", features: ["1 instance", "20 messages / statuses per month", "1,000 API requests / month", "1 API key", "0 webhook endpoints", "2 contact groups", "Campaigns: no", "Webhooks: no", "Voice notes: yes"] },
-      { name: "Starter", price: "9 €", secondaryPrice: "", desc: "Launch your first automations in production.", cta: "Get started", features: ["2 instances", "5,000 messages / statuses per month", "10,000 API requests / month", "3 API keys", "3 webhook endpoints", "10 contact groups", "Campaigns: yes", "Webhooks: yes", "Voice notes: yes"] },
-      { name: "Pro", price: "19 €", secondaryPrice: "", desc: "For teams sending more, automating more, and monitoring better.", cta: "Subscribe", features: ["5 instances", "25,000 messages / statuses per month", "100,000 API requests / month", "10 API keys", "10 webhook endpoints", "50 contact groups", "Campaigns: yes", "Webhooks: yes", "Voice notes: yes"] },
-      { name: "Plus", price: "39 €", secondaryPrice: "", desc: "For high volume, advanced workflows, and multi-number operations.", cta: "Contact us", features: ["20 instances", "150,000 messages / statuses per month", "500,000 API requests / month", "10 API keys", "50 webhook endpoints", "Unlimited contact groups", "Campaigns: yes", "Webhooks: yes", "Voice notes: yes"] },
+      { name: "Free", price: "0 €", secondaryPrice: "", desc: "Test the infrastructure and connect a first number.", cta: "Get started", features: ["1 instance", "20 messages / statuses per month", "1,000 API requests / month", "1 API key", "0 webhook endpoints", "2 contact groups", "Campaigns: no", "WhatsApp statuses: no", "Webhooks: no", "Voice notes: yes", "Teams: no workspace creation — join a team when invited"] },
+      { name: "Starter", price: "9 €", secondaryPrice: "", desc: "Launch your first automations in production.", cta: "Get started", features: ["2 instances", "5,000 messages / statuses per month", "10,000 API requests / month", "3 API keys", "3 webhook endpoints", "10 contact groups", "Campaigns: yes", "WhatsApp statuses: no", "Webhooks: yes", "Voice notes: yes", "Teams: no workspace creation — join a team when invited"] },
+      { name: "Pro", price: "19 €", secondaryPrice: "", desc: "For teams sending more, automating more, and monitoring better.", cta: "Subscribe", features: ["5 instances", "5,000 messages / statuses per month", "50,000 API requests / month", "10 API keys", "10 webhook endpoints", "50 contact groups", "Campaigns: yes", "WhatsApp statuses: yes", "Webhooks: yes", "Voice notes: yes", "Teams: up to 2 workspaces you own, 4 seats each"] },
+      { name: "Plus", price: "39 €", secondaryPrice: "", desc: "For high volume, advanced workflows, and multi-number operations.", cta: "Contact us", features: ["20 instances", "150,000 messages / statuses per month", "500,000 API requests / month", "10 API keys", "50 webhook endpoints", "Unlimited contact groups", "Campaigns: yes", "WhatsApp statuses: yes", "Webhooks: yes", "Voice notes: yes", "Teams: up to 4 workspaces you own, 8 seats each"] },
     ],
     integrationTitle: "Designed for integration from day one",
     integrationText: "A readable, secure, and performant REST API. Easy to plug into your backend, CRM, bot, or orchestrator.",
@@ -819,178 +525,6 @@ const EN: LandingMessages = {
   "message": "Your order #123 is ready.",
   "instanceId": "main"
 }`,
-  },
-  comparatif: {
-    metaTitle: "MsgFlash vs Twilio, 360dialog, Wati: the honest comparison (2026)",
-    metaDescription: "Transparent comparison of MsgFlash, Twilio, 360dialog and Wati: pricing, setup, webhooks, risks, and real-world usage.",
-    eyebrow: "Comparison",
-    title: "MsgFlash vs Twilio, 360dialog, Wati: the honest comparison (2026)",
-    subtitle: "No fluff. We show where we win, where we lose, and why some teams still choose the official API despite the price.",
-    primary: "See the risks",
-    secondary: "Start free",
-    tableHeaders: ["Criterion", "MsgFlash", "Twilio", "360dialog", "Wati"],
-    rows: [
-      { criterion: "Monthly price", msgflash: "$9 to $39", twilio: "$0 + $0.005 / msg", dialog360: "€49 / month + Meta", wati: "$49 / month + Meta" },
-      { criterion: "Cost per message (France)", msgflash: "Included in the subscription", twilio: "~$0.143 marketing + $0.005 markup", dialog360: "~$0.143 marketing + $0.005 markup", wati: "Meta pass-through + plan" },
-      { criterion: "Setup", msgflash: "2 min (QR code)", twilio: "1-2 weeks (validation)", dialog360: "1-2 weeks (validation)", wati: "< 1 hour" },
-      { criterion: "Meta validation", msgflash: "Not required", twilio: "Required", dialog360: "Required", wati: "Required" },
-      { criterion: "Green tick", msgflash: "No", twilio: "Yes", dialog360: "Yes", wati: "Yes" },
-      { criterion: "Pre-approved templates", msgflash: "No", twilio: "Yes", dialog360: "Yes", wati: "Yes" },
-      { criterion: "Warmup & anti-ban protection", msgflash: "SafetyScore + warnings", twilio: "No", dialog360: "No", wati: "No" },
-      { criterion: "Webhooks", msgflash: "Delivery, replies, errors", twilio: "Full", dialog360: "Full", wati: "Basic" },
-      { criterion: "n8n / Zapier / Make", msgflash: "Native", twilio: "Via HTTP", dialog360: "No", wati: "Limited" },
-      { criterion: "SLA / Uptime", msgflash: "99% (Pro+)", twilio: "99.99%", dialog360: "99.9%", wati: "99.9%" },
-      { criterion: "Support", msgflash: "Discord + Email", twilio: "Enterprise", dialog360: "Email", wati: "Chat" },
-      { criterion: "Ban risk", msgflash: "Medium (warmup active)", twilio: "Low", dialog360: "Low", wati: "Low" },
-      { criterion: "Best for", msgflash: "Devs, makers, automations", twilio: "Enterprise, custom devs", dialog360: "API-first devs", wati: "SMB no-code" },
-    ],
-    winTitle: "When to choose MsgFlash",
-    winPoints: [
-      "You want to ship today, not in 2 weeks",
-      "You send < 25,000 messages/month",
-      "You integrate n8n, Zapier, or your custom backend",
-      "You prefer predictable fixed pricing over Meta billing surprises",
-      "You want a system that protects you from your own mistakes",
-      "You use WhatsApp for transactional notifications",
-    ],
-    loseTitle: "When NOT to choose MsgFlash",
-    losePoints: [
-      "You need a verified green tick",
-      "You send > 150,000 messages/month",
-      "You operate in health or finance",
-      "You cannot afford to lose a number",
-      "You need pre-approved templates",
-    ],
-    faqTitle: "Comparison FAQ",
-    faqItems: [
-      { question: "Does warmup block my sends?", answer: "No. V1 is warnings only: it calculates risk, warns you, but does not systematically block sends." },
-      { question: "Can I move from MsgFlash to Twilio later?", answer: "Yes, but you will need to re-validate your number with Meta and recreate your templates. Plan for a 2-week transition." },
-      { question: "Is MsgFlash illegal?", answer: "No. We use the WhatsApp Web protocol. It is not official, but it is not illegal." },
-      { question: "Why does 360dialog cost €49 / month without a UI?", answer: "Because they pay Meta to be an official BSP. You are paying for certification, not the technology." },
-    ],
-  },
-  risques: {
-    metaTitle: "MsgFlash risks — what you need to know before you start",
-    metaDescription: "We clearly list the risks, limits, and mitigations of MsgFlash: bans, green tick, templates, and protocol dependency.",
-    eyebrow: "Risks",
-    title: "MsgFlash risks — nothing hidden",
-    subtitle: "We are not the official API. Here is what that means in practice, and how our warmup system helps reduce mistakes.",
-    primary: "Start free",
-    secondary: "See the comparison",
-    risks: [
-      {
-        title: "Risk 1: Number bans",
-        label: "🟡",
-        description:
-          "WhatsApp detects automated behavior and bans the number.",
-        mitigation: ["Use a dedicated number", "Vary content", "Respect quiet hours", "Leave delays", "Follow warmup recommendations"],
-      },
-      {
-        title: "Risk 2: No verified green tick",
-        label: "🟡",
-        description:
-          "The green tick certifies that your number belongs to your brand.",
-        mitigation: ["Use MsgFlash where verification is not critical", "Prefer the official API for public or regulated brands"],
-      },
-      {
-        title: "Risk 3: No pre-approved templates",
-        label: "🟡",
-        description:
-          "The official API requires every marketing message to be submitted to Meta for approval.",
-        mitigation: ["Avoid spam", "Stay transactional", "Control quality and frequency"],
-      },
-      {
-        title: "Risk 4: WhatsApp Web protocol dependency",
-        label: "🟡",
-        description:
-          "MsgFlash relies on the WhatsApp Web protocol. If Meta changes it, we need to adapt the stack quickly.",
-        mitigation: ["24/7 monitoring", "Beta release testing", "Transparent communication", "Technical backup"],
-      },
-    ],
-    mythTitle: "What is not a risk",
-    mythRows: [
-      { myth: "It is illegal", reality: "No. We use the WhatsApp Web protocol." },
-      { myth: "Your data is stolen", reality: "No. We do not store message content, only useful metadata." },
-      { myth: "Meta will sue you", reality: "No. Meta bans numbers; it does not sue users of third-party libraries." },
-      { myth: "Warmup blocks everything", reality: "No. V1 is warnings only." },
-    ],
-    closingTitle: "Our final recommendation",
-    closingText:
-      "Use MsgFlash if you accept ban risk as the cost of doing business, if you have a dedicated number, and if you want to iterate quickly. Do not use MsgFlash if your WhatsApp number is critical or if you need a green tick.",
-  },
-  useCasesPage: {
-    metaTitle: "MsgFlash use cases — what users are building",
-    metaDescription: "Explore concrete MsgFlash use cases: e-commerce, SaaS, agencies, health, events, and logistics.",
-    eyebrow: "Use cases",
-    title: "MsgFlash use cases — what users are building",
-    subtitle: "No theory. Concrete implementations with code, outcomes, and limits.",
-    primary: "See pricing",
-    secondary: "Read the docs",
-    cases: [
-      {
-        title: "E-commerce — Order notifications",
-        label: "Use Case 1",
-        problem: "Confirmation emails have a 20% open rate. SMS is expensive. You want to inform customers without paying a fortune.",
-        solution:
-          "Shopify webhook → n8n → MsgFlash → WhatsApp\n\n```javascript\n{\n  \"to\": \"{{$json.customer.phone}}\",\n  \"type\": \"text\",\n  \"message\": \"✅ Order #{{$json.order_number}} confirmed !\\n\\n📦 Delivery expected: {{$json.delivery_date}}\\n🚚 Tracking: {{$json.tracking_url}}\\n\\nQuestions? Reply to this message.\",\n  \"instanceId\": \"shopify-prod\"\n}\n```",
-        result: "~95% open rate, low cost, fast setup.",
-        limits: ["No native product catalog", "No in-chat payment", "Customer opt-in required"],
-      },
-      {
-        title: "SaaS — Monitoring & DevOps alerts",
-        label: "Use Case 2",
-        problem: "Your server goes down at 3 a.m. The alert email is buried in the inbox. You want to be woken up immediately.",
-        solution:
-          "Datadog/UptimeRobot → webhook → MsgFlash API → WhatsApp\n\n```bash\ncurl -X POST https://api.msgflash.com/v1/messages \\\n  -H \"Authorization: Bearer $MSGFLASH_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"to\": \"+33612345678\",\n    \"type\": \"text\",\n    \"message\": \"🚨 CRITICAL ALERT\\n\\nServer: prod-db-01\\nStatus: DOWN\\nError: Connection timeout\\nTime: 2026-05-07 03:24 UTC\\n\\nDashboard: https://status.monapp.com\",\n    \"instanceId\": \"monitoring\"\n  }'\n```",
-        result: "Response time under 2 minutes.",
-        limits: ["No native escalation", "No native PagerDuty integration"],
-      },
-      {
-        title: "Agencies — Multi-client operations",
-        label: "Use Case 3",
-        problem: "You manage multiple clients, numbers, and contexts. You need a clean operating model.",
-        solution:
-          "One account per client, or one instance per operation. Tags and groups help isolate flows without multiplying tools.",
-        result: "Less confusion, more control, faster onboarding.",
-        limits: ["Governance to define", "Access best practices to set up"],
-      },
-      {
-        title: "Health — Appointment reminders",
-        label: "Use Case 4",
-        problem: "Patients forget appointments and no-shows are costly.",
-        solution:
-          "A CRM or calendar sends a WhatsApp reminder with time, date, and a confirmation link. Teams reduce missed appointments without adding a complex channel.",
-        result: "Fewer no-shows and more confirmations.",
-        limits: ["Sensitive compliance context", "Opt-in required"],
-      },
-      {
-        title: "Events — Participant communication",
-        label: "Use Case 5",
-        problem: "Last-minute changes do not reach everyone.",
-        solution:
-          "Send session details, room changes, and practical instructions over WhatsApp, with status tracking to know who received what.",
-        result: "Better delivery of useful information.",
-        limits: ["Large volume management to plan", "Opt-in recommended"],
-      },
-      {
-        title: "Logistics — Delivery tracking",
-        label: "Use Case 6",
-        problem: "Customers keep asking where their parcel is.",
-        solution:
-          "On every status change, a WhatsApp message updates the customer with their tracking number and latest step.",
-        result: "Fewer support tickets and more visibility.",
-        limits: ["Logistics system integration required"],
-      },
-    ],
-    summaryTitle: "Use case summary",
-    summaryRows: [
-      { useCase: "E-commerce", trigger: "Purchase / cart abandonment", benefit: "More recovery" },
-      { useCase: "SaaS", trigger: "Incident / alert", benefit: "Faster reaction" },
-      { useCase: "Agencies", trigger: "Multi-client flows", benefit: "More governance" },
-      { useCase: "Health", trigger: "Appointment", benefit: "Fewer no-shows" },
-      { useCase: "Events", trigger: "Participant update", benefit: "Useful distribution" },
-      { useCase: "Logistics", trigger: "Status change", benefit: "Fewer tickets" },
-    ],
   },
   faq: {
     title: "Frequently asked questions",
@@ -1015,15 +549,11 @@ const EN: LandingMessages = {
       automations: "Automations",
       campaigns: "Campaigns",
       wordpress: "WordPress",
-      comparatif: "Comparison",
-      risques: "Risks",
-      useCases: "Use cases",
       pricing: "Pricing",
       api: "API",
       docs: "Documentation",
       webhook: "Webhook",
       status: "Status",
-      blog: "Blog",
       privacy: "Privacy",
       terms: "Terms",
       contact: "Contact",

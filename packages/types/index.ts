@@ -288,6 +288,61 @@ export interface CreateContactPayload {
   tags?: string[]
 }
 
+export type ContactSort = "createdAt_desc" | "name_asc"
+
+export interface ContactListResponse {
+  contacts: Contact[]
+  total: number
+  limit?: number
+  sort?: ContactSort
+  nextCursor: string | null
+  hasMore: boolean
+}
+
+/** Async bulk (add/remove group members, bulk delete) — ≥100 contacts */
+export interface ContactBulkJobAccepted {
+  mode: "async"
+  jobId: string
+  status: string
+  operation: string
+  requestedCount: number
+  groupId?: string
+  progress?: number
+  message?: string
+}
+
+export interface ContactBulkDeleteSyncResponse {
+  deletedCount: number
+  requested: number
+  notFound: string[]
+}
+
+export type ContactBulkDeleteResponse = ContactBulkDeleteSyncResponse | ContactBulkJobAccepted
+
+export interface ContactBulkJobSummary {
+  added?: number
+  removed?: number
+  deleted?: number
+  alreadyInGroup?: number
+  notInGroup?: number
+  notFound?: number
+}
+
+export interface ContactBulkJobProgress {
+  id: string
+  operation: string
+  status: string
+  requestedCount: number
+  processedCount?: number
+  progress: number
+  groupId?: string
+  summary?: ContactBulkJobSummary
+  error?: string | null
+  createdAt: string
+  updatedAt?: string
+  completedAt?: string | null
+}
+
 // ─── Template ────────────────────────────────────────────────────────────────
 
 export type TemplateType = "text" | "image" | "video" | "audio" | "document"
@@ -566,6 +621,9 @@ export interface ContactGroup {
 export interface ContactGroupsResponse {
   groups: ContactGroup[]
   total: number
+  limit?: number
+  nextCursor?: string | null
+  hasMore?: boolean
 }
 
 export interface ContactGroupMember {
@@ -581,6 +639,7 @@ export interface ContactGroupMembersResponse {
   nextCursor: string | null
   hasMore: boolean
   total: number
+  limit?: number
 }
 
 export interface AddMembersResponse {
@@ -595,56 +654,13 @@ export interface RemoveMembersResponse {
   notInGroup: number
 }
 
-export interface DeleteContactsResponse {
-  deletedCount: number
-  requested: number
-  notFound: string[]
-}
+export type AddMembersResult = AddMembersResponse | ContactBulkJobAccepted
+export type RemoveMembersResult = RemoveMembersResponse | ContactBulkJobAccepted
 
-export type BulkJobOperation = "add_to_group" | "remove_from_group" | "delete_contacts"
-export type BulkJobStatus = "pending" | "processing" | "done" | "failed" | "cancelled"
-
-export interface BulkJobSummary {
-  added?: number
-  removed?: number
-  deleted?: number
-  alreadyInGroup?: number
-  notInGroup?: number
-  notFound?: number
-}
-
-export interface BulkJob {
-  id: string
-  operation: BulkJobOperation
-  status: BulkJobStatus
-  requestedCount: number
-  processedCount: number
-  progress: number
-  groupId?: string | null
-  summary: BulkJobSummary
-  error: string | null
-  createdAt: string
-  updatedAt: string
-  completedAt?: string | null
-}
-
-export interface BulkJobQueuedResponse {
-  mode: "async"
-  jobId: string
-  status: BulkJobStatus
-  operation: BulkJobOperation
-  requestedCount: number
-  groupId?: string | null
-  progress: number
-  message: string
-}
-
-export interface BulkJobProgressResponse {
-  data: BulkJob
-}
-
-export interface BulkJobCancelResponse {
-  data: BulkJob
+export function isContactBulkJobAccepted(
+  r: AddMembersResponse | ContactBulkJobAccepted | RemoveMembersResponse | ContactBulkDeleteSyncResponse,
+): r is ContactBulkJobAccepted {
+  return typeof r === "object" && r !== null && "mode" in r && (r as ContactBulkJobAccepted).mode === "async"
 }
 
 export interface ContactGroupsOfContact {
@@ -659,6 +675,8 @@ export interface ContactImport {
   id: string
   status: ContactImportStatus
   totalRows: number
+  processedRows?: number
+  progress?: number
   importedCount: number
   updatedCount: number
   skippedCount: number
@@ -686,14 +704,28 @@ export interface ImportResult {
   message?: string
 }
 
-export interface ImportProgressResponse {
-  data: ContactImport
-}
-
 export interface ContactImportsResponse {
   imports: ContactImport[]
   nextCursor: string | null
   hasMore: boolean
+  total?: number
+  limit?: number
+}
+
+/** GET /api/search — server-side global search */
+export interface GlobalSearchSections {
+  contacts: Array<{ id: string; name?: string; phone?: string; tags?: string[]; [key: string]: unknown }>
+  groups: Array<{ id: string; name?: string; description?: string; contactCount?: number; [key: string]: unknown }>
+  messages: Array<{ id: string; to?: string; body?: string; status?: string; type?: string; [key: string]: unknown }>
+  campaigns: Array<{ id: string; name?: string; status?: string; [key: string]: unknown }>
+  instances: Array<{ id: string; name?: string; waNumber?: string; status?: string; [key: string]: unknown }>
+}
+
+export interface GlobalSearchResponse {
+  query: string
+  limit: number
+  sections: GlobalSearchSections
+  results: Array<Record<string, unknown>>
 }
 
 // ─── Number Lookups ──────────────────────────────────────────────────────────
@@ -979,4 +1011,159 @@ export interface AdminActionLogRow {
 export interface AdminActionPayload {
   reason: string
   note?: string
+}
+
+/** Owner summary on admin team list/detail (`GET /api/admin/teams`). */
+export interface AdminTeamOwnerSummary {
+  id?: string
+  email?: string
+  fullName?: string
+}
+
+/** Row from `GET /api/admin/teams` paginated list. */
+export interface AdminTeamListItem {
+  id: string
+  name: string
+  ownerUserId: string
+  owner?: AdminTeamOwnerSummary | string | null
+  activeMemberCount: number
+  maxSeats?: number | null
+  deletedAt?: string | null
+  createdAt: string
+}
+
+export interface AdminTeamsListResponse {
+  items: AdminTeamListItem[]
+  page: number
+  limit: number
+  total: number
+}
+
+/** Member row from `GET /api/admin/teams/:id` (shape may vary by backend). */
+export interface AdminTeamMemberRow {
+  userId?: string
+  email?: string
+  fullName?: string
+  role?: string
+  status?: string
+  joinedAt?: string | null
+  leftAt?: string | null
+  removedAt?: string | null
+  removedByUserId?: string | null
+  [key: string]: unknown
+}
+
+/** Invitation audit row (no secrets). */
+export interface AdminTeamInvitationRow {
+  id?: string
+  email?: string
+  status?: string
+  createdAt?: string | null
+  acceptedAt?: string | null
+  revokedAt?: string | null
+  expiresAt?: string | null
+  [key: string]: unknown
+}
+
+/** `GET /api/admin/teams/:id` — team metadata plus members, invites, usage. */
+export interface AdminTeamDetailResponse {
+  team?: AdminTeamListItem
+  id?: string
+  name?: string
+  ownerUserId?: string
+  owner?: AdminTeamOwnerSummary | string | null
+  activeMemberCount?: number
+  maxSeats?: number | null
+  deletedAt?: string | null
+  createdAt?: string
+  members?: AdminTeamMemberRow[]
+  invitations?: AdminTeamInvitationRow[]
+  usageThisMonth?: Record<string, number | string> | number | null
+  instances?: Array<Record<string, unknown>>
+  billingOwnerUserId?: string | null
+  [key: string]: unknown
+}
+
+/** `GET /api/admin/users/:userId/teams` — teams the user owns or belongs to. */
+export interface AdminUserTeamAssociation {
+  teamId: string
+  name?: string
+  role?: string
+  isOwner?: boolean
+  ownerUserId?: string
+  [key: string]: unknown
+}
+
+export interface AdminUserTeamsResponse {
+  items: AdminUserTeamAssociation[]
+}
+
+// ─── Portal — Teams & workspaces (console `/api/teams`) ─────────────────────
+
+export interface TeamInvitationMine {
+  invitationId: string
+  teamId: string
+  teamName: string
+  role: string
+  invitedBy: string
+  expiresAt: string
+  createdAt: string
+}
+
+export interface TeamSummary {
+  id: string
+  name: string
+  myRole?: string
+  isOwner?: boolean
+  activeMemberCount?: number
+  maxSeats?: number | null
+  createdAt?: string
+}
+
+export interface TeamMember {
+  userId: string
+  email?: string
+  fullName?: string
+  role?: string
+  status?: string
+  joinedAt?: string | null
+  leftAt?: string | null
+}
+
+export interface TeamInvitation {
+  id?: string
+  invitationId?: string
+  email?: string
+  status?: string
+  createdAt?: string | null
+  expiresAt?: string | null
+}
+
+export interface TeamApiKeyRow {
+  id: string
+  name: string
+  keyPrefix?: string
+  createdAt?: string
+  revokedAt?: string | null
+}
+
+export interface CreateTeamApiKeyResponse extends TeamApiKeyRow {
+  secret?: string
+}
+
+export interface TeamDetail extends TeamSummary {
+  members?: TeamMember[]
+  invitations?: TeamInvitation[]
+  usageThisMonth?: Record<string, number> | number | null
+  instances?: Array<Record<string, unknown>>
+}
+
+export interface CreateTeamInviteInput {
+  email: string
+  role: "admin" | "collaborator"
+}
+
+export interface CreateTeamPayload {
+  name: string
+  invites: CreateTeamInviteInput[]
 }

@@ -1,11 +1,9 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { fadeIn } from "@/lib/animations"
-import { apiClient } from "@usesendnow/api-client"
-import type { InstanceHealth } from "@usesendnow/types"
 import { formatRelativeDate } from "@/lib/format"
 import { useMessages } from "@/hooks/useMessages"
 import { useInstances } from "@/hooks/useInstances"
@@ -18,7 +16,6 @@ import EmptyState from "@/components/ui/EmptyState"
 import Select from "@/components/ui/Select"
 import { SkeletonTableRow } from "@/components/ui/Skeleton"
 import { Message01Icon } from "hugeicons-react"
-import WarmupWarningModal from "@/components/shared/WarmupWarningModal"
 
 const STATUS_VARIANT: Record<string, "neutral" | "blue" | "success" | "purple" | "error" | "orange"> = {
   queued: "neutral",
@@ -36,13 +33,9 @@ export default function MessagesPage() {
   const router = useRouter()
   const { copy } = usePortalLocale()
   const L = copy.messages.list
-  const cw = copy.common.warmupWarning
   const messageTypes = copy.messages.detail.types
   const [instanceFilter, setInstanceFilter] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
-  const [warmupWarningOpen, setWarmupWarningOpen] = useState(false)
-  const [warmupWarningHealth, setWarmupWarningHealth] = useState<InstanceHealth | null>(null)
-  const pendingRouteRef = useRef<string | null>(null)
   const { messages, loading, loadingMore, hasMore, loadMore } = useMessages({
     instanceId: instanceFilter || undefined,
     status: statusFilter || undefined,
@@ -52,51 +45,12 @@ export default function MessagesPage() {
   const statusLabel = (status: string) =>
     L.statusLabels[status as keyof typeof L.statusLabels] ?? status
 
-  const openComposer = async () => {
-    const connectedInstances = instances.filter((instance) => instance.status === "connected")
-    if (connectedInstances.length === 0) {
-      router.push("/messages/new")
-      return
-    }
-
-    try {
-      const healthResults = await Promise.allSettled(
-        connectedInstances.map(async (instance) => ({
-          instance,
-          health: await apiClient.instances.getHealth(instance.id),
-        }))
-      )
-      const bestCandidate = healthResults
-        .filter((result): result is PromiseFulfilledResult<{ instance: typeof connectedInstances[number]; health: InstanceHealth }> => result.status === "fulfilled")
-        .map((result) => result.value)
-        .sort((a, b) => b.health.safetyScore - a.health.safetyScore)[0]
-
-      if (bestCandidate && bestCandidate.health.safetyScore > 60) {
-        setWarmupWarningHealth(bestCandidate.health)
-        pendingRouteRef.current = "/messages/new"
-        setWarmupWarningOpen(true)
-        return
-      }
-    } catch {
-      // If health fetch fails, continue normally.
-    }
-
-    router.push("/messages/new")
-  }
-
-  const continueToComposer = () => {
-    setWarmupWarningOpen(false)
-    const pending = pendingRouteRef.current
-    pendingRouteRef.current = null
-    router.push(pending ?? "/messages/new")
-  }
-
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">
       <PageHeader
         title={L.title}
         description={L.description}
-        action={<Button variant="primary" onClick={() => void openComposer()}>{L.action}</Button>}
+        action={<Button variant="primary" onClick={() => router.push("/messages/new")}>{L.action}</Button>}
       />
 
       <div className="mb-6 flex flex-wrap gap-3">
@@ -146,7 +100,7 @@ export default function MessagesPage() {
             title={L.emptyTitle}
             description={statusFilter || instanceFilter ? L.emptyWithFilter : L.emptyDefault}
             ctaLabel={L.action}
-            onCta={() => void openComposer()}
+            onCta={() => router.push("/messages/new")}
           />
         ) : (
           <>
@@ -222,16 +176,6 @@ export default function MessagesPage() {
           </>
         )}
       </Card>
-
-      <WarmupWarningModal
-        open={warmupWarningOpen}
-        health={warmupWarningHealth}
-        onClose={() => {
-          setWarmupWarningOpen(false)
-          pendingRouteRef.current = null
-        }}
-        onContinue={continueToComposer}
-      />
     </motion.div>
   )
 }

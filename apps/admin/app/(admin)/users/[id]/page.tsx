@@ -6,6 +6,7 @@ import { useParams } from "next/navigation"
 import { Button, Card, DataTable, Input, Modal, PageHeader } from "@usesendnow/ui"
 import { adminApi } from "@/lib/admin-api"
 import { useAdminData } from "@/hooks/useAdminData"
+import { UserTeamsCard } from "@/components/admin/UserTeamsCard"
 
 const DETAIL_SECTIONS = ["usage", "instances", "apiKeys", "requestLogs", "messages", "campaigns", "payments", "actionsHistory"] as const
 
@@ -53,6 +54,8 @@ export default function UserDetailPage() {
           rows={[user]}
         />
       </Card>
+
+      <UserTeamsCard userId={userId} />
 
       <div className="grid gap-3 lg:grid-cols-2">
         {DETAIL_SECTIONS.map((sectionKey) => (

@@ -42,15 +42,17 @@ import type {
   ContactGroup,
   ContactGroupsResponse,
   ContactGroupMembersResponse,
-  AddMembersResponse,
-  RemoveMembersResponse,
-  DeleteContactsResponse,
-  BulkJob,
-  BulkJobQueuedResponse,
+  ContactListResponse,
+  ContactSort,
+  ContactBulkDeleteResponse,
+  ContactBulkJobProgress,
+  AddMembersResult,
+  RemoveMembersResult,
   ContactGroupsOfContact,
   ContactImport,
   ImportResult,
   ContactImportsResponse,
+  GlobalSearchResponse,
   ApiError,
   UploadedMedia,
   NumberLookup,
@@ -60,7 +62,13 @@ import type {
   ImportContactsPayload,
   NumberLookupsListResponse,
   InstanceHealth,
-  SafetyAssessment,
+  TeamInvitationMine,
+  TeamInvitation,
+  TeamSummary,
+  TeamDetail,
+  CreateTeamPayload,
+  CreateTeamApiKeyResponse,
+  TeamApiKeyRow,
 } from "@usesendnow/types"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -86,14 +94,84 @@ class ApiClientError extends Error {
   }
 }
 
+/** Same storage key as `apps/portal/lib/workspace-storage` — authenticated requests send `X-Team-Id` in team workspace when allowed. */
+const PORTAL_WORKSPACE_STORAGE_KEY = "msgflash_portal_workspace_v1"
+
+/**
+ * Routes that must stay “actor personal” — no X-Team-Id:
+ * - Auth / profile
+ * - Listing all teams you belong to (`GET /api/teams`) and creating a team (`POST /api/teams`)
+ * - Your pending invites inbox + accept (not scoped to the active workspace team)
+ */
+function shouldAttachPortalWorkspaceHeaders(path: string, isPublic: boolean): boolean {
+  if (isPublic) return false
+  const base = path.includes("?") ? path.slice(0, path.indexOf("?")) : path
+  if (base.startsWith("/api/auth/")) return false
+  if (base === "/api/teams") return false
+  if (base === "/api/teams/invitations/mine") return false
+  if (base === "/api/teams/invitations/accept") return false
+  return true
+}
+
+function portalWorkspaceHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = window.localStorage.getItem(PORTAL_WORKSPACE_STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as { mode?: string; teamId?: unknown }
+    if (parsed.mode === "team" && typeof parsed.teamId === "string" && parsed.teamId.length > 0) {
+      return { "X-Team-Id": parsed.teamId }
+    }
+  } catch {
+    /* ignore */
+  }
+  return {}
+}
+
+/** Backend may nest payload as `{ data: T }` or `{ data: { data: T } }`. */
+function unwrapResponsePayload<T>(raw: unknown): T {
+  let cur: unknown = raw
+  for (let depth = 0; depth < 4; depth++) {
+    if (cur !== null && typeof cur === "object" && !Array.isArray(cur) && "data" in cur) {
+      const next = (cur as { data: unknown }).data
+      if (next === undefined) break
+      cur = next
+    } else {
+      break
+    }
+  }
+  return cur as T
+}
+
+function asContactGroup(payload: unknown): ContactGroup {
+  if (payload !== null && typeof payload === "object" && "group" in payload) {
+    const g = (payload as { group: ContactGroup }).group
+    if (g && typeof g === "object" && "id" in g) return g
+  }
+  return payload as ContactGroup
+}
+
+function asContactImportPayload(payload: unknown): ContactImport {
+  if (payload !== null && typeof payload === "object" && "import" in payload) {
+    const imp = (payload as { import: ContactImport }).import
+    if (imp && typeof imp === "object" && "id" in imp) return imp
+  }
+  return payload as ContactImport
+}
+
 async function request<T>(
   method: string,
   path: string,
   body?: unknown,
-  isPublic = false
+  isPublic = false,
+  extraHeaders?: Record<string, string>,
 ): Promise<T> {
+  const workspaceHeaders =
+    shouldAttachPortalWorkspaceHeaders(path, isPublic) ? portalWorkspaceHeaders() : {}
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...workspaceHeaders,
+    ...(extraHeaders ?? {}),
   }
 
   if (!isPublic) {
@@ -109,7 +187,7 @@ async function request<T>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
 
-  const json = (await res.json()) as { data?: T; error?: ApiError }
+  const json = (await res.json()) as { data?: unknown; error?: ApiError }
 
   if (!res.ok || json.error) {
     const err = json.error ?? { code: "UNKNOWN_ERROR", message: "An error occurred" }
@@ -125,7 +203,7 @@ async function request<T>(
     throw new ApiClientError(err.code, err.message, res.status)
   }
 
-  return json.data as T
+  return unwrapResponsePayload<T>(json.data)
 }
 
 async function uploadRequest<T>(
@@ -154,10 +232,10 @@ async function uploadRequest<T>(
       }
 
       xhr.onload = () => {
-        let json: { data?: T; error?: ApiError } = {}
+        let json: { data?: unknown; error?: ApiError } = {}
 
         try {
-          json = JSON.parse(xhr.responseText) as { data?: T; error?: ApiError }
+          json = JSON.parse(xhr.responseText) as { data?: unknown; error?: ApiError }
         } catch {
           reject(new ApiClientError("UNKNOWN_ERROR", "An error occurred", xhr.status))
           return
@@ -172,7 +250,7 @@ async function uploadRequest<T>(
         if (onProgress) {
           onProgress(100)
         }
-        resolve(json.data as T)
+        resolve(unwrapResponsePayload<T>(json.data))
       }
 
       xhr.onerror = () => {
@@ -189,18 +267,18 @@ async function uploadRequest<T>(
     body: formData,
   })
 
-  const json = (await res.json()) as { data?: T; error?: ApiError }
+  const json = (await res.json()) as { data?: unknown; error?: ApiError }
 
   if (!res.ok || json.error) {
     const err = json.error ?? { code: "UNKNOWN_ERROR", message: "An error occurred" }
     throw new ApiClientError(err.code, err.message, res.status)
   }
 
-  return json.data as T
+  return unwrapResponsePayload<T>(json.data)
 }
 
-const get = <T>(path: string, isPublic = false) =>
-  request<T>("GET", path, undefined, isPublic)
+const get = <T>(path: string, isPublic = false, extraHeaders?: Record<string, string>) =>
+  request<T>("GET", path, undefined, isPublic, extraHeaders)
 const post = <T>(path: string, body?: unknown, isPublic = false) =>
   request<T>("POST", path, body, isPublic)
 const put = <T>(path: string, body?: unknown) =>
@@ -321,7 +399,7 @@ const campaigns = {
   pause: (id: string) => patch<{ success: boolean }>(`/api/campaigns/${id}/pause`),
 
   resume: (id: string) =>
-    patch<{ success: boolean; safety?: SafetyAssessment }>(`/api/campaigns/${id}/resume`),
+    patch<{ success: boolean }>(`/api/campaigns/${id}/resume`),
 
   cancel: (id: string) => patch<Campaign>(`/api/campaigns/${id}/cancel`),
 
@@ -331,7 +409,20 @@ const campaigns = {
 // ─── Contacts ─────────────────────────────────────────────────────────────────
 
 const contacts = {
-  list: () => get<Contact[]>("/api/contacts"),
+  list: (params?: {
+    limit?: number
+    cursor?: string
+    search?: string
+    sort?: ContactSort
+  }): Promise<ContactListResponse> => {
+    const q = new URLSearchParams()
+    if (params?.limit) q.set("limit", String(params.limit))
+    if (params?.cursor) q.set("cursor", params.cursor)
+    if (params?.search) q.set("search", params.search)
+    if (params?.sort) q.set("sort", params.sort)
+    const qs = q.toString()
+    return get<ContactListResponse>(qs ? `/api/contacts?${qs}` : "/api/contacts")
+  },
 
   create: (payload: CreateContactPayload) =>
     post<Contact>("/api/contacts", payload),
@@ -342,7 +433,16 @@ const contacts = {
   delete: (id: string) => del<{ deleted: boolean }>(`/api/contacts/${id}`),
 
   deleteMany: (contactIds: string[]) =>
-    request<DeleteContactsResponse | BulkJobQueuedResponse>("DELETE", "/api/contacts/bulk", { contactIds }),
+    request<ContactBulkDeleteResponse>("DELETE", "/api/contacts/bulk", { contactIds }),
+
+  bulkJobs: {
+    get: (jobId: string) => get<ContactBulkJobProgress>(`/api/contacts/bulk-jobs/${jobId}`),
+
+    getProgress: (jobId: string) =>
+      get<ContactBulkJobProgress>(`/api/contacts/bulk-jobs/${jobId}/progress`),
+
+    cancel: (jobId: string) => post<{ success?: boolean }>(`/api/contacts/bulk-jobs/${jobId}/cancel`),
+  },
 
   getGroups: (id: string) => get<ContactGroupsOfContact>(`/api/contacts/${id}/groups`),
 
@@ -371,12 +471,12 @@ const contacts = {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     })
-    const json = await res.json() as { data?: ImportResult; error?: ApiError }
+    const json = (await res.json()) as { data?: unknown; error?: ApiError }
     if (!res.ok || json.error) {
       const err = json.error ?? { code: "UNKNOWN_ERROR", message: "An error occurred" }
       throw new ApiClientError(err.code, err.message, res.status)
     }
-    return json.data as ImportResult
+    return unwrapResponsePayload<ImportResult>(json.data)
   },
 
   listImports: (limit = 10, cursor?: string): Promise<ContactImportsResponse> => {
@@ -386,31 +486,33 @@ const contacts = {
     return get<ContactImportsResponse>(`/api/contacts/imports?${q.toString()}`)
   },
 
-  getImport: (importId: string) =>
-    get<ContactImport>(`/api/contacts/imports/${importId}`),
-
-  getBulkJob: (jobId: string) =>
-    get<BulkJob>(`/api/contacts/bulk-jobs/${jobId}`),
-
-  getBulkJobProgress: (jobId: string) =>
-    get<BulkJob>(`/api/contacts/bulk-jobs/${jobId}/progress`),
-
-  cancelBulkJob: (jobId: string) =>
-    post<BulkJob>(`/api/contacts/bulk-jobs/${jobId}/cancel`),
+  getImport: (importId: string, opts?: { includeReport?: boolean }): Promise<ContactImport> => {
+    const q = new URLSearchParams()
+    if (opts?.includeReport) q.set("includeReport", "true")
+    const suffix = q.toString() ? `?${q}` : ""
+    return get<unknown>(`/api/contacts/imports/${importId}${suffix}`).then(asContactImportPayload)
+  },
 }
 
 // ─── Contact Groups ────────────────────────────────────────────────────────────
 
 const contactGroups = {
-  list: () => get<ContactGroupsResponse>("/api/contacts/groups"),
+  list: (params?: { limit?: number; cursor?: string; search?: string }): Promise<ContactGroupsResponse> => {
+    const q = new URLSearchParams()
+    if (params?.limit) q.set("limit", String(params.limit))
+    if (params?.cursor) q.set("cursor", params.cursor)
+    if (params?.search) q.set("search", params.search)
+    const qs = q.toString()
+    return get<ContactGroupsResponse>(qs ? `/api/contacts/groups?${qs}` : "/api/contacts/groups")
+  },
 
   get: (groupId: string) => get<ContactGroup>(`/api/contacts/groups/${groupId}`),
 
   create: (payload: { name: string; description?: string; color?: string }) =>
-    post<ContactGroup>("/api/contacts/groups", payload),
+    post<unknown>("/api/contacts/groups", payload).then(asContactGroup),
 
   update: (groupId: string, payload: { name?: string; description?: string; color?: string }) =>
-    put<ContactGroup>(`/api/contacts/groups/${groupId}`, payload),
+    put<unknown>(`/api/contacts/groups/${groupId}`, payload).then(asContactGroup),
 
   delete: (groupId: string) => del<{ deleted: boolean }>(`/api/contacts/groups/${groupId}`),
 
@@ -423,10 +525,21 @@ const contactGroups = {
   },
 
   addMembers: (groupId: string, contactIds: string[]) =>
-    post<AddMembersResponse | BulkJobQueuedResponse>(`/api/contacts/groups/${groupId}/members`, { contactIds }),
+    post<AddMembersResult>(`/api/contacts/groups/${groupId}/members`, { contactIds }),
 
   removeMembers: (groupId: string, contactIds: string[]) =>
-    request<RemoveMembersResponse | BulkJobQueuedResponse>("DELETE", `/api/contacts/groups/${groupId}/members`, { contactIds }),
+    request<RemoveMembersResult>("DELETE", `/api/contacts/groups/${groupId}/members`, { contactIds }),
+}
+
+// ─── Global search ─────────────────────────────────────────────────────────────
+
+const search = {
+  query: (q: string, limit = 5) => {
+    const params = new URLSearchParams()
+    params.set("q", q)
+    params.set("limit", String(limit))
+    return get<GlobalSearchResponse>(`/api/search?${params.toString()}`)
+  },
 }
 
 // ─── Templates ────────────────────────────────────────────────────────────────
@@ -494,8 +607,7 @@ const webhooks = {
 // ─── Billing ──────────────────────────────────────────────────────────────────
 
 const billing = {
-  getSubscription: () =>
-    get<SubscriptionResponse>("/api/billing/subscription"),
+  getSubscription: () => get<SubscriptionResponse>("/api/billing/subscription"),
 
   getMe: () => get<SubscriptionResponse>("/api/subscriptions/me"),
 
@@ -542,6 +654,141 @@ const numberLookups = {
     post<ImportContactsResponse>(`/api/number-lookups/${id}/import-contacts`, payload),
 }
 
+function normalizeTeamListPayload(payload: TeamSummary[] | { items?: TeamSummary[]; teams?: TeamSummary[] }): TeamSummary[] {
+  if (Array.isArray(payload)) return payload
+  return payload.items ?? payload.teams ?? []
+}
+
+function parseTruthyOwnerFlag(value: unknown): boolean {
+  if (value === true || value === 1) return true
+  if (typeof value === "string") {
+    const s = value.toLowerCase().trim()
+    return s === "true" || s === "1" || s === "yes"
+  }
+  return false
+}
+
+function pickFirstRoleString(...vals: unknown[]): string | undefined {
+  for (const v of vals) {
+    if (typeof v === "string" && v.trim()) return v.trim()
+  }
+  return undefined
+}
+
+function normalizeTeamDetailPayload(payload: TeamDetail & { team?: TeamDetail }): TeamDetail {
+  const env = payload as unknown as Record<string, unknown>
+  if (payload.team && typeof payload.team === "object") {
+    const inner = payload.team
+    const innerRec = inner as unknown as Record<string, unknown>
+    const myRoleMerged = pickFirstRoleString(
+      inner.myRole,
+      payload.myRole,
+      innerRec.role,
+      env.role,
+      env.membershipRole,
+      env.currentUserRole,
+    )
+    const isOwnerMerged =
+      inner.isOwner === true ||
+      payload.isOwner === true ||
+      parseTruthyOwnerFlag(innerRec.isOwner) ||
+      parseTruthyOwnerFlag(env.isOwner)
+
+    return {
+      ...inner,
+      members: payload.members ?? inner.members,
+      invitations: payload.invitations ?? inner.invitations,
+      usageThisMonth: payload.usageThisMonth ?? inner.usageThisMonth,
+      instances: payload.instances ?? inner.instances,
+      myRole: myRoleMerged ?? inner.myRole ?? payload.myRole,
+      isOwner: isOwnerMerged ? true : (inner.isOwner ?? payload.isOwner),
+      maxSeats: inner.maxSeats ?? payload.maxSeats,
+      activeMemberCount: inner.activeMemberCount ?? payload.activeMemberCount,
+      createdAt: inner.createdAt ?? payload.createdAt,
+    }
+  }
+  const flat = payload as unknown as Record<string, unknown>
+  const myRoleFlat = pickFirstRoleString(
+    payload.myRole,
+    flat.role,
+    flat.membershipRole,
+    flat.currentUserRole,
+  )
+  const isOwnerFlat = payload.isOwner === true || parseTruthyOwnerFlag(flat.isOwner)
+  return {
+    ...payload,
+    myRole: myRoleFlat ?? payload.myRole,
+    isOwner: isOwnerFlat ? true : payload.isOwner,
+  }
+}
+
+// ─── Teams (workspaces) ──────────────────────────────────────────────────────
+
+function normalizeInvitationMineList(
+  payload: TeamInvitationMine[] | { items?: TeamInvitationMine[]; invitations?: TeamInvitationMine[] },
+): TeamInvitationMine[] {
+  if (Array.isArray(payload)) return payload
+  return payload.items ?? payload.invitations ?? []
+}
+
+function normalizeApiKeyList(payload: TeamApiKeyRow[] | { items?: TeamApiKeyRow[] }): TeamApiKeyRow[] {
+  if (Array.isArray(payload)) return payload
+  return payload.items ?? []
+}
+
+const teams = {
+  listMineInvitations: () =>
+    get<TeamInvitationMine[] | { items?: TeamInvitationMine[] }>("/api/teams/invitations/mine").then(
+      normalizeInvitationMineList,
+    ),
+
+  acceptInvitation: (body: { invitationId?: string; token?: string }) =>
+    post<{ success?: boolean }>("/api/teams/invitations/accept", body),
+
+  list: () =>
+    get<TeamSummary[] | { items?: TeamSummary[]; teams?: TeamSummary[] }>("/api/teams").then(normalizeTeamListPayload),
+
+  create: (payload: CreateTeamPayload) => post<TeamDetail>("/api/teams", payload),
+
+  get: (teamId: string) =>
+    get<TeamDetail & { team?: TeamDetail }>(`/api/teams/${teamId}`).then(normalizeTeamDetailPayload),
+
+  update: (teamId: string, body: { name: string }) => patch<TeamDetail>(`/api/teams/${teamId}`, body),
+
+  delete: (teamId: string) => del<{ deleted?: boolean }>(`/api/teams/${teamId}`),
+
+  createInvitation: (teamId: string, body: { email: string; role: "admin" | "collaborator" }) =>
+    post<TeamInvitation>(`/api/teams/${teamId}/invitations`, body),
+
+  resendInvitation: (teamId: string, invitationId: string) =>
+    post<{ success?: boolean }>(`/api/teams/${teamId}/invitations/${invitationId}/resend`),
+
+  revokeInvitation: (teamId: string, invitationId: string) =>
+    del<{ success?: boolean }>(`/api/teams/${teamId}/invitations/${invitationId}`),
+
+  removeMember: (teamId: string, userId: string) =>
+    del<{ success?: boolean }>(`/api/teams/${teamId}/members/${userId}`),
+
+  leave: (teamId: string) => post<{ success?: boolean }>(`/api/teams/${teamId}/members/leave`),
+
+  assignInstance: (teamId: string, body: { instanceId: string; memberUserId: string }) =>
+    post<{ success?: boolean }>(`/api/teams/${teamId}/instance-assignments`, body),
+
+  unassignInstance: (teamId: string, instanceId: string, memberUserId: string) => {
+    const q = new URLSearchParams({ instanceId, memberUserId }).toString()
+    return del<{ success?: boolean }>(`/api/teams/${teamId}/instance-assignments?${q}`)
+  },
+
+  listApiKeys: (teamId: string) =>
+    get<TeamApiKeyRow[] | { items?: TeamApiKeyRow[] }>(`/api/teams/${teamId}/api-keys`).then(normalizeApiKeyList),
+
+  createApiKey: (teamId: string, body: { name: string }) =>
+    post<CreateTeamApiKeyResponse>(`/api/teams/${teamId}/api-keys`, body),
+
+  revokeApiKey: (teamId: string, keyId: string) =>
+    del<{ success?: boolean }>(`/api/teams/${teamId}/api-keys/${keyId}`),
+}
+
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 export const apiClient = {
@@ -551,6 +798,7 @@ export const apiClient = {
   campaigns,
   contacts,
   contactGroups,
+  search,
   templates,
   media,
   apiKeys,
@@ -558,6 +806,7 @@ export const apiClient = {
   billing,
   statuses,
   numberLookups,
+  teams,
 }
 
 export { ApiClientError }

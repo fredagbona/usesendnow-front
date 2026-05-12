@@ -24,13 +24,10 @@ import Textarea from "@/components/ui/Textarea"
 import CustomVariableBuilder from "@/components/ui/CustomVariableBuilder"
 import PlanGateBanner from "@/components/ui/PlanGateBanner"
 import CampaignSafetyHints from "@/components/campaigns/CampaignSafetyHints"
-import WarmupWarningModal from "@/components/shared/WarmupWarningModal"
 import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 import { VoiceRecorderPanel } from "@/components/messages/VoiceRecorderPanel"
 import { ACCEPTED_LABELS, ACCEPTED_MIME, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, formatBytes } from "@/lib/messageComposer"
-import { isTemporaryMediaBlockedForRecurring, isTemporaryMediaExpiredForScheduledAt } from "@/lib/mediaValidation"
 import { Megaphone01Icon, ArrowLeft01Icon, InformationCircleIcon } from "hugeicons-react"
-import type { InstanceHealth } from "@usesendnow/types"
 
 export default function NewCampaignPage() {
   const router = useRouter()
@@ -48,19 +45,16 @@ export default function NewCampaignPage() {
   const [planBlocked, setPlanBlocked] = useState(false)
   const [creating, setCreating] = useState(false)
   const [customVariables, setCustomVariables] = useState<CustomVariableEntry[]>([])
-  const [contentMode, setContentMode] = useState<"template" | "direct">("direct")
+  const [contentMode, setContentMode] = useState<"template" | "direct">("template")
   const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [mediaError, setMediaError] = useState<string | null>(null)
   const [mediaNotice, setMediaNotice] = useState<string | null>(null)
   const [safetyHints, setSafetyHints] = useState<SafetyAssessment | null>(null)
-  const [warmupWarningOpen, setWarmupWarningOpen] = useState(false)
-  const [warmupWarningHealth, setWarmupWarningHealth] = useState<InstanceHealth | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadedMediaRef = useRef<UploadedMedia | null>(null)
   const shouldCleanupMediaRef = useRef(false)
-  const pendingCreateRef = useRef<(() => Promise<void>) | null>(null)
 
   // Reset safety hints on unmount (navigation away from page)
   useEffect(() => {
@@ -119,41 +113,12 @@ export default function NewCampaignPage() {
       : form.directType === "text"
         ? form.directBody.trim().length > 0
         : Boolean(form.directMediaUrl)
-  const temporaryMediaExpired = isTemporaryMediaExpiredForScheduledAt(uploadedMedia, form.schedule)
-  const temporaryMediaRecurring = isTemporaryMediaBlockedForRecurring(uploadedMedia, form.repeat)
   const canCreateCampaign =
     form.name.trim().length > 0
     && Boolean(form.instanceId)
+    && Boolean(form.schedule)
     && recipientsValid
     && contentValid
-    && !temporaryMediaExpired
-    && !temporaryMediaRecurring
-
-  const createDisabledReason = useMemo(() => {
-    if (!form.name.trim()) return null
-    if (!form.instanceId) return np.missingInstance
-    if (!recipientsValid) return np.missingRecipients
-    if (contentMode === "template" && !form.templateId) return np.missingTemplate
-    if (contentMode === "direct") {
-      if (form.directType === "text" && !form.directBody.trim()) return np.missingDirectMessage
-      if (form.directType !== "text" && !form.directMediaUrl) return np.missingDirectMessage
-    }
-    if (temporaryMediaExpired) return np.temporaryMediaExpired
-    if (temporaryMediaRecurring) return np.temporaryMediaRecurring
-    return null
-  }, [
-    contentMode,
-    form.directBody,
-    form.directMediaUrl,
-    form.directType,
-    form.instanceId,
-    form.name,
-    form.templateId,
-    np,
-    recipientsValid,
-    temporaryMediaExpired,
-    temporaryMediaRecurring,
-  ])
 
   const toggleRecipientValue = (field: "tags" | "explicit", value: string) => {
     setForm((prev) => ({
@@ -162,15 +127,6 @@ export default function NewCampaignPage() {
         ? prev[field].filter((item) => item !== value)
         : [...prev[field], value],
     }))
-  }
-
-  const confirmWarmupWarning = async () => {
-    setWarmupWarningOpen(false)
-    const pending = pendingCreateRef.current
-    pendingCreateRef.current = null
-    if (pending) {
-      await pending()
-    }
   }
 
   useEffect(() => {
@@ -282,7 +238,6 @@ export default function NewCampaignPage() {
 
   const handleTemplateChange = (templateId: string) => {
     const template = templates.find((t) => t.id === templateId) ?? null
-    setContentMode("template")
     setForm((prev) => ({ ...prev, templateId }))
     setCustomVariables(
       template
@@ -305,106 +260,76 @@ export default function NewCampaignPage() {
     e.preventDefault()
     if (!canCreateCampaign) return
 
-    if (temporaryMediaRecurring) {
-      setMediaError(copy.campaigns.newPage.mediaRecurringBlocked)
-      return
-    }
+    setCreating(true)
+    try {
+      const schedule = form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString()
+      const repeat: RepeatType = form.repeat !== "none" ? form.repeat : "none"
 
-    if (temporaryMediaExpired) {
-      setMediaError(copy.campaigns.newPage.mediaScheduleBlocked)
-      return
-    }
+      let payload: CreateCampaignPayload
 
-    const runCreate = async () => {
-      setCreating(true)
-      try {
-        const repeat: RepeatType = form.repeat !== "none" ? form.repeat : "none"
-
-        let payload: CreateCampaignPayload
-
-        if (contentMode === "template") {
-          payload = {
-            name: form.name.trim(),
-            instanceId: form.instanceId,
-            templateId: form.templateId,
-            schedule: form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString(),
-            repeat,
-            variables: entriesToVariableMap(customVariables),
-            recipients: {
-              type: form.recipientType,
-              value: form.recipientType === "explicit" ? form.explicit : form.recipientType === "tags" ? form.tags : undefined,
-              groupId: form.recipientType === "group" ? form.groupId : undefined,
-            },
-          }
-        } else {
-          payload = {
-            name: form.name.trim(),
-            instanceId: form.instanceId,
-            type: form.directType,
-            body: form.directType === "text" ? form.directBody.trim() : undefined,
-            mediaUrl: isDirectMediaType ? form.directMediaUrl : undefined,
-            schedule: form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString(),
-            repeat,
-            recipients: {
-              type: form.recipientType,
-              value: form.recipientType === "explicit" ? form.explicit : form.recipientType === "tags" ? form.tags : undefined,
-              groupId: form.recipientType === "group" ? form.groupId : undefined,
-            },
-          }
+      if (contentMode === "template") {
+        payload = {
+          name: form.name.trim(),
+          instanceId: form.instanceId,
+          templateId: form.templateId,
+          schedule: form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString(),
+          repeat,
+          variables: entriesToVariableMap(customVariables),
+          recipients: {
+            type: form.recipientType,
+            value: form.recipientType === "explicit" ? form.explicit : form.recipientType === "tags" ? form.tags : undefined,
+            groupId: form.recipientType === "group" ? form.groupId : undefined,
+          },
         }
-
-        const campaign = await apiClient.campaigns.create(payload)
-        prependCampaign(campaign)
-
-        const safetyData = (campaign as any)?.safety
-        if (safetyData && safetyData.decision === "warn") {
-          setSafetyHints(safetyData)
-          toast.success(copy.campaigns.createdWarmup)
-        } else {
-          toast.success(copy.campaigns.created)
+      } else {
+        payload = {
+          name: form.name.trim(),
+          instanceId: form.instanceId,
+          type: form.directType,
+          body: form.directType === "text" ? form.directBody.trim() : undefined,
+          mediaUrl: isDirectMediaType ? form.directMediaUrl : undefined,
+          schedule: form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString(),
+          repeat,
+          recipients: {
+            type: form.recipientType,
+            value: form.recipientType === "explicit" ? form.explicit : form.recipientType === "tags" ? form.tags : undefined,
+            groupId: form.recipientType === "group" ? form.groupId : undefined,
+          },
         }
+      }
 
-        shouldCleanupMediaRef.current = false
-        router.push("/campaigns")
-        router.refresh()
-      } catch (err) {
-        if (err instanceof ApiClientError) {
-          if (err.code === "CAMPAIGNS_NOT_AVAILABLE_ON_PLAN") {
-            toast.error(np.errorCampaignsNotOnPlan)
-          } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
-            toast.error(np.errorQuotaExceeded)
-          } else if (err.code === "NOT_FOUND") {
-            toast.error(np.errorNotFound)
-          } else if (err.code === "MEDIA_URL_EXPIRED" || err.code === "MEDIA_URL_EXPIRES_BEFORE_EXECUTION") {
-            setMediaError(copy.campaigns.newPage.mediaScheduleBlocked)
-          } else if (err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_RECURRING" || err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_CRON") {
-            setMediaError(copy.campaigns.newPage.mediaRecurringBlocked)
-          } else if (err.code === "MEDIA_TEMPORARY_NOT_ALLOWED_FOR_TEMPLATE") {
-            setMediaError(copy.campaigns.newPage.mediaTemplateBlocked)
-          } else if (err.code === "VALIDATION_ERROR") {
-            toast.error(np.errorValidation)
-          } else {
-            toast.error(np.errorGeneric)
-          }
+      const campaign = await apiClient.campaigns.create(payload)
+      prependCampaign(campaign)
+
+      // Check for safety warnings
+      const safetyData = (campaign as any)?.safety
+      if (safetyData && safetyData.decision === "warn") {
+        setSafetyHints(safetyData)
+        toast.success(copy.campaigns.createdWarmup)
+      } else {
+        toast.success(copy.campaigns.created)
+      }
+
+      router.push("/campaigns")
+      router.refresh()
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        if (err.code === "CAMPAIGNS_NOT_AVAILABLE_ON_PLAN") {
+          toast.error(np.errorCampaignsNotOnPlan)
+        } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
+          toast.error(np.errorQuotaExceeded)
+        } else if (err.code === "NOT_FOUND") {
+          toast.error(np.errorNotFound)
+        } else if (err.code === "VALIDATION_ERROR") {
+          toast.error(np.errorValidation)
         } else {
           toast.error(np.errorGeneric)
         }
-      } finally {
-        setCreating(false)
+      } else {
+        toast.error(np.errorGeneric)
       }
-    }
-
-    try {
-      const health = await apiClient.instances.getHealth(form.instanceId)
-      if (health.safetyScore > 60) {
-        setWarmupWarningHealth(health)
-        pendingCreateRef.current = runCreate
-        setWarmupWarningOpen(true)
-        return
-      }
-      await runCreate()
-    } catch {
-      await runCreate()
+    } finally {
+      setCreating(false)
     }
   }
 
@@ -460,6 +385,7 @@ export default function NewCampaignPage() {
               type="datetime-local"
               value={form.schedule}
               onChange={(e) => setForm((prev) => ({ ...prev, schedule: e.target.value }))}
+              required
             />
 
             <Select label={np.repeatLabel} value={form.repeat} onChange={(e) => setForm((prev) => ({ ...prev, repeat: e.target.value as "none" | "daily" | "weekly" }))}>
@@ -647,14 +573,6 @@ export default function NewCampaignPage() {
                     />
                   )}
 
-                  {uploadedMedia && temporaryMediaExpired && (
-                    <p className="text-xs text-error">{copy.campaigns.newPage.mediaScheduleBlocked}</p>
-                  )}
-
-                  {uploadedMedia && temporaryMediaRecurring && (
-                    <p className="text-xs text-error">{copy.campaigns.newPage.mediaRecurringBlocked}</p>
-                  )}
-
                   {form.directType !== "voice_note" && (
                     <Textarea
                       label={np.captionLabel}
@@ -678,10 +596,10 @@ export default function NewCampaignPage() {
 
         <div className="flex items-center justify-between">
           <div className="text-sm text-text-secondary">
-            {!canCreateCampaign && createDisabledReason && (
+            {!canCreateCampaign && (
               <span className="flex items-center gap-1.5">
                 <InformationCircleIcon className="w-4 h-4" />
-                {createDisabledReason}
+                {np.fillRequiredHint}
               </span>
             )}
           </div>
@@ -691,18 +609,6 @@ export default function NewCampaignPage() {
           </div>
         </div>
       </form>
-
-      <WarmupWarningModal
-        open={warmupWarningOpen}
-        health={warmupWarningHealth}
-        onClose={() => {
-          setWarmupWarningOpen(false)
-          pendingCreateRef.current = null
-        }}
-        onContinue={async () => {
-          await confirmWarmupWarning()
-        }}
-      />
     </motion.div>
   )
 }

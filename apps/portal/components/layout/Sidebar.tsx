@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation"
 import {
   Home01Icon,
   SmartPhone01Icon,
-  BarChartIcon,
   Message01Icon,
   Megaphone01Icon,
   UserGroupIcon,
@@ -45,7 +44,6 @@ export default function Sidebar({
   const NAV_ITEMS = [
     { label: copy.nav.dashboard, href: "/dashboard", icon: Home01Icon },
     { label: copy.nav.instances, href: "/instances", icon: SmartPhone01Icon },
-    { label: copy.nav.health, href: "/health", icon: BarChartIcon },
     { label: copy.nav.messages, href: "/messages", icon: Message01Icon },
     { label: copy.nav.campaigns, href: "/campaigns", icon: Megaphone01Icon },
     { label: copy.nav.contacts, href: "/contacts", icon: UserGroupIcon },
@@ -247,7 +245,6 @@ export function MobileDrawer({
   const NAV_ITEMS = [
     { label: copy.nav.dashboard, href: "/dashboard", icon: Home01Icon },
     { label: copy.nav.instances, href: "/instances", icon: SmartPhone01Icon },
-    { label: copy.nav.health, href: "/health", icon: BarChartIcon },
     { label: copy.nav.messages, href: "/messages", icon: Message01Icon },
     { label: copy.nav.campaigns, href: "/campaigns", icon: Megaphone01Icon },
     { label: copy.nav.contacts, href: "/contacts", icon: UserGroupIcon },

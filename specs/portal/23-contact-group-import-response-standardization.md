@@ -1,525 +1,706 @@
-
-# SPEC — Portal Integration / Contacts, Groups and Imports Response Standardization
+# SPEC — Portal / Contact Groups, CSV Import & Export
 App: portal
-Audience: frontend
+Routes: /contacts (mis à jour), /contacts/groups, /contacts/groups/:groupId
 Auth: required
 Status: ready
 
 ---
 
 ## Purpose
-Document de migration frontend pour la normalisation des reponses API contacts, groupes et imports.
-
-Objectif:
-- expliquer le changement de contrat
-- lister tous les endpoints impactes
-- montrer le mapping avant/apres
-- permettre au frontend de corriger rapidement ses fetchers, hooks et pages
-
-Le nouveau standard est:
-
-```json
-{
-  "data": ...
-}
-```
-
-Toutes les reponses console JWT de cette surface doivent maintenant etre lues via `response.data`.
+Extension du module contacts :
+- Organiser les contacts dans des **groupes** (many-to-many)
+- **Importer** des contacts depuis un fichier CSV (sync ≤500 lignes, async >500)
+- **Exporter** tous les contacts ou un groupe en CSV
+- Cibler un **groupe** comme destinataires d'une campagne
 
 ---
 
-## Pourquoi ce changement
+## Backend endpoints utilisés
 
-Le backend etait incoherent:
-- une partie des endpoints contacts respectait deja le standard `{ data: ... }`
-- les endpoints groupes et imports renvoyaient parfois directement l'objet racine
-- certains endpoints groupes renvoyaient `{ group: ... }`
-
-Cela forçait le frontend a gerer plusieurs formes de payload pour une meme feature.
-
-Le backend a ete corrige pour standardiser ces reponses.
-
----
-
-## Endpoints impactes
-
-| Method | Endpoint | Ancien format | Nouveau format |
+| Method | Endpoint | Auth | Usage |
 |---|---|---|---|
-| GET | /api/contacts/groups | `{ groups, total }` | `{ data: { groups, total } }` |
-| POST | /api/contacts/groups | `{ group }` | `{ data: group }` |
-| GET | /api/contacts/groups/{groupId} | `{ group }` | `{ data: group }` |
-| PUT | /api/contacts/groups/{groupId} | `{ group }` | `{ data: group }` |
-| DELETE | /api/contacts/groups/{groupId} | `{ deleted: true }` | `{ data: { deleted: true } }` |
-| POST | /api/contacts/groups/{groupId}/members | objet direct | `{ data: objet }` |
-| DELETE | /api/contacts/groups/{groupId}/members | objet direct | `{ data: objet }` |
-| GET | /api/contacts/groups/{groupId}/members | objet direct | `{ data: objet }` |
-| GET | /api/contacts/{id}/groups | `{ groups: [...] }` | `{ data: { groups: [...] } }` |
-| POST | /api/contacts/import | objet direct | `{ data: objet }` |
-| GET | /api/contacts/imports | objet direct | `{ data: objet }` |
-| GET | /api/contacts/imports/{importId} | objet direct | `{ data: objet }` |
-
-Non impactes:
-- `GET /api/contacts`
-- `POST /api/contacts`
-- `GET /api/contacts/{id}`
-- `PUT /api/contacts/{id}`
-- `DELETE /api/contacts/{id}`
-
-Ces endpoints utilisaient deja `{ data: ... }`.
+| GET | /api/contacts/groups | JWT | Lister les groupes |
+| POST | /api/contacts/groups | JWT | Créer un groupe |
+| GET | /api/contacts/groups/:groupId | JWT | Détail d'un groupe |
+| PUT | /api/contacts/groups/:groupId | JWT | Modifier un groupe |
+| DELETE | /api/contacts/groups/:groupId | JWT | Supprimer un groupe |
+| POST | /api/contacts/groups/:groupId/members | JWT | Ajouter des contacts |
+| DELETE | /api/contacts/groups/:groupId/members | JWT | Retirer des contacts |
+| GET | /api/contacts/groups/:groupId/members | JWT | Lister les contacts d'un groupe |
+| GET | /api/contacts/bulk-jobs | JWT | Lister les jobs bulk contacts |
+| GET | /api/contacts/bulk-jobs/:jobId | JWT | Lire un job bulk contact |
+| GET | /api/contacts/bulk-jobs/:jobId/progress | JWT | Suivre la progression d'un job bulk contact |
+| POST | /api/contacts/bulk-jobs/:jobId/cancel | JWT | Annuler un job bulk contact |
+| GET | /api/contacts/:id/groups | JWT | Groupes d'un contact |
+| POST | /api/contacts/import | JWT + multipart | Importer un CSV |
+| GET | /api/contacts/imports | JWT | Lister les imports |
+| GET | /api/contacts/imports/:importId | JWT | Statut d'un import async |
+| GET | /api/contacts/export?groupId=... | JWT | Exporter en CSV |
+| GET | /api/search?q=... | JWT | Recherche globale serveur |
+| GET | /api/billing/subscription | JWT | Vérifier limite maxContactGroups |
 
 ---
 
-## Regle frontend a appliquer
+## 1. Mise à jour de la page /contacts
 
-### Regle simple
-Pour toute la surface `/api/contacts/*`, le frontend doit maintenant supposer:
+### Nouvelles zones dans le header
+- Bouton **"Import CSV"** (ouvre ImportModal)
+- Bouton **"Export CSV"** (déclenche le téléchargement direct)
+- Bouton **"Groups"** ou onglet → navigue vers `/contacts/groups`
+- Badge plan sur le bouton "Groups" si limite atteinte
 
-```ts
-const payload = response.data.data
-```
+### Indicateur de limite de groupes
+Récupérer via `GET /api/billing/subscription` → `limits.maxContactGroups`.
+Afficher sous le bouton "Groups" : "3 / 10 groups used" (si plan le permet).
+Si `maxContactGroups === -1` : pas de badge, illimité.
 
-Il ne faut plus lire:
-- `response.data.group`
-- `response.data.groups`
-- `response.data.total`
-- `response.data.mode`
-
-Il faut lire l'objet metier dans `response.data.data`.
+### Colonne "Groups" dans ContactTable
+Ajouter une colonne **Groups** : badges des groupes du contact (2 max + "+N").
+Cliquer sur un badge → `/contacts/groups/:groupId`.
 
 ---
 
-## Mapping avant / apres
+## 2. Page /contacts/groups
 
-### 1. List groups
+### Layout
+Layout standard portal.
 
-#### Endpoint
-`GET /api/contacts/groups`
+### Zones principales
+- **Header** : titre "Contact Groups" + bouton "New Group" + compteur "X / Y groups"
+  - Si limite atteinte : bouton désactivé + tooltip "Upgrade to create more groups"
+- **PlanLimitBanner** : si `count >= maxContactGroups` et `maxContactGroups !== -1`
+- **GroupGrid** ou **GroupList** : liste des groupes (cards ou table)
+- **GroupModal** : modale création/édition
+- **DeleteGroupModal** : confirmation de suppression
 
-#### Avant
-```json
-{
-  "groups": [
-    {
-      "id": "grp_1",
-      "name": "VIP",
-      "description": "Best customers",
-      "color": "#F59E0B",
-      "membersCount": 12,
-      "createdAt": "2026-04-01T10:00:00.000Z",
-      "updatedAt": "2026-04-01T10:00:00.000Z"
-    }
-  ],
-  "total": 1
-}
-```
+### GroupCard / GroupRow
+Infos affichées :
+- Pastille de couleur (`color`)
+- Nom du groupe
+- Description (tronquée à 60 chars)
+- Compteur de contacts : "47 contacts"
+- Date de création (relative)
+- Actions : "View" → `/contacts/groups/:groupId` | "Edit" | "Delete"
 
-#### Maintenant
-```json
-{
-  "data": {
-    "groups": [
-      {
-        "id": "grp_1",
-        "name": "VIP",
-        "description": "Best customers",
-        "color": "#F59E0B",
-        "membersCount": 12,
-        "createdAt": "2026-04-01T10:00:00.000Z",
-        "updatedAt": "2026-04-01T10:00:00.000Z"
-      }
-    ],
-    "total": 1
-  }
-}
-```
-
-#### Frontend
+### GroupModal
+Props :
 ```ts
-const result = response.data.data
-const groups = result.groups
-const total = result.total
-```
-
-### 2. Create group
-
-#### Endpoint
-`POST /api/contacts/groups`
-
-#### Avant
-```json
 {
-  "group": {
-    "id": "grp_1",
-    "name": "VIP",
-    "description": "Best customers",
-    "color": "#F59E0B"
-  }
+  mode: "create" | "edit"
+  group?: ContactGroup
+  onSuccess: (group: ContactGroup) => void
+  onClose: () => void
 }
 ```
 
-#### Maintenant
-```json
-{
-  "data": {
-    "id": "grp_1",
-    "name": "VIP",
-    "description": "Best customers",
-    "color": "#F59E0B"
-  }
-}
+Champs :
+- `name` — string, required, min 1, max 100
+- `description` — textarea, optional, max 255
+- `color` — color picker (hex, regex `/^#[0-9A-Fa-f]{6}$/`), optional
+  - Proposer 6 couleurs prédéfinies : `#25D366`, `#F59E0B`, `#EF4444`, `#3B82F6`, `#8B5CF6`, `#EC4899`
+
+Bouton : "Create Group" (create) ou "Save Changes" (edit).
+
+### DeleteGroupModal
+Props : `groupName: string; contactCount: number; onConfirm: () => void; onCancel: () => void`
+Message : "Delete **{name}**? The {contactCount} contacts inside will NOT be deleted — only the group."
+
+---
+
+## 3. Page /contacts/groups/:groupId
+
+### Layout
+Layout standard portal avec breadcrumb : Contacts > Groups > {name}
+
+### Zones principales
+- **GroupHeader** : nom, description, pastille couleur, compteur, bouton "Edit" + "Delete"
+- **SearchBar** : recherche dans les membres (param `search`)
+- **MembersTable** : liste paginée des contacts membres
+- **AddMembersModal** : ajouter des contacts existants au groupe
+- **RemoveMemberModal** : confirmation de retrait
+
+### MembersTable
+Colonnes :
+- **Name** : nom du contact
+- **Phone** : numéro
+- **Tags** : badges (3 max)
+- **Added** : `addedAt` relatif
+- **Actions** : bouton "Remove from group"
+
+Pagination cursor-based :
+- Bouton "Load more" en bas (ou infinite scroll)
+- Paramètres : `?limit=50&cursor=<id>&search=<string>`
+
+### AddMembersModal
+- Champ de recherche des contacts de l'utilisateur (appel `GET /api/contacts` + filtre local)
+- Liste avec checkboxes
+- Bouton "Add X contacts"
+- Appel : `POST /api/contacts/groups/:groupId/members` → `{ contactIds: [...] }`
+- Si sélection `< 100` contacts :
+  - réponse sync immédiate
+  - toast "X contacts added" + refresh liste membres
+- Si sélection `>= 100` contacts :
+  - réponse `202`
+  - afficher un état "Adding contacts in background..."
+  - lancer un polling sur `/api/contacts/bulk-jobs/:jobId/progress`
+  - fermer la modale possible sans perdre le suivi
+
+### Bulk selection rule
+À partir de `100` contacts sélectionnés, le backend bascule automatiquement en **mode async** pour :
+- ajout au groupe
+- retrait du groupe
+- suppression bulk de contacts
+
+Sous ce seuil, le comportement reste **sync** pour garder une UX immédiate.
+
+---
+
+## 4. Import CSV — ImportModal
+
+### Déclencheur
+Bouton "Import CSV" depuis `/contacts`.
+
+### Composant ImportModal
+Props : `onSuccess: (result: ImportResult) => void; onClose: () => void`
+
+#### Étapes (wizard 3 étapes)
+
+**Étape 1 — Upload**
+- Zone drag & drop ou bouton "Choose file"
+- Formats acceptés : `.csv` uniquement
+- Taille max : 5MB (indiquer dans l'UI)
+- Lien "Download sample CSV" → génère ou télécharge un fichier exemple
+- Champ optionnel : "Assign to group" → select parmi les groupes existants
+- Bouton "Next" → valide la présence d'un fichier
+
+**Étape 2 — Preview**
+- Afficher les 3 premières lignes du CSV côté client pour confirmer le format
+- Indiquer le nombre total de lignes détectées
+- Avertissement si >500 lignes : "⚠ Large file: import will run in the background"
+- Bouton "Import" → déclenche l'appel API
+
+**Étape 3 — Résultat**
+- **Sync (≤500 lignes)** : affiche le rapport immédiatement
+  ```
+  ✓ 38 contacts imported
+  ↻ 5 contacts updated
+  ✗ 2 invalid (see details)
+  ```
+  - Si `errors.length > 0` : section dépliable "Show errors" avec tableau ligne/numéro/raison
+  - Bouton "Done"
+
+- **Async (>500 lignes)** : affiche un état intermédiaire
+  ```
+  ⏳ Import in progress — importId: imp_abc123
+  You can close this window. Check status in the Imports tab.
+  ```
+  - Bouton "Close"
+
+### Appel API
+```
+POST /api/contacts/import
+Content-Type: multipart/form-data
+
+file: <csv file>
+groupId: <optional>
 ```
 
-#### Frontend
-```ts
-const group = response.data.data
-```
-
-### 3. Get group
-
-#### Endpoint
-`GET /api/contacts/groups/{groupId}`
-
-#### Avant
+**Réponse sync (mode: "sync")** :
 ```json
 {
-  "group": {
-    "id": "grp_1",
-    "name": "VIP",
-    "description": "Best customers",
-    "color": "#F59E0B"
-  }
-}
-```
-
-#### Maintenant
-```json
-{
-  "data": {
-    "id": "grp_1",
-    "name": "VIP",
-    "description": "Best customers",
-    "color": "#F59E0B"
-  }
-}
-```
-
-### 4. Update group
-
-#### Endpoint
-`PUT /api/contacts/groups/{groupId}`
-
-#### Avant
-```json
-{
-  "group": {
-    "id": "grp_1",
-    "name": "VIP Updated",
-    "description": "Best customers",
-    "color": "#F59E0B"
-  }
-}
-```
-
-#### Maintenant
-```json
-{
-  "data": {
-    "id": "grp_1",
-    "name": "VIP Updated",
-    "description": "Best customers",
-    "color": "#F59E0B"
-  }
-}
-```
-
-### 5. Delete group
-
-#### Endpoint
-`DELETE /api/contacts/groups/{groupId}`
-
-#### Avant
-```json
-{
-  "deleted": true
-}
-```
-
-#### Maintenant
-```json
-{
-  "data": {
-    "deleted": true
-  }
-}
-```
-
-### 6. Add / remove / list members
-
-#### Endpoints
-- `POST /api/contacts/groups/{groupId}/members`
-- `DELETE /api/contacts/groups/{groupId}/members`
-- `GET /api/contacts/groups/{groupId}/members`
-
-#### Regle frontend
-Les reponses metier restent identiques dans leur contenu, mais elles sont maintenant enveloppees dans `data`.
-
-Exemple:
-
-#### Avant
-```json
-{
-  "members": [
-    {
-      "id": "cnt_1",
-      "name": "Awa",
-      "phone": "+22912345678"
-    }
-  ],
-  "nextCursor": null,
-  "hasMore": false
-}
-```
-
-#### Maintenant
-```json
-{
-  "data": {
-    "members": [
-      {
-        "id": "cnt_1",
-        "name": "Awa",
-        "phone": "+22912345678"
-      }
-    ],
-    "nextCursor": null,
-    "hasMore": false
-  }
-}
-```
-
-### 7. Get groups for a contact
-
-#### Endpoint
-`GET /api/contacts/{id}/groups`
-
-#### Avant
-```json
-{
-  "groups": [
-    {
-      "id": "grp_1",
-      "name": "VIP",
-      "color": "#F59E0B"
-    }
+  "mode": "sync",
+  "totalRows": 45,
+  "importedCount": 38,
+  "updatedCount": 5,
+  "skippedCount": 0,
+  "invalidCount": 2,
+  "errors": [
+    { "line": 4,  "phone": "0601000000", "reason": "Phone must be in international format (+XXX...)" },
+    { "line": 17, "phone": "+999000000", "reason": "Invalid phone number: +999000000" }
   ]
 }
 ```
 
-#### Maintenant
-```json
-{
-  "data": {
-    "groups": [
-      {
-        "id": "grp_1",
-        "name": "VIP",
-        "color": "#F59E0B"
-      }
-    ]
-  }
-}
-```
-
-### 8. CSV import
-
-#### Endpoint
-`POST /api/contacts/import`
-
-#### Avant
+**Réponse async (mode: "async")** :
 ```json
 {
   "mode": "async",
-  "importId": "imp_123",
-  "status": "pending"
+  "importId": "imp_abc123",
+  "status": "pending",
+  "totalRows": 2500,
+  "message": "Import in progress. Check status via GET /api/contacts/imports/imp_abc123"
 }
 ```
 
-#### Maintenant
-```json
-{
-  "data": {
-    "mode": "async",
-    "importId": "imp_123",
-    "status": "pending"
-  }
-}
+### Format CSV attendu (à documenter dans l'UI)
+```
+phone,name,tags
++22901000000,Kouassi Amara,vip|benin
++22501000000,Fatou Diallo,client
++33612345678,Jean Dupont,
+```
+- `phone` : obligatoire, format international E.164 (+XXX...)
+- `name` : optionnel
+- `tags` : optionnel, séparés par `|`
+
+---
+
+## 5. Onglet / Section "Imports" dans /contacts
+
+### Déclencheur
+Onglet "Imports" dans la page `/contacts` ou lien depuis le résultat async de l'ImportModal.
+
+### Layout
+Table paginée des imports passés.
+
+### ImportsTable
+Colonnes :
+- **Date** : `createdAt` relatif
+- **Status** : badge coloré
+  - `pending` : gray "Pending"
+  - `processing` : blue (avec pulse) "Processing…"
+  - `done` : green "Done"
+  - `failed` : red "Failed"
+- **Rows** : `totalRows`
+- **Progress** : `progress` si `status = pending|processing`
+- **Imported** : `importedCount`
+- **Updated** : `updatedCount`
+- **Invalid** : `invalidCount`
+- **Actions** : bouton "Details" (si `status: done` et `report` disponible)
+
+### Polling pour les imports en cours
+- Si un import a `status: pending` ou `processing` → poll `GET /api/contacts/imports/:importId` toutes les 3 secondes
+- Arrêter le poll quand `status: done` ou `failed`
+- Toast "Import completed — 2341 contacts imported" quand `done`
+
+### Appel liste
+```
+GET /api/contacts/imports?limit=10&cursor=<id>
 ```
 
-#### Frontend
-```ts
-const result = response.data.data
-const mode = result.mode
-const importId = result.importId
-```
-
-### 9. List imports
-
-#### Endpoint
-`GET /api/contacts/imports`
-
-#### Avant
+**Réponse** :
 ```json
 {
-  "imports": [...],
+  "imports": [
+    {
+      "id": "imp_abc123",
+      "status": "done",
+      "totalRows": 2500,
+      "processedRows": 2500,
+      "progress": 100,
+      "importedCount": 2341,
+      "updatedCount": 150,
+      "skippedCount": 0,
+      "invalidCount": 9,
+      "groupId": "grp_abc",
+      "createdAt": "2026-03-27T10:00:00.000Z",
+      "completedAt": "2026-03-27T10:02:13.000Z"
+    }
+  ],
   "nextCursor": null,
   "hasMore": false
 }
 ```
 
-#### Maintenant
+### Détail d'un import
+```http
+GET /api/contacts/imports/:importId
+```
+
+Réponse légère par défaut:
 ```json
 {
-  "data": {
-    "imports": [...],
-    "nextCursor": null,
-    "hasMore": false
+  "import": {
+    "id": "imp_abc123",
+    "status": "processing",
+    "totalRows": 2500,
+    "processedRows": 1400,
+    "progress": 56,
+    "importedCount": 1320,
+    "updatedCount": 55,
+    "skippedCount": 10,
+    "invalidCount": 15,
+    "groupId": "grp_abc",
+    "createdAt": "2026-03-27T10:00:00.000Z",
+    "completedAt": null
   }
 }
 ```
 
-### 10. Get import detail
+Rapport détaillé uniquement si demandé:
+```http
+GET /api/contacts/imports/:importId?includeReport=true
+```
 
-#### Endpoint
-`GET /api/contacts/imports/{importId}`
+---
 
-#### Avant
+## 6. Bulk jobs contacts
+
+### Cas couverts
+- ajout massif de contacts à un groupe
+- retrait massif de contacts d'un groupe
+- suppression massive de contacts
+
+### Règle de bascule
+- `< 100` contacts : réponse sync habituelle
+- `>= 100` contacts : réponse async `202`
+
+### Réponse async type
 ```json
 {
-  "id": "imp_123",
-  "status": "done",
-  "summary": {
-    "created": 120,
-    "updated": 5,
-    "failed": 2
+  "data": {
+    "mode": "async",
+    "jobId": "job_abc123",
+    "status": "pending",
+    "operation": "add_to_group",
+    "requestedCount": 4900,
+    "groupId": "grp_123",
+    "progress": 0,
+    "message": "Bulk operation queued. Check status via GET /api/contacts/bulk-jobs/job_abc123"
   }
 }
 ```
 
-#### Maintenant
+### GET /api/contacts/bulk-jobs/{jobId}/progress
 ```json
 {
   "data": {
-    "id": "imp_123",
-    "status": "done",
+    "id": "job_abc123",
+    "operation": "add_to_group",
+    "status": "processing",
+    "requestedCount": 4900,
+    "processedCount": 2300,
+    "progress": 47,
+    "groupId": "grp_123",
     "summary": {
-      "created": 120,
-      "updated": 5,
-      "failed": 2
-    }
+      "added": 2190,
+      "alreadyInGroup": 80,
+      "notFound": 30
+    },
+    "error": null,
+    "createdAt": "2026-05-08T10:00:00.000Z",
+    "updatedAt": "2026-05-08T10:00:08.000Z",
+    "completedAt": null
+  }
+}
+```
+
+### Statuts possibles
+- `pending`
+- `processing`
+- `done`
+- `failed`
+- `cancelled`
+
+### Polling front
+- démarrer le polling dès une réponse `202`
+- poller `GET /api/contacts/bulk-jobs/:jobId/progress` toutes les `2s`
+- arrêter sur `done`, `failed` ou `cancelled`
+- au succès :
+  - rafraîchir la liste des membres ou des contacts
+  - afficher un toast final basé sur `summary`
+
+### Annulation
+```http
+POST /api/contacts/bulk-jobs/:jobId/cancel
+```
+
+Réponse :
+```json
+{
+  "data": {
+    "id": "job_abc123",
+    "status": "cancelled",
+    "progress": 52,
+    "processedCount": 2550,
+    "summary": {
+      "added": 2431,
+      "alreadyInGroup": 91,
+      "notFound": 28
+    },
+    "completedAt": "2026-05-08T10:00:09.000Z"
   }
 }
 ```
 
 ---
 
-## Pages frontend impactees
+## 6. Export CSV
 
-### `/contacts`
-Verifier:
-- liste principale des contacts non impactee
-- panneau/group picker d'un contact impacte si `GET /api/contacts/{id}/groups` est utilise
+### Déclencheur
+- Bouton "Export CSV" dans la page `/contacts` → export de tous les contacts
+- Bouton "Export" dans la page `/contacts/groups/:groupId` → export du groupe uniquement
 
-### `/contacts/groups`
-Impactee directement:
-- liste des groupes
-- creation
-- edition
-- suppression
+### Comportement
+- Appel : `GET /api/contacts/export` (tous) ou `GET /api/contacts/export?groupId=grp_abc`
+- Le navigateur déclenche le téléchargement automatiquement (`Content-Disposition: attachment`)
+- Nom du fichier : `contacts-2026-03-27.csv`
+- Toast "Export started…" pendant le chargement + disparaît à la fin
+- Pas de modale intermédiaire
 
-### `/contacts/groups/[groupId]`
-Impactee directement:
-- chargement detail groupe
-- chargement membres
-- ajout/suppression membres
-
-### `/contacts/imports`
-Impactee directement:
-- listing des imports
-- detail d'import
-- submit CSV import
-
----
-
-## Fix frontend recommande
-
-### Adapter les clients API
-Si vous avez des helpers comme:
+### Implémentation frontend
 ```ts
-api.get("/contacts/groups")
-api.post("/contacts/groups", payload)
-api.get(`/contacts/groups/${id}`)
-```
+const handleExport = async (groupId?: string) => {
+  const url = groupId
+    ? `/api/contacts/export?groupId=${groupId}`
+    : `/api/contacts/export`
 
-Corriger les parseurs:
+  // Déclencher le téléchargement avec le token JWT
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  const blob = await response.blob()
+  const filename = response.headers.get('Content-Disposition')
+    ?.split('filename=')[1] ?? 'contacts.csv'
 
-#### Avant
-```ts
-const groups = response.data.groups
-const total = response.data.total
-const group = response.data.group
-```
-
-#### Maintenant
-```ts
-const result = response.data.data
-const groups = result.groups
-const total = result.total
-const group = result
-```
-
-### Pattern generique recommande
-```ts
-type ApiEnvelope<T> = {
-  data: T
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
 }
 ```
 
-Puis:
-```ts
-const response = await api.get<ApiEnvelope<GroupListResponse>>("/contacts/groups")
-return response.data.data
+### Format CSV exporté
+```
+phone,name,tags,groups,createdAt
++22901000000,Kouassi Amara,vip|benin,Clients VIP|Bénin,2026-03-01T10:00:00Z
++22501000000,Fatou Diallo,client,Clients VIP,2026-02-15T08:00:00Z
 ```
 
 ---
 
-## Checklist frontend
+## 7. Mise à jour de NewCampaignModal — stratégie "group"
 
-- Corriger tous les hooks/groups pour lire `response.data.data`
-- Corriger tous les hooks/imports pour lire `response.data.data`
-- Corriger `getContactGroups(contactId)` pour lire `response.data.data.groups`
-- Corriger `createGroup` / `updateGroup` / `getGroup` pour lire directement `response.data.data`
-- Corriger les optimistic updates si elles dependaient de `response.data.group`
-- Corriger les types TypeScript locaux si le root payload etait encore `group` ou `groups`
+Dans la section **Recipients** de la modale de création de campagne, ajouter l'option :
 
----
-
-## Ce qui ne change pas
-
-- Les routes elles-memes ne changent pas
-- Les statuts HTTP ne changent pas
-- Les payloads de requete ne changent pas
-- Les erreurs `error.code`, `error.message`, `error.meta` ne changent pas
-- L'endpoint webhook n'est pas concerne par cette normalisation
-
----
-
-## Recommendation finale
-
-Pour le frontend, considere maintenant que toute la surface console `/api/*` suit ce contrat:
-
-```ts
-type ApiSuccess<T> = { data: T }
-type ApiFailure = { error: { code: string; message: string; meta?: unknown } }
+```
+Type : radio  ○ All  ○ Tags  ○ Group  ○ Explicit
 ```
 
-Si un ancien hook lit encore une forme non enveloppee, il faut le migrer.
+Quand `group` est sélectionné :
+- Afficher un `<select>` alimenté par `GET /api/contacts/groups`
+- Payload envoyé :
+  ```json
+  { "type": "group", "groupId": "grp_abc123" }
+  ```
+- Si aucun groupe n'existe : afficher "No groups yet. Create a group first." avec lien
+
+---
+
+## 8. États à gérer
+
+### Page /contacts/groups
+- `loading.initial` : skeleton de cards
+- `empty` : "No groups yet. Create your first group to organize your contacts."
+- `plan_limit` : PlanLimitBanner + bouton "New Group" désactivé
+- `creating` : loading dans GroupModal
+- `updating` : loading dans GroupModal
+- `deleting` : loading sur le bouton Delete
+- `error.MAX_CONTACT_GROUPS_REACHED` (403) : "You've reached your plan's group limit. Upgrade to create more."
+- `error.CONFLICT` (409) : "A group with this name already exists."
+- `error.NOT_FOUND` (404) : toast "Group not found."
+
+### Page /contacts/groups/:groupId
+- `loading.initial` : skeleton
+- `empty.members` : "No contacts in this group yet. Add some."
+- `adding` : loading dans AddMembersModal
+- `removing` : loading sur le bouton "Remove"
+- `error.NOT_FOUND` : redirect `/contacts/groups` + toast "Group not found"
+
+### ImportModal
+- `uploading` : spinner + "Importing…"
+- `error.CSV_INVALID_FORMAT` (400) : "Invalid CSV format. Check the file encoding and column headers."
+- `error.CSV_TOO_LARGE` (400) : "File too large. Max 5MB and 10,000 rows."
+- `error.NOT_FOUND` (groupId invalide) : "The selected group was not found."
+
+---
+
+## 9. Codes d'erreur backend à gérer
+
+| Code | HTTP | Message affiché |
+|---|---|---|
+| `MAX_CONTACT_GROUPS_REACHED` | 403 | "Group limit reached. Upgrade your plan." |
+| `NOT_FOUND` (group) | 404 | "Group not found." |
+| `CONFLICT` (nom groupe) | 409 | "A group named '{name}' already exists." |
+| `CSV_INVALID_FORMAT` | 400 | "Invalid CSV file. Check headers and encoding." |
+| `CSV_TOO_LARGE` | 400 | "File exceeds 5MB or 10,000 rows." |
+| `IMPORT_NOT_FOUND` | 404 | "Import not found." |
+
+---
+
+## 10. Types TypeScript de référence
+
+```ts
+interface ContactGroup {
+  id: string
+  name: string
+  description?: string
+  color?: string
+  contactCount: number
+  createdAt: string
+  updatedAt?: string
+}
+
+interface ContactGroupMember {
+  id: string
+  name: string
+  phone: string
+  tags: string[]
+  addedAt: string
+}
+
+interface ContactImport {
+  id: string
+  status: 'pending' | 'processing' | 'done' | 'failed'
+  totalRows: number
+  importedCount: number
+  updatedCount: number
+  skippedCount: number
+  invalidCount: number
+  groupId?: string
+  createdAt: string
+  completedAt?: string
+  report?: {
+    errors: Array<{ line: number; phone: string; reason: string }>
+  }
+}
+
+// Extension du type Campaign recipients
+type CampaignRecipients =
+  | { type: 'all' }
+  | { type: 'tags'; value: string[] }
+  | { type: 'group'; groupId: string }
+  | { type: 'explicit'; value: string[] }
+```
+
+---
+
+## 11. Payloads de référence complets
+
+### GET /api/contacts/groups
+```json
+{
+  "groups": [
+    {
+      "id": "grp_abc123",
+      "name": "Clients VIP",
+      "description": "Clients avec plus de 3 commandes",
+      "color": "#25D366",
+      "contactCount": 47,
+      "createdAt": "2026-03-27T10:00:00Z"
+    }
+  ],
+  "total": 3,
+  "limit": 50,
+  "nextCursor": "MjAyNi0wMy0yN1QxMDowMDowMC4wMDBafGdycF9hYmMxMjM=",
+  "hasMore": false
+}
+```
+
+Query supportée:
+- `limit`
+- `cursor`
+- `search`
+
+### POST /api/contacts/groups
+```json
+// Request
+{ "name": "Clients VIP", "description": "...", "color": "#25D366" }
+
+// Response 201
+{ "group": { "id": "grp_new", "name": "Clients VIP", "contactCount": 0, "createdAt": "..." } }
+
+// Error 403
+{ "error": { "code": "MAX_CONTACT_GROUPS_REACHED", "message": "Your plan allows a maximum of 2 contact groups. Upgrade to create more." } }
+
+// Error 409
+{ "error": { "code": "CONFLICT", "message": "A group named \"Clients VIP\" already exists" } }
+```
+
+### POST /api/contacts/groups/:groupId/members
+```json
+// Request
+{ "contactIds": ["cnt_abc", "cnt_def", "cnt_xyz"] }
+
+// Response sync (< 100 contacts)
+{ "added": 3, "alreadyInGroup": 1, "notFound": 0, "total": 4 }
+
+// Response async (>= 100 contacts)
+{
+  "mode": "async",
+  "jobId": "job_abc123",
+  "status": "pending",
+  "operation": "add_to_group",
+  "requestedCount": 4900,
+  "groupId": "grp_abc"
+}
+```
+
+### DELETE /api/contacts/groups/:groupId/members
+```json
+// Request
+{ "contactIds": ["cnt_abc"] }
+
+// Response sync (< 100 contacts)
+{ "removed": 1, "notInGroup": 0 }
+
+// Response async (>= 100 contacts)
+{
+  "mode": "async",
+  "jobId": "job_def456",
+  "status": "pending",
+  "operation": "remove_from_group",
+  "requestedCount": 280,
+  "groupId": "grp_abc"
+}
+```
+
+### GET /api/contacts/groups/:groupId/members
+```json
+{
+  "contacts": [
+    { "id": "cnt_abc", "name": "Kouassi Amara", "phone": "+22901000000", "tags": ["vip"], "addedAt": "2026-03-27T10:00:00Z" }
+  ],
+  "nextCursor": "MjAyNi0wMy0yN1QxMDowMDowMC4wMDBafGNudF94eXo=",
+  "hasMore": true,
+  "limit": 50,
+  "total": 47
+}
+```
+
+Query supportée:
+- `limit`
+- `cursor`
+- `search`
+
+### GET /api/contacts/:id/groups
+```json
+{
+  "groups": [
+    { "id": "grp_abc", "name": "Clients VIP", "color": "#25D366" },
+    { "id": "grp_def", "name": "Bénin", "color": "#F59E0B" }
+  ]
+}
+```
+
+---
+
+## 12. Navigation
+
+| Route | Composant principal |
+|---|---|
+| `/contacts` | Mise à jour : +boutons Import/Export/Groups, +colonne groups dans table |
+| `/contacts/groups` | Liste des groupes |
+| `/contacts/groups/:groupId` | Détail du groupe + membres |
+| `/contacts` (onglet Imports) | Liste des imports + polling statut |
+
+---
+
+## 13. Out of scope
+- Fusion de contacts en double
+- Import depuis Google Contacts / vCard
+- Groupes imbriqués / hiérarchie
+- Permissions différentes par groupe
+- Statistiques d'engagement par groupe
+- Suppression des groupes en excès lors d'un downgrade (les groupes existants restent — seule la création de nouveaux est bloquée)

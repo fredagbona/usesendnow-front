@@ -97,6 +97,9 @@ export function Pricing({}: PricingProps) {
             <p className="font-(family-name:--font-poppins) text-sm text-[#9D9D9D]">
               {messages.pricing.subtitle}
             </p>
+            <p className="mx-auto mt-3 max-w-3xl font-(family-name:--font-poppins) text-xs leading-6 text-[#8A8A8A]">
+              {messages.pricing.teamsFootnote}
+            </p>
           </div>
 
           <motion.div

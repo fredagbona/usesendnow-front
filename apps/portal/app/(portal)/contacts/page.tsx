@@ -5,15 +5,17 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
-import { useContacts } from "@/hooks/useContacts"
+import { useContactsList } from "@/hooks/useContactsList"
 import { useContactGroups } from "@/hooks/useContactGroups"
 import { useContactImports } from "@/hooks/useContactImports"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { renderWithStrongCount, renderWithStrongName } from "@/lib/render-copy-placeholders"
 import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
+import { useContactBulkJobPoll } from "@/hooks/useContactBulkJobPoll"
 import { formatDate } from "@/lib/format"
-import type { Contact, ContactGroup, SubscriptionResponse, ImportResult } from "@usesendnow/types"
+import type { Contact, ContactGroup, SubscriptionResponse, ImportResult, ContactSort } from "@usesendnow/types"
+import { isContactBulkJobAccepted } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
 import Badge from "@/components/ui/Badge"
@@ -23,7 +25,6 @@ import Input from "@/components/ui/Input"
 import Alert from "@/components/ui/Alert"
 import EmptyState from "@/components/ui/EmptyState"
 import { SkeletonTableRow } from "@/components/ui/Skeleton"
-import { isBulkJobQueuedResponse, trackBulkJob } from "@/lib/bulkJobs"
 import {
   UserGroupIcon,
   Upload01Icon,
@@ -165,7 +166,6 @@ function ImportModal({
   const [result, setResult] = useState<ImportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showErrors, setShowErrors] = useState(false)
-  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null)
 
   const parsePreview = useCallback((f: File) => {
     const reader = new FileReader()
@@ -203,18 +203,8 @@ function ImportModal({
     if (!file) return
     setImporting(true)
     setError(null)
-    setImportProgress(null)
     try {
-      const rowsToProcess = Math.max(0, totalRows)
-      const shouldShowProgress = rowsToProcess >= 100
-      if (shouldShowProgress) {
-        setImportProgress({ current: 0, total: rowsToProcess })
-      }
-
       const res = await apiClient.contacts.import(file, groupId || undefined)
-      if (shouldShowProgress) {
-        setImportProgress({ current: rowsToProcess, total: rowsToProcess })
-      }
       setResult(res)
       setStep("result")
       onSuccess(res)
@@ -232,7 +222,6 @@ function ImportModal({
       }
     } finally {
       setImporting(false)
-      setImportProgress(null)
     }
   }
 
@@ -322,23 +311,6 @@ function ImportModal({
           </p>
 
           {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
-
-          {importProgress && (
-            <Alert
-              variant="info"
-              title={copy.contacts.importWizard.importProgressTitle
-                .replace("{{current}}", String(importProgress.current))
-                .replace("{{total}}", String(importProgress.total))}
-              message={copy.contacts.importWizard.importProgressMessage}
-            >
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#3B82F6]/15">
-                <div
-                  className="h-full rounded-full bg-[#3B82F6] transition-all"
-                  style={{ width: `${Math.min(100, Math.round((importProgress.current / importProgress.total) * 100))}%` }}
-                />
-              </div>
-            </Alert>
-          )}
 
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="secondary" onClick={onClose}>{copy.contacts.cancel}</Button>
@@ -508,9 +480,6 @@ export default function ContactsPage() {
     const labels = copy.contacts.importStatus
     return labels[status as keyof typeof labels] ?? status
   }
-  const { contacts, loading, addContact, updateContact, removeContact } = useContacts()
-  const { groups } = useContactGroups()
-  const { imports, loading: importsLoading } = useContactImports()
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null)
   const [tab, setTab] = useState<Tab>("contacts")
   const [search, setSearch] = useState(() => {
@@ -520,18 +489,56 @@ export default function ContactsPage() {
     }
     return ""
   })
+  const [sort, setSort] = useState<ContactSort>("createdAt_desc")
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Contact | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [importPickerGroups, setImportPickerGroups] = useState<ContactGroup[]>([])
   const [exporting, setExporting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
-  const [bulkGroupId, setBulkGroupId] = useState("")
-  const [bulkAddingToGroup, setBulkAddingToGroup] = useState(false)
-  const [bulkAddProgress, setBulkAddProgress] = useState<{ current: number; total: number } | null>(null)
-  const [bulkDeleteProgress, setBulkDeleteProgress] = useState<{ current: number; total: number } | null>(null)
+
+  const {
+    contacts,
+    loading,
+    loadingMore,
+    hasMore,
+    total,
+    loadMore,
+    addContact,
+    updateContact,
+    removeContact,
+    refetch: refetchContacts,
+  } = useContactsList(search, sort)
+  const { groups, total: groupTotal } = useContactGroups()
+  const { imports, loading: importsLoading } = useContactImports()
+  const bulkJobPoll = useContactBulkJobPoll()
+
+  useEffect(() => {
+    if (!importOpen) return
+    let cancelled = false
+    async function loadAll() {
+      const acc: ContactGroup[] = []
+      let cursor: string | undefined
+      try {
+        for (;;) {
+          const r = await apiClient.contactGroups.list({ limit: 100, cursor })
+          acc.push(...r.groups)
+          if (!r.hasMore || !r.nextCursor) break
+          cursor = r.nextCursor ?? undefined
+        }
+        if (!cancelled) setImportPickerGroups(acc)
+      } catch {
+        if (!cancelled) setImportPickerGroups([])
+      }
+    }
+    void loadAll()
+    return () => {
+      cancelled = true
+    }
+  }, [importOpen])
 
   // Contact groups lookup map
   const [contactGroups, setContactGroups] = useState<Map<string, Array<{ id: string; name: string; color?: string }>>>(new Map())
@@ -541,36 +548,25 @@ export default function ContactsPage() {
   }, [])
 
   // Load groups for each contact (batch)
-  const refreshContactGroups = useCallback((contactIds: string[]) => {
-    if (contactIds.length === 0) return
+  useEffect(() => {
+    if (contacts.length === 0) return
     const map = new Map<string, Array<{ id: string; name: string; color?: string }>>()
-    contactIds.forEach((contactId) => {
-      const contact = contacts.find((item) => item.id === contactId)
-      if (!contact) return
-      apiClient.contacts.getGroups(contactId)
+    contacts.forEach((c) => {
+      apiClient.contacts.getGroups(c.id)
         .then((res) => {
-          map.set(contact.id, res.groups)
+          map.set(c.id, res.groups)
           setContactGroups(new Map(map))
         })
         .catch(() => {})
     })
   }, [contacts])
 
-  useEffect(() => {
-    if (contacts.length === 0) return
-    refreshContactGroups(contacts.map((c) => c.id))
-  }, [contacts, refreshContactGroups])
-
   const maxContactGroups = subscription?.subscription?.plan?.limits?.maxContactGroups ?? -1
-  const groupCount = groups.length
+  const groupCount = groupTotal
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return contacts
-    const q = search.toLowerCase()
-    return contacts.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.phone.includes(q)
-    )
-  }, [contacts, search])
+  const contactIds = useMemo(() => contacts.map((c) => c.id), [contacts])
+
+  const allSelected = contacts.length > 0 && contactIds.every((id) => selectedIds.has(id))
 
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -608,10 +604,6 @@ export default function ContactsPage() {
 
   // ─── Selection helpers ────────────────────────────────────────────────────
 
-  const filteredIds = useMemo(() => filtered.map((c) => c.id), [filtered])
-
-  const allSelected = filtered.length > 0 && filteredIds.every((id) => selectedIds.has(id))
-
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
@@ -625,64 +617,60 @@ export default function ContactsPage() {
     if (allSelected) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(filteredIds))
+      setSelectedIds(new Set(contactIds))
     }
+  }
+
+  const handleCancelBulkJob = async () => {
+    try {
+      await bulkJobPoll.cancel()
+      toast.success(copy.contacts.bulkJobCancelled)
+    } catch {
+      toast.error(copy.contacts.bulkJobCancelFailed)
+    }
+    setSelectedIds(new Set())
+    await refetchContacts()
   }
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return
     setBulkDeleting(true)
+    const ids = Array.from(selectedIds)
     try {
-      const contactIds = Array.from(selectedIds)
-      const response = await apiClient.contacts.deleteMany(contactIds)
-
-      if (isBulkJobQueuedResponse(response)) {
-        const total = response.requestedCount
-        setBulkDeleteProgress({ current: 0, total })
-        const trackResult = await trackBulkJob(response.jobId, (job) => {
-          setBulkDeleteProgress({
-            current: job.processedCount,
-            total: job.requestedCount,
-          })
+      const result = await apiClient.contacts.deleteMany(ids)
+      if (isContactBulkJobAccepted(result)) {
+        toast.info(copy.contacts.bulkJobStarted)
+        bulkJobPoll.start(result.jobId, {
+          onComplete: (progress) => {
+            const st = (progress.status ?? "").toLowerCase()
+            if (st === "failed" || st === "error") {
+              toast.error(copy.contacts.bulkJobFailed)
+            } else if (st === "cancelled" || st === "canceled") {
+              toast.info(copy.contacts.bulkJobEndedCancelled)
+            } else {
+              const count = progress.summary?.deleted ?? progress.processedCount ?? ids.length
+              toast.success(copy.contacts.bulkJobDoneDeleted.replace("{{count}}", String(count)))
+            }
+            setSelectedIds(new Set())
+            void refetchContacts()
+          },
         })
-        const summary = trackResult.job.summary
-        const deletedCount = summary.deleted ?? 0
-        const notFoundCount = summary.notFound ?? 0
-        if (deletedCount > 0) {
-          selectedIds.forEach((id) => {
-            if (trackResult.job.status === "done") removeContact(id)
-          })
-        }
-        if (notFoundCount > 0) {
-          toast.warning(
-            copy.contacts.bulkDeletePartial
-              .replace("{{deleted}}", String(deletedCount))
-              .replace("{{notFound}}", String(notFoundCount)),
-          )
-        } else {
-          const tpl =
-            deletedCount === 1
-              ? copy.contacts.bulkDeleteSuccessOne
-              : copy.contacts.bulkDeleteSuccessMany
-          toast.success(tpl.replace("{{count}}", String(deletedCount)))
-        }
+        return
+      }
+
+      ids.forEach((id) => removeContact(id))
+      if (result.notFound && result.notFound.length > 0) {
+        toast.warning(
+          copy.contacts.bulkDeletePartial
+            .replace("{{deleted}}", String(result.deletedCount))
+            .replace("{{notFound}}", String(result.notFound.length)),
+        )
       } else {
-        const deletedCount = response.deletedCount
-        const notFoundIds = response.notFound ?? []
-        selectedIds.forEach((id) => removeContact(id))
-        if (notFoundIds.length > 0) {
-          toast.warning(
-            copy.contacts.bulkDeletePartial
-              .replace("{{deleted}}", String(deletedCount))
-              .replace("{{notFound}}", String(notFoundIds.length)),
-          )
-        } else {
-          const tpl =
-            deletedCount === 1
-              ? copy.contacts.bulkDeleteSuccessOne
-              : copy.contacts.bulkDeleteSuccessMany
-          toast.success(tpl.replace("{{count}}", String(deletedCount)))
-        }
+        const tpl =
+          result.deletedCount === 1
+            ? copy.contacts.bulkDeleteSuccessOne
+            : copy.contacts.bulkDeleteSuccessMany
+        toast.success(tpl.replace("{{count}}", String(result.deletedCount)))
       }
       setSelectedIds(new Set())
     } catch (err) {
@@ -699,76 +687,6 @@ export default function ContactsPage() {
       }
     } finally {
       setBulkDeleting(false)
-      setBulkDeleteProgress(null)
-    }
-  }
-
-  const handleBulkAddToGroup = async () => {
-    if (selectedIds.size === 0 || !bulkGroupId) return
-    setBulkAddingToGroup(true)
-    try {
-      const contactIds = Array.from(selectedIds)
-      const targetGroup = groups.find((group) => group.id === bulkGroupId) ?? null
-      const response = await apiClient.contactGroups.addMembers(bulkGroupId, contactIds)
-
-      if (isBulkJobQueuedResponse(response)) {
-        setBulkAddProgress({ current: 0, total: response.requestedCount })
-        const trackResult = await trackBulkJob(response.jobId, (job) => {
-          setBulkAddProgress({
-            current: job.processedCount,
-            total: job.requestedCount,
-          })
-        })
-        const summary = trackResult.job.summary
-        const addedCount = summary.added ?? 0
-        if (targetGroup && addedCount > 0) {
-          setContactGroups((prev) => {
-            const next = new Map(prev)
-            contactIds.forEach((id) => {
-              const current = next.get(id) ?? []
-              if (!current.some((group) => group.id === targetGroup.id)) {
-                next.set(id, [targetGroup, ...current])
-              }
-            })
-            return next
-          })
-        }
-        const successTpl =
-          addedCount === 1
-            ? copy.contacts.bulkAssignGroupSuccessOne
-            : copy.contacts.bulkAssignGroupSuccessMany
-        toast.success(successTpl.replace("{{count}}", String(addedCount)))
-      } else {
-        const addedCount = response.added
-        if (targetGroup && addedCount > 0) {
-          setContactGroups((prev) => {
-            const next = new Map(prev)
-            contactIds.forEach((id) => {
-              const current = next.get(id) ?? []
-              if (!current.some((group) => group.id === targetGroup.id)) {
-                next.set(id, [targetGroup, ...current])
-              }
-            })
-            return next
-          })
-        }
-        const successTpl =
-          addedCount === 1
-            ? copy.contacts.bulkAssignGroupSuccessOne
-            : copy.contacts.bulkAssignGroupSuccessMany
-        toast.success(successTpl.replace("{{count}}", String(addedCount)))
-      }
-      setBulkGroupId("")
-      setSelectedIds(new Set())
-    } catch (err) {
-      if (err instanceof ApiClientError && err.code === "NOT_FOUND") {
-        toast.error(copy.contacts.importGroupNotFound)
-      } else {
-        toast.error(copy.contacts.bulkAssignGroupFailed)
-      }
-    } finally {
-      setBulkAddingToGroup(false)
-      setBulkAddProgress(null)
     }
   }
 
@@ -777,10 +695,10 @@ export default function ContactsPage() {
       <PageHeader
         title={copy.contacts.pageTitle}
         description={
-          contacts.length > 0
+          total > 0
             ? renderWithStrongCount(
-                contacts.length === 1 ? copy.contacts.headerCountOne : copy.contacts.headerCountMany,
-                contacts.length,
+                total === 1 ? copy.contacts.headerCountOne : copy.contacts.headerCountMany,
+                total,
               )
             : copy.contacts.pageDescription
         }
@@ -837,19 +755,50 @@ export default function ContactsPage() {
 
       {tab === "contacts" && (
         <>
-          <div className="mb-5">
+          <div className="mb-5 flex flex-col sm:flex-row gap-3 sm:items-end">
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={copy.contacts.searchPlaceholder}
-              className="max-w-sm"
+              className="max-w-sm flex-1"
             />
+            <label className="flex flex-col gap-1 text-xs text-text-secondary shrink-0">
+              <span>{copy.contacts.sortLabel}</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as ContactSort)}
+                className="border border-border-strong rounded-lg px-3 py-2 text-sm text-text bg-bg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-w-40"
+              >
+                <option value="createdAt_desc">{copy.contacts.sortCreatedDesc}</option>
+                <option value="name_asc">{copy.contacts.sortNameAsc}</option>
+              </select>
+            </label>
           </div>
 
           <Card>
+            {bulkJobPoll.activeJobId && (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3 mb-4 rounded-xl border border-border-strong bg-bg-subtle">
+                <div>
+                  <p className="text-sm font-medium text-text">{copy.contacts.bulkJobRunning}</p>
+                  <p className="text-xs text-text-muted mt-0.5 font-mono">
+                    {copy.contacts.bulkJobProgress
+                      .replace("{{percent}}", String(bulkJobPoll.snapshot.progress))
+                      .replace("{{status}}", bulkJobPoll.snapshot.status)}
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={bulkJobPoll.cancelling}
+                  onClick={() => void handleCancelBulkJob()}
+                >
+                  {copy.contacts.bulkJobCancel}
+                </Button>
+              </div>
+            )}
             {/* Bulk action bar */}
             {selectedIds.size > 0 && (
-              <div className="flex flex-col gap-3 px-5 py-3 bg-primary-subtle border border-primary/30 rounded-xl mb-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center justify-between px-5 py-3 bg-primary-subtle border border-primary/30 rounded-xl mb-4">
                 <div className="flex items-center gap-3">
                   <CheckmarkCircle01Icon className="w-5 h-5 text-primary" />
                   <span className="text-sm text-text">
@@ -861,80 +810,21 @@ export default function ContactsPage() {
                     )}
                   </span>
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-                  <div className="flex flex-col gap-2 rounded-xl border border-border bg-bg px-2 py-2 sm:flex-row sm:items-center sm:py-1.5">
-                    <span className="text-xs font-medium text-text-secondary whitespace-nowrap">
-                      {copy.contacts.bulkAssignGroupLabel}
-                    </span>
-                    <select
-                      value={bulkGroupId}
-                      onChange={(e) => setBulkGroupId(e.target.value)}
-                      className="min-w-44 rounded-lg border border-border-strong bg-bg px-2 py-1 text-xs text-text outline-none sm:min-w-44 min-w-0"
-                    >
-                      <option value="">{copy.contacts.bulkAssignGroupPlaceholder}</option>
-                      {groups.map((g) => (
-                        <option key={g.id} value={g.id}>{g.name}</option>
-                      ))}
-                    </select>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="w-full sm:w-auto"
-                      disabled={!bulkGroupId || groups.length === 0}
-                      loading={bulkAddingToGroup}
-                      onClick={handleBulkAddToGroup}
-                    >
-                      {copy.contacts.bulkAssignGroupButton}
-                    </Button>
-                  </div>
+                <div className="flex items-center gap-2">
                   <Button variant="secondary" size="sm" onClick={() => setSelectedIds(new Set())}>
                     {copy.contacts.deselectAll}
                   </Button>
-                  <Button variant="danger" size="sm" loading={bulkDeleting} onClick={handleBulkDelete}>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    loading={bulkDeleting}
+                    disabled={!!bulkJobPoll.activeJobId}
+                    onClick={handleBulkDelete}
+                  >
                     <Delete01Icon className="w-4 h-4 mr-1.5" />
                     {copy.contacts.deleteAction}
                   </Button>
                 </div>
-                {bulkAddProgress && (
-                  <div className="mt-1">
-                    <Alert
-                      variant="info"
-                      title={
-                        copy.contacts.bulkAddProgressTitle
-                          .replace("{{current}}", String(bulkAddProgress.current))
-                          .replace("{{total}}", String(bulkAddProgress.total))
-                      }
-                      message={copy.contacts.bulkAddProgressMessage}
-                    >
-                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#3B82F6]/15">
-                        <div
-                          className="h-full rounded-full bg-[#3B82F6] transition-all"
-                          style={{ width: `${Math.min(100, Math.round((bulkAddProgress.current / bulkAddProgress.total) * 100))}%` }}
-                        />
-                      </div>
-                    </Alert>
-                  </div>
-                )}
-                {bulkDeleteProgress && (
-                  <div className="mt-1">
-                    <Alert
-                      variant="info"
-                      title={
-                        copy.contacts.bulkDeleteProgressTitle
-                          .replace("{{current}}", String(bulkDeleteProgress.current))
-                          .replace("{{total}}", String(bulkDeleteProgress.total))
-                      }
-                      message={copy.contacts.bulkDeleteProgressMessage}
-                    >
-                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#3B82F6]/15">
-                        <div
-                          className="h-full rounded-full bg-[#3B82F6] transition-all"
-                          style={{ width: `${Math.min(100, Math.round((bulkDeleteProgress.current / bulkDeleteProgress.total) * 100))}%` }}
-                        />
-                      </div>
-                    </Alert>
-                  </div>
-                )}
               </div>
             )}
 
@@ -971,7 +861,7 @@ export default function ContactsPage() {
                   ))}
                 </div>
               </>
-            ) : filtered.length === 0 ? (
+            ) : contacts.length === 0 ? (
               <EmptyState
                 icon={<UserGroupIcon className="w-8 h-8" />}
                 title={search ? copy.contacts.noContactFound : copy.contacts.emptyTitle}
@@ -1000,7 +890,7 @@ export default function ContactsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filtered.map((contact) => {
+                      {contacts.map((contact) => {
                         const cGroups = contactGroups.get(contact.id) ?? []
                         return (
                           <tr key={contact.id} className="border-b border-border last:border-0 hover:bg-bg-subtle">
@@ -1054,7 +944,7 @@ export default function ContactsPage() {
 
                 {/* Mobile cards */}
                 <div className="sm:hidden divide-y divide-border">
-                  {filtered.map((contact) => {
+                  {contacts.map((contact) => {
                     const cGroups = contactGroups.get(contact.id) ?? []
                     return (
                       <div key={contact.id} className="py-3">
@@ -1070,8 +960,8 @@ export default function ContactsPage() {
                             <p className="text-xs font-mono text-text-muted">{contact.phone}</p>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <Button size="sm" variant="secondary" onClick={() => setEditTarget(contact)}>Modifier</Button>
-                            <Button size="sm" variant="danger" loading={deleting === contact.id} onClick={() => setDeleteTarget(contact)}>×</Button>
+                            <Button size="sm" variant="secondary" onClick={() => setEditTarget(contact)}>{copy.contacts.editAction}</Button>
+                            <Button size="sm" variant="danger" loading={deleting === contact.id} onClick={() => setDeleteTarget(contact)}>{copy.contacts.deleteAction}</Button>
                           </div>
                         </div>
                         {(contact.tags.length > 0 || cGroups.length > 0) && (
@@ -1097,6 +987,14 @@ export default function ContactsPage() {
                     )
                   })}
                 </div>
+
+                {hasMore && (
+                  <div className="mt-4 flex justify-center">
+                    <Button variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>
+                      {copy.contacts.loadMoreContacts}
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </Card>
@@ -1164,7 +1062,19 @@ export default function ContactsPage() {
                   </thead>
                   <tbody>
                     {imports.map((imp) => (
-                      <tr key={imp.id} className="border-b border-border last:border-0 hover:bg-bg-subtle">
+                      <tr
+                        key={imp.id}
+                        role="link"
+                        tabIndex={0}
+                        className="border-b border-border last:border-0 hover:bg-bg-subtle cursor-pointer"
+                        onClick={() => router.push(`/contacts/imports/${imp.id}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault()
+                            router.push(`/contacts/imports/${imp.id}`)
+                          }
+                        }}
+                      >
                         <td className="py-3 pr-4 text-sm text-text-muted whitespace-nowrap">{formatDate(imp.createdAt)}</td>
                         <td className="py-3 pr-4">
                           <Badge variant={IMPORT_STATUS_VARIANT[imp.status] ?? "neutral"} pulse={imp.status === "processing"}>
@@ -1184,7 +1094,19 @@ export default function ContactsPage() {
               {/* Mobile cards */}
               <div className="sm:hidden divide-y divide-border">
                 {imports.map((imp) => (
-                  <div key={imp.id} className="py-3 flex items-start justify-between gap-3">
+                  <div
+                    key={imp.id}
+                    role="link"
+                    tabIndex={0}
+                    className="py-3 flex items-start justify-between gap-3 cursor-pointer hover:bg-bg-subtle -mx-1 px-1 rounded-lg"
+                    onClick={() => router.push(`/contacts/imports/${imp.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        router.push(`/contacts/imports/${imp.id}`)
+                      }
+                    }}
+                  >
                     <div>
                       <div className="mb-1">
                         <Badge variant={IMPORT_STATUS_VARIANT[imp.status] ?? "neutral"} pulse={imp.status === "processing"}>
@@ -1244,7 +1166,7 @@ export default function ContactsPage() {
 
       {importOpen && (
         <ImportModal
-          groups={groups}
+          groups={importPickerGroups.length > 0 ? importPickerGroups : groups}
           onSuccess={() => {}}
           onClose={() => setImportOpen(false)}
         />

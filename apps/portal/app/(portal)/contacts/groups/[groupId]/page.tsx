@@ -9,6 +9,7 @@ import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
 import { formatDate } from "@/lib/format"
 import type { ContactGroup, ContactGroupMember, Contact } from "@usesendnow/types"
+import { isContactBulkJobAccepted } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
 import Badge from "@/components/ui/Badge"
@@ -23,11 +24,10 @@ import {
   ArrowLeft01Icon,
   Download01Icon,
   UserAdd01Icon,
-  CheckmarkCircle01Icon,
 } from "hugeicons-react"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { renderWithStrongCount, renderWithStrongName } from "@/lib/render-copy-placeholders"
-import { isBulkJobQueuedResponse, trackBulkJob } from "@/lib/bulkJobs"
+import { useContactBulkJobPoll } from "@/hooks/useContactBulkJobPoll"
 
 const PRESET_COLORS = ["#FFD600", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6", "#EC4899"]
 
@@ -132,6 +132,8 @@ function EditGroupModal({
 
 // ─── Add Members Modal ─────────────────────────────────────────────────────────
 
+const CONTACTS_PAGE_SIZE = 50
+
 function AddMembersModal({
   groupId,
   existingMemberIds,
@@ -145,27 +147,69 @@ function AddMembersModal({
 }) {
   const { copy } = usePortalLocale()
   const gCopy = copy.contacts.groups
+  const [searchInput, setSearchInput] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
   const [loadingContacts, setLoadingContacts] = useState(true)
-  const [search, setSearch] = useState("")
+  const [loadingMore, setLoadingMore] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [jobProgress, setJobProgress] = useState<{ current: number; total: number } | null>(null)
+  const bulkJobPoll = useContactBulkJobPoll()
 
   useEffect(() => {
-    apiClient.contacts.list()
-      .then((data) => setContacts(data))
-      .catch(() => {})
-      .finally(() => setLoadingContacts(false))
-  }, [])
+    const t = setTimeout(() => setDebouncedSearch(searchInput), 300)
+    return () => clearTimeout(t)
+  }, [searchInput])
 
-  const filtered = contacts.filter((c) => {
-    if (existingMemberIds.has(c.id)) return false
-    if (!search.trim()) return true
-    const q = search.toLowerCase()
-    return c.name.toLowerCase().includes(q) || c.phone.includes(q)
-  })
+  const loadFirstPage = useCallback(async () => {
+    setLoadingContacts(true)
+    setError(null)
+    try {
+      const data = await apiClient.contacts.list({
+        limit: CONTACTS_PAGE_SIZE,
+        search: debouncedSearch.trim() || undefined,
+        sort: "name_asc",
+      })
+      setContacts(data.contacts)
+      setNextCursor(data.nextCursor ?? null)
+      setHasMore(data.hasMore)
+    } catch {
+      setContacts([])
+      setNextCursor(null)
+      setHasMore(false)
+    } finally {
+      setLoadingContacts(false)
+    }
+  }, [debouncedSearch])
+
+  useEffect(() => {
+    void loadFirstPage()
+  }, [loadFirstPage])
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || !nextCursor || loadingMore) return
+    setLoadingMore(true)
+    try {
+      const data = await apiClient.contacts.list({
+        limit: CONTACTS_PAGE_SIZE,
+        cursor: nextCursor,
+        search: debouncedSearch.trim() || undefined,
+        sort: "name_asc",
+      })
+      setContacts((prev) => [...prev, ...data.contacts])
+      setNextCursor(data.nextCursor ?? null)
+      setHasMore(data.hasMore)
+    } catch {
+      /* keep current list */
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [debouncedSearch, hasMore, loadingMore, nextCursor])
+
+  const visible = contacts.filter((c) => !existingMemberIds.has(c.id))
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -181,53 +225,96 @@ function AddMembersModal({
     setAdding(true)
     setError(null)
     try {
-      const contactIds = [...selected]
-      const res = await apiClient.contactGroups.addMembers(groupId, contactIds)
-      if (isBulkJobQueuedResponse(res)) {
-        setJobProgress({ current: 0, total: res.requestedCount })
-        const tracked = await trackBulkJob(res.jobId, (job) => {
-          setJobProgress({
-            current: job.processedCount,
-            total: job.requestedCount,
-          })
+      const ids = [...selected]
+      const res = await apiClient.contactGroups.addMembers(groupId, ids)
+      if (isContactBulkJobAccepted(res)) {
+        toast.info(gCopy.addMembersBulkStarted)
+        setAdding(false)
+        bulkJobPoll.start(res.jobId, {
+          onComplete: (progress) => {
+            const st = (progress.status ?? "").toLowerCase()
+            if (st === "failed" || st === "error") {
+              setError(gCopy.addMembersFailed)
+              return
+            }
+            if (st === "cancelled" || st === "canceled") {
+              toast.info(gCopy.addMembersBulkEndedCancelled)
+              onSuccess(0)
+              onClose()
+              return
+            }
+            const added = progress.summary?.added ?? progress.processedCount ?? ids.length
+            toast.success(gCopy.addMembersBulkDone.replace("{{count}}", String(added)))
+            onSuccess(added)
+            onClose()
+          },
         })
-        const added = tracked.job.summary.added ?? 0
-        const tpl =
-          added === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
-        toast.success(tpl.replace("{{count}}", String(added)))
-        onSuccess(added)
-        onClose()
-      } else {
-        const tpl =
-          res.added === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
-        toast.success(tpl.replace("{{count}}", String(res.added)))
-        onSuccess(res.added)
-        onClose()
+        return
       }
+      const tpl =
+        res.added === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
+      toast.success(tpl.replace("{{count}}", String(res.added)))
+      onSuccess(res.added)
+      onClose()
     } catch {
       setError(gCopy.addMembersFailed)
     } finally {
       setAdding(false)
-      setJobProgress(null)
     }
   }
 
+  const handleCancelBulkAdd = async () => {
+    try {
+      await bulkJobPoll.cancel()
+      toast.success(gCopy.addMembersBulkCancelled)
+      onSuccess(0)
+      onClose()
+    } catch {
+      toast.error(gCopy.addMembersBulkCancelFailed)
+    }
+  }
+
+  const handleModalClose = () => {
+    if (bulkJobPoll.activeJobId) return
+    onClose()
+  }
+
   return (
-    <Modal open onClose={onClose} title={gCopy.addMembersTitle} maxWidth="max-w-lg">
+    <Modal open onClose={handleModalClose} title={gCopy.addMembersTitle} maxWidth="max-w-lg">
       <div className="space-y-4">
+        {bulkJobPoll.activeJobId ? (
+          <div className="rounded-xl border border-border-strong bg-bg-subtle p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-text">{gCopy.addMembersBulkRunning}</p>
+              <p className="text-xs text-text-muted mt-0.5 font-mono">
+                {gCopy.addMembersBulkProgress
+                  .replace("{{percent}}", String(bulkJobPoll.snapshot.progress))
+                  .replace("{{status}}", bulkJobPoll.snapshot.status)}
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={bulkJobPoll.cancelling}
+              onClick={() => void handleCancelBulkAdd()}
+            >
+              {gCopy.addMembersBulkCancel}
+            </Button>
+          </div>
+        ) : null}
         <Input
           placeholder={gCopy.searchContactsPlaceholder}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           autoFocus
         />
         <div className="max-h-64 overflow-y-auto border border-border rounded-xl divide-y divide-border">
           {loadingContacts ? (
             <div className="p-4 text-sm text-text-secondary text-center">{gCopy.loading}</div>
-          ) : filtered.length === 0 ? (
+          ) : visible.length === 0 ? (
             <div className="p-4 text-sm text-text-secondary text-center">{gCopy.noContactsAvailable}</div>
           ) : (
-            filtered.map((c) => (
+            visible.map((c) => (
               <label key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-subtle cursor-pointer">
                 <input
                   type="checkbox"
@@ -243,26 +330,24 @@ function AddMembersModal({
             ))
           )}
         </div>
-        {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
-        {jobProgress && (
-          <Alert
-            variant="info"
-            title={gCopy.addMembersJobProgressTitle
-              .replace("{{current}}", String(jobProgress.current))
-              .replace("{{total}}", String(jobProgress.total))}
-            message={gCopy.addMembersJobProgressMessage}
-          >
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#3B82F6]/15">
-              <div
-                className="h-full rounded-full bg-[#3B82F6] transition-all"
-                style={{ width: `${Math.min(100, Math.round((jobProgress.current / jobProgress.total) * 100))}%` }}
-              />
-            </div>
-          </Alert>
+        {hasMore && !loadingContacts && (
+          <div className="flex justify-center">
+            <Button variant="secondary" size="sm" loading={loadingMore} onClick={() => void loadMore()}>
+              {gCopy.loadMore}
+            </Button>
+          </div>
         )}
+        {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
         <div className="flex justify-end gap-2 pt-1">
-          <Button variant="secondary" onClick={onClose}>{gCopy.cancel}</Button>
-          <Button variant="primary" loading={adding} disabled={selected.size === 0} onClick={handleAdd}>
+          <Button variant="secondary" onClick={handleModalClose} disabled={!!bulkJobPoll.activeJobId}>
+            {gCopy.cancel}
+          </Button>
+          <Button
+            variant="primary"
+            loading={adding}
+            disabled={selected.size === 0 || adding || !!bulkJobPoll.activeJobId}
+            onClick={() => void handleAdd()}
+          >
             {gCopy.addContacts} {selected.size > 0 ? `(${selected.size})` : ""}
           </Button>
         </div>
@@ -286,13 +371,12 @@ export default function ContactGroupDetailPage() {
   const [total, setTotal] = useState(0)
   const [loadingGroup, setLoadingGroup] = useState(true)
   const [loadingMembers, setLoadingMembers] = useState(true)
-  const [search, setSearch] = useState("")
+  const [memberSearchInput, setMemberSearchInput] = useState("")
+  const [debouncedMemberSearch, setDebouncedMemberSearch] = useState("")
   const [editOpen, setEditOpen] = useState(false)
   const [deleteGroupOpen, setDeleteGroupOpen] = useState(false)
   const [addMembersOpen, setAddMembersOpen] = useState(false)
   const [removeTarget, setRemoveTarget] = useState<ContactGroupMember | null>(null)
-  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set())
-  const [bulkRemoving, setBulkRemoving] = useState(false)
   const [removing, setRemoving] = useState(false)
   const [deletingGroup, setDeletingGroup] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -312,19 +396,23 @@ export default function ContactGroupDetailPage() {
     }
   }, [groupId, router, gCopy])
 
-  const fetchMembers = useCallback(async (searchVal?: string, cursor?: string) => {
+  useEffect(() => {
+    void fetchGroup()
+  }, [fetchGroup])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedMemberSearch(memberSearchInput), 300)
+    return () => clearTimeout(t)
+  }, [memberSearchInput])
+
+  const fetchMembersFirstPage = useCallback(async () => {
     setLoadingMembers(true)
     try {
       const data = await apiClient.contactGroups.listMembers(groupId, {
         limit: 50,
-        cursor,
-        search: searchVal || undefined,
+        search: debouncedMemberSearch.trim() || undefined,
       })
-      if (cursor) {
-        setMembers((prev) => [...prev, ...data.contacts])
-      } else {
-        setMembers(data.contacts)
-      }
+      setMembers(data.contacts)
       setNextCursor(data.nextCursor)
       setHasMore(data.hasMore)
       setTotal(data.total)
@@ -333,17 +421,11 @@ export default function ContactGroupDetailPage() {
     } finally {
       setLoadingMembers(false)
     }
-  }, [groupId])
+  }, [groupId, debouncedMemberSearch, gCopy.saveFailed])
 
   useEffect(() => {
-    fetchGroup()
-    fetchMembers()
-  }, [fetchGroup, fetchMembers])
-
-  const handleSearchChange = (val: string) => {
-    setSearch(val)
-    fetchMembers(val)
-  }
+    void fetchMembersFirstPage()
+  }, [fetchMembersFirstPage])
 
   const handleLoadMore = async () => {
     if (!nextCursor) return
@@ -352,7 +434,7 @@ export default function ContactGroupDetailPage() {
       const data = await apiClient.contactGroups.listMembers(groupId, {
         limit: 50,
         cursor: nextCursor,
-        search: search || undefined,
+        search: debouncedMemberSearch.trim() || undefined,
       })
       setMembers((prev) => [...prev, ...data.contacts])
       setNextCursor(data.nextCursor)
@@ -411,60 +493,6 @@ export default function ContactGroupDetailPage() {
   }
 
   const memberIds = new Set(members.map((m) => m.id))
-  const allSelected = members.length > 0 && members.every((member) => selectedMemberIds.has(member.id))
-
-  const toggleSelectMember = (id: string) => {
-    setSelectedMemberIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  const toggleSelectAllMembers = () => {
-    if (allSelected) {
-      setSelectedMemberIds(new Set())
-    } else {
-      setSelectedMemberIds(new Set(members.map((member) => member.id)))
-    }
-  }
-
-  const handleBulkRemoveMembers = async () => {
-    if (selectedMemberIds.size === 0) return
-    setBulkRemoving(true)
-    try {
-      const ids = Array.from(selectedMemberIds)
-      const result = await apiClient.contactGroups.removeMembers(groupId, ids)
-
-      if (isBulkJobQueuedResponse(result)) {
-        const tracked = await trackBulkJob(result.jobId)
-        const removedCount = tracked.job.summary.removed ?? 0
-        setMembers((prev) => prev.filter((member) => !selectedMemberIds.has(member.id)))
-        setTotal((prev) => Math.max(0, prev - removedCount))
-        setGroup((prev) => prev ? { ...prev, contactCount: Math.max(0, prev.contactCount - removedCount) } : prev)
-        setSelectedMemberIds(new Set())
-        toast.success(
-          (removedCount === 1 ? gCopy.removeMembersSuccessOne : gCopy.removeMembersSuccessMany)
-            .replace("{{count}}", String(removedCount))
-        )
-      } else {
-        const removedCount = result.removed
-        setMembers((prev) => prev.filter((member) => !selectedMemberIds.has(member.id)))
-        setTotal((prev) => Math.max(0, prev - removedCount))
-        setGroup((prev) => prev ? { ...prev, contactCount: Math.max(0, prev.contactCount - removedCount) } : prev)
-        setSelectedMemberIds(new Set())
-        toast.success(
-          (removedCount === 1 ? gCopy.removeMembersSuccessOne : gCopy.removeMembersSuccessMany)
-            .replace("{{count}}", String(removedCount))
-        )
-      }
-    } catch {
-      toast.error(gCopy.removeMemberFailed)
-    } finally {
-      setBulkRemoving(false)
-    }
-  }
 
   if (loadingGroup) {
     return (
@@ -517,8 +545,8 @@ export default function ContactGroupDetailPage() {
       {/* Search + Add */}
       <div className="flex flex-wrap items-center gap-3">
         <Input
-          value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          value={memberSearchInput}
+          onChange={(e) => setMemberSearchInput(e.target.value)}
           placeholder={gCopy.searchMembersPlaceholder}
           className="flex-1 min-w-0 sm:max-w-sm"
         />
@@ -528,27 +556,6 @@ export default function ContactGroupDetailPage() {
         </Button>
       </div>
 
-      {selectedMemberIds.size > 0 && (
-        <div className="flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <CheckmarkCircle01Icon className="h-5 w-5 text-primary" />
-            <span className="text-sm text-text">
-              {selectedMemberIds.size === 1
-                ? gCopy.bulkSelectedOne.replace("{{count}}", String(selectedMemberIds.size))
-                : gCopy.bulkSelectedMany.replace("{{count}}", String(selectedMemberIds.size))}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setSelectedMemberIds(new Set())}>
-              {gCopy.deselectAll}
-            </Button>
-            <Button variant="danger" size="sm" loading={bulkRemoving} onClick={handleBulkRemoveMembers}>
-              {gCopy.removeSelected}
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Members table */}
       <Card>
         {loadingMembers && members.length === 0 ? (
@@ -557,7 +564,7 @@ export default function ContactGroupDetailPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    {["", gCopy.table.name, gCopy.table.phone, gCopy.table.tags, gCopy.table.addedAt, ""].map((h) => (
+                    {[gCopy.table.name, gCopy.table.phone, gCopy.table.tags, gCopy.table.addedAt, ""].map((h) => (
                       <th key={h} className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4">{h}</th>
                     ))}
                   </tr>
@@ -600,14 +607,6 @@ export default function ContactGroupDetailPage() {
                 <tbody>
                   {members.map((member) => (
                     <tr key={member.id} className="border-b border-border last:border-0 hover:bg-bg-subtle">
-                      <td className="py-3 pr-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedMemberIds.has(member.id)}
-                          onChange={() => toggleSelectMember(member.id)}
-                          className="h-4 w-4 rounded border-border-strong accent-primary cursor-pointer"
-                        />
-                      </td>
                       <td className="py-3 pr-4 text-sm font-semibold text-text">{member.name}</td>
                       <td className="py-3 pr-4 text-sm font-mono text-text-body whitespace-nowrap">{member.phone}</td>
                       <td className="py-3 pr-4">
@@ -632,26 +631,18 @@ export default function ContactGroupDetailPage() {
             <div className="sm:hidden divide-y divide-border">
               {members.map((member) => (
                 <div key={member.id} className="py-3 flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-2 min-w-0 flex-1">
-                    <input
-                      type="checkbox"
-                      checked={selectedMemberIds.has(member.id)}
-                      onChange={() => toggleSelectMember(member.id)}
-                      className="h-4 w-4 mt-1 rounded border-border-strong accent-primary cursor-pointer shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-text truncate">{member.name}</p>
-                      <p className="text-xs font-mono text-text-muted">{member.phone}</p>
-                      {member.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {member.tags.slice(0, 3).map((tag) => (
-                            <Badge key={tag} variant="neutral">{tag}</Badge>
-                          ))}
-                          {member.tags.length > 3 && <Badge variant="neutral">+{member.tags.length - 3}</Badge>}
-                        </div>
-                      )}
-                      <p className="text-xs text-text-muted mt-1">{formatDate(member.addedAt)}</p>
-                    </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-text truncate">{member.name}</p>
+                    <p className="text-xs font-mono text-text-muted">{member.phone}</p>
+                    {member.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {member.tags.slice(0, 3).map((tag) => (
+                          <Badge key={tag} variant="neutral">{tag}</Badge>
+                        ))}
+                        {member.tags.length > 3 && <Badge variant="neutral">+{member.tags.length - 3}</Badge>}
+                      </div>
+                    )}
+                    <p className="text-xs text-text-muted mt-1">{formatDate(member.addedAt)}</p>
                   </div>
                   <Button size="sm" variant="ghost" onClick={() => setRemoveTarget(member)}>{gCopy.remove}</Button>
                 </div>
@@ -706,7 +697,7 @@ export default function ContactGroupDetailPage() {
           existingMemberIds={memberIds}
           onSuccess={(count) => {
             setGroup((prev) => prev ? { ...prev, contactCount: prev.contactCount + count } : prev)
-            fetchMembers(search)
+            fetchMembersFirstPage()
           }}
           onClose={() => setAddMembersOpen(false)}
         />

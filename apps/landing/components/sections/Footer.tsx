@@ -12,12 +12,11 @@ export function Footer({}: FooterProps) {
     {
       title: messages.footer.product,
       links: [
-        { label: messages.footer.links.api, href: landingBrand.docsUrl },
-        { label: messages.footer.links.pricing, href: landingBrand.homeAnchors.pricing },
+        { label: messages.footer.links.automations, href: landingBrand.homeAnchors.features },
         { label: messages.footer.links.campaigns, href: landingBrand.campaignsUrl },
         { label: messages.footer.links.wordpress, href: landingBrand.wordpressUrl },
-        { label: messages.footer.links.automations, href: landingBrand.homeAnchors.features },
-        { label: messages.footer.links.useCases, href: "/use-cases" },
+        { label: messages.footer.links.pricing, href: landingBrand.homeAnchors.pricing },
+        { label: messages.footer.links.api, href: landingBrand.docsUrl },
       ],
     },
     {
@@ -25,10 +24,7 @@ export function Footer({}: FooterProps) {
       links: [
         { label: messages.footer.links.docs, href: landingBrand.docsUrl },
         { label: messages.footer.links.webhook, href: `${landingBrand.docsUrl}/webhooks` },
-        { label: messages.footer.links.comparatif, href: "/comparatif" },
-        { label: messages.footer.links.risques, href: "/risques" },
-        { label: messages.footer.links.status, href: "https://msgflash.instatus.com/" },
-        { label: messages.footer.links.blog, href: "https://blog.msgflash.com/" },
+        { label: messages.footer.links.status, href: landingBrand.appUrl },
       ],
     },
     {

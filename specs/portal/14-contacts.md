@@ -117,8 +117,12 @@ Message : "Delete **{name}**? They will be removed from all tags and campaigns."
 - Unicité sur `(userId, phone)` — le backend renverra `CONFLICT` si le numéro existe déjà.
 - Le numéro est normalisé côté backend — accepter +229... et 229...
 - Les tags sont des strings libres — pas de liste prédéfinie.
-- Filtre côté client uniquement (la liste complète est chargée d'un coup, pas de pagination serveur).
-- `POST /api/contacts/import` (import CSV) n'est pas encore implémenté (`[À CRÉER]` — retourne 501).
+- Pagination serveur cursor-based sur `GET /api/contacts`.
+- Paramètres supportés : `limit`, `cursor`, `search`, `sort`.
+- Tri supporté :
+  - `createdAt_desc` par défaut
+  - `name_asc`
+- Import CSV disponible via `POST /api/contacts/import`.
 
 ---
 
@@ -127,19 +131,35 @@ Message : "Delete **{name}**? They will be removed from all tags and campaigns."
 Response GET /api/contacts:
 ```json
 {
-  "data": [
-    {
-      "id": "cnt_abc123",
-      "userId": "user_xyz",
-      "name": "Jean Dupont",
-      "phone": "+22912345678",
-      "tags": ["vip", "newsletter"],
-      "meta": null,
-      "createdAt": "2026-03-01T10:00:00.000Z",
-      "updatedAt": "2026-03-01T10:00:00.000Z"
-    }
-  ]
+  "data": {
+    "contacts": [
+      {
+        "id": "cnt_abc123",
+        "name": "Jean Dupont",
+        "phone": "+22912345678",
+        "tags": ["vip", "newsletter"],
+        "temperature": "cold",
+        "createdAt": "2026-03-01T10:00:00.000Z",
+        "updatedAt": "2026-03-01T10:00:00.000Z"
+      }
+    ],
+    "total": 5240,
+    "limit": 50,
+    "sort": "createdAt_desc",
+    "nextCursor": "MjAyNi0wMy0wMVQxMDowMDowMC4wMDBafGNudF9hYmMxMjM=",
+    "hasMore": true
+  }
 }
+```
+
+Query example:
+```http
+GET /api/contacts?limit=50&search=jean&sort=createdAt_desc
+```
+
+Global search:
+```http
+GET /api/search?q=jean&limit=5
 ```
 
 Request POST /api/contacts:
