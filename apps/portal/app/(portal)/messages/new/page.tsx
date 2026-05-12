@@ -90,27 +90,36 @@ export default function NewMessagePage() {
     }
   }, [])
 
-  /** Warmup warning when opening this page (first connected instance as reference). Non-blocking. */
+  /** Warmup warning when the user picks an instance (non-blocking). */
   useEffect(() => {
-    const instanceId = connectedInstances[0]?.id
-    if (!instanceId) return
+    if (!sendForm.instanceId) {
+      setWarmupModalOpen(false)
+      setWarmupHealth(null)
+      return
+    }
     let cancelled = false
     void (async () => {
       try {
-        const health = await apiClient.instances.getHealth(instanceId)
+        const health = await apiClient.instances.getHealth(sendForm.instanceId)
         if (cancelled) return
         if (shouldShowWarmupWarningBeforeSend(health)) {
           setWarmupHealth(health)
           setWarmupModalOpen(true)
+        } else {
+          setWarmupHealth(null)
+          setWarmupModalOpen(false)
         }
       } catch {
-        /* optional guidance */
+        if (!cancelled) {
+          setWarmupHealth(null)
+          setWarmupModalOpen(false)
+        }
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [connectedInstances])
+  }, [sendForm.instanceId])
 
   const resetMediaState = () => {
     setUploadedMedia(null)

@@ -264,28 +264,37 @@ export default function NewCampaignPage() {
       .catch(() => setPlanBlocked(true))
   }, [])
 
-  /** Warmup warning when opening this page (first connected instance as reference). Non-blocking. */
+  /** Warmup warning when the user picks an instance (non-blocking). */
   useEffect(() => {
     if (planBlocked) return
-    const instanceId = connectedInstances[0]?.id
-    if (!instanceId) return
+    if (!form.instanceId) {
+      setWarmupModalOpen(false)
+      setWarmupHealth(null)
+      return
+    }
     let cancelled = false
     void (async () => {
       try {
-        const health = await apiClient.instances.getHealth(instanceId)
+        const health = await apiClient.instances.getHealth(form.instanceId)
         if (cancelled) return
         if (shouldShowWarmupWarningBeforeSend(health)) {
           setWarmupHealth(health)
           setWarmupModalOpen(true)
+        } else {
+          setWarmupHealth(null)
+          setWarmupModalOpen(false)
         }
       } catch {
-        /* optional guidance */
+        if (!cancelled) {
+          setWarmupHealth(null)
+          setWarmupModalOpen(false)
+        }
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [planBlocked, connectedInstances])
+  }, [planBlocked, form.instanceId])
 
   const runCreate = async () => {
     setCreating(true)
