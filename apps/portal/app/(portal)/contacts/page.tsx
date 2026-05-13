@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
-import { useContactsList } from "@/hooks/useContactsList"
+import { useContactsList, CONTACTS_LIST_PAGE_SIZE } from "@/hooks/useContactsList"
 import { useContactGroups } from "@/hooks/useContactGroups"
 import { useContactImports } from "@/hooks/useContactImports"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
@@ -477,6 +477,9 @@ function ImportModal({
 }
 
 const ADD_MEMBERS_BATCH = 200
+const DELETE_MANY_BATCH = 200
+const CONTACTS_BULK_DELETE_TOAST_ID = "portal-contacts-bulk-delete"
+const CONTACTS_ADD_GROUP_TOAST_ID = "portal-contacts-add-group"
 
 function AddSelectionToGroupModal({
   open,
@@ -593,12 +596,15 @@ export default function ContactsPage() {
   const [exporting, setExporting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false)
+  const [deleteAllRunning, setDeleteAllRunning] = useState(false)
   const [showBackToTop, setShowBackToTop] = useState(false)
 
   const {
     contacts,
     loading,
     total,
+    effectiveSearch,
     pageIndex,
     pageSize,
     canGoPrev,
@@ -779,26 +785,172 @@ export default function ContactsPage() {
     await refetchContacts()
   }
 
+  const fetchAllContactIds = useCallback(async (): Promise<string[]> => {
+    const ids: string[] = []
+    let cursor: string | undefined
+    for (;;) {
+      const data = await apiClient.contacts.list({
+        limit: CONTACTS_LIST_PAGE_SIZE,
+        cursor,
+        search: effectiveSearch.trim() || undefined,
+        sort,
+        groupId: groupFilterId.trim() || undefined,
+      })
+      ids.push(...data.contacts.map((c) => c.id))
+      if (!data.hasMore || !data.nextCursor) break
+      cursor = data.nextCursor ?? undefined
+    }
+    return ids
+  }, [effectiveSearch, sort, groupFilterId])
+
+  const handleConfirmDeleteAll = async () => {
+    if (bulkJobPoll.activeJobId || deleteAllRunning) return
+    setDeleteAllRunning(true)
+    const prepToast = toast.loading(copy.contacts.deleteAllPreparing)
+    const BULK_ID = CONTACTS_BULK_DELETE_TOAST_ID
+    try {
+      const ids = await fetchAllContactIds()
+      toast.dismiss(prepToast)
+      if (ids.length === 0) {
+        setDeleteAllModalOpen(false)
+        toast.error(copy.contacts.noContactFound)
+        return
+      }
+
+      let totalDeleted = 0
+      let aborted = false
+      let fatal = false
+      let usedUnifiedToast = false
+
+      for (let i = 0; i < ids.length; i += DELETE_MANY_BATCH) {
+        const chunk = ids.slice(i, i + DELETE_MANY_BATCH)
+        const hasMoreAfterThis = i + DELETE_MANY_BATCH < ids.length
+        const result = await apiClient.contacts.deleteMany(chunk)
+        if (isContactBulkJobAccepted(result)) {
+          usedUnifiedToast = true
+          toast.loading(copy.contacts.bulkJobRunning, { id: BULK_ID })
+          await new Promise<void>((resolve) => {
+            bulkJobPoll.start(
+              result.jobId,
+              {
+                onProgress: (p) => {
+                  toast.loading(
+                    copy.contacts.bulkJobProgress
+                      .replace("{{percent}}", String(p.progress))
+                      .replace("{{status}}", p.status),
+                    { id: BULK_ID },
+                  )
+                },
+                onComplete: (progress) => {
+                  const st = (progress.status ?? "").toLowerCase()
+                  if (st === "failed" || st === "error") {
+                    toast.error(copy.contacts.bulkJobFailed, { id: BULK_ID })
+                    fatal = true
+                  } else if (st === "cancelled" || st === "canceled") {
+                    toast.info(copy.contacts.bulkJobEndedCancelled, { id: BULK_ID })
+                    aborted = true
+                  } else {
+                    const count =
+                      progress.summary?.deleted ?? progress.processedCount ?? chunk.length
+                    totalDeleted += count
+                    if (hasMoreAfterThis) {
+                      toast.loading(copy.contacts.bulkJobRunning, { id: BULK_ID })
+                    }
+                  }
+                  resolve()
+                },
+              },
+              { variant: "delete" },
+            )
+          })
+          if (fatal || aborted) break
+        } else {
+          totalDeleted += result.deletedCount
+          if (result.notFound && result.notFound.length > 0) {
+            toast.warning(
+              copy.contacts.bulkDeletePartial
+                .replace("{{deleted}}", String(result.deletedCount))
+                .replace("{{notFound}}", String(result.notFound.length)),
+            )
+          }
+        }
+      }
+
+      if (!fatal && !aborted) {
+        if (usedUnifiedToast && totalDeleted > 0) {
+          toast.success(
+            copy.contacts.bulkJobDoneDeleted.replace("{{count}}", String(totalDeleted)),
+            { id: BULK_ID },
+          )
+        } else if (!usedUnifiedToast && totalDeleted > 0) {
+          const tpl =
+            totalDeleted === 1
+              ? copy.contacts.bulkDeleteSuccessOne
+              : copy.contacts.bulkDeleteSuccessMany
+          toast.success(tpl.replace("{{count}}", String(totalDeleted)))
+        } else if (usedUnifiedToast && totalDeleted === 0) {
+          toast.dismiss(BULK_ID)
+        }
+      }
+    } catch (err) {
+      toast.dismiss(prepToast)
+      if (err instanceof ApiClientError) {
+        if (err.code === "VALIDATION_ERROR") {
+          toast.error(copy.contacts.bulkDeleteErrorValidation)
+        } else if (err.code === "FORBIDDEN") {
+          toast.error(copy.contacts.bulkDeleteErrorForbidden)
+        } else {
+          toast.error(copy.contacts.bulkDeleteErrorGeneric)
+        }
+      } else {
+        toast.error(copy.contacts.bulkDeleteErrorGeneric)
+      }
+    } finally {
+      toast.dismiss(prepToast)
+      void refetchContacts()
+      setSelectedIds(new Set())
+      setDeleteAllModalOpen(false)
+      setDeleteAllRunning(false)
+    }
+  }
+
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return
     setBulkDeleting(true)
     const ids = Array.from(selectedIds)
+    const BULK_ID = CONTACTS_BULK_DELETE_TOAST_ID
     try {
       const result = await apiClient.contacts.deleteMany(ids)
       if (isContactBulkJobAccepted(result)) {
-        toast.info(copy.contacts.bulkJobStarted)
+        toast.loading(
+          copy.contacts.bulkJobProgress
+            .replace("{{percent}}", "0")
+            .replace("{{status}}", "pending"),
+          { id: BULK_ID },
+        )
         bulkJobPoll.start(
           result.jobId,
           {
+            onProgress: (p) => {
+              toast.loading(
+                copy.contacts.bulkJobProgress
+                  .replace("{{percent}}", String(p.progress))
+                  .replace("{{status}}", p.status),
+                { id: BULK_ID },
+              )
+            },
             onComplete: (progress) => {
               const st = (progress.status ?? "").toLowerCase()
               if (st === "failed" || st === "error") {
-                toast.error(copy.contacts.bulkJobFailed)
+                toast.error(copy.contacts.bulkJobFailed, { id: BULK_ID })
               } else if (st === "cancelled" || st === "canceled") {
-                toast.info(copy.contacts.bulkJobEndedCancelled)
+                toast.info(copy.contacts.bulkJobEndedCancelled, { id: BULK_ID })
               } else {
                 const count = progress.summary?.deleted ?? progress.processedCount ?? ids.length
-                toast.success(copy.contacts.bulkJobDoneDeleted.replace("{{count}}", String(count)))
+                toast.success(
+                  copy.contacts.bulkJobDoneDeleted.replace("{{count}}", String(count)),
+                  { id: BULK_ID },
+                )
               }
               setSelectedIds(new Set())
               void refetchContacts()
@@ -845,33 +997,48 @@ export default function ContactsPage() {
     const ids = Array.from(selectedIds)
     if (ids.length === 0 || !groupId) return
     const gCopy = copy.contacts.groups
+    const BULK_ID = CONTACTS_ADD_GROUP_TOAST_ID
     setAddToGroupSubmitting(true)
     let totalAdded = 0
     let aborted = false
     let fatalError = false
+    let anyAsyncBulk = false
     try {
       for (let i = 0; i < ids.length; i += ADD_MEMBERS_BATCH) {
         const chunk = ids.slice(i, i + ADD_MEMBERS_BATCH)
+        const hasMoreAfterThis = i + ADD_MEMBERS_BATCH < ids.length
         const res = await apiClient.contactGroups.addMembers(groupId, chunk)
         if (isContactBulkJobAccepted(res)) {
-          toast.info(gCopy.addMembersBulkStarted)
+          anyAsyncBulk = true
+          toast.loading(gCopy.addMembersBulkRunning, { id: BULK_ID })
           setAddToGroupSubmitting(false)
           await new Promise<void>((resolve) => {
             bulkJobPoll.start(
               res.jobId,
               {
+                onProgress: (p) => {
+                  toast.loading(
+                    gCopy.addMembersBulkProgress
+                      .replace("{{percent}}", String(p.progress))
+                      .replace("{{status}}", p.status),
+                    { id: BULK_ID },
+                  )
+                },
                 onComplete: (progress) => {
                   const st = (progress.status ?? "").toLowerCase()
                   if (st === "failed" || st === "error") {
-                    toast.error(gCopy.addMembersFailed)
+                    toast.error(gCopy.addMembersFailed, { id: BULK_ID })
                     aborted = true
                     fatalError = true
                   } else if (st === "cancelled" || st === "canceled") {
-                    toast.info(gCopy.addMembersBulkEndedCancelled)
+                    toast.info(gCopy.addMembersBulkEndedCancelled, { id: BULK_ID })
                     aborted = true
                   } else {
                     const added = progress.summary?.added ?? progress.processedCount ?? chunk.length
                     totalAdded += added
+                    if (hasMoreAfterThis) {
+                      toast.loading(gCopy.addMembersBulkRunning, { id: BULK_ID })
+                    }
                   }
                   resolve()
                 },
@@ -887,7 +1054,13 @@ export default function ContactsPage() {
       }
       if (!fatalError && !aborted && totalAdded > 0) {
         const tpl = totalAdded === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
-        toast.success(tpl.replace("{{count}}", String(totalAdded)))
+        if (anyAsyncBulk) {
+          toast.success(tpl.replace("{{count}}", String(totalAdded)), { id: BULK_ID })
+        } else {
+          toast.success(tpl.replace("{{count}}", String(totalAdded)))
+        }
+      } else if (anyAsyncBulk && !fatalError && !aborted) {
+        toast.dismiss(BULK_ID)
       }
       setAddToGroupOpen(false)
       setSelectedIds(new Set())
@@ -997,6 +1170,19 @@ export default function ContactsPage() {
                 <option value="name_asc">{copy.contacts.sortNameAsc}</option>
               </select>
             </label>
+            {total > 0 ? (
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                className="shrink-0 self-end lg:self-end"
+                disabled={!!bulkJobPoll.activeJobId || deleteAllRunning || bulkDeleting || loading}
+                onClick={() => setDeleteAllModalOpen(true)}
+              >
+                <Delete01Icon className="w-4 h-4" />
+                {copy.contacts.deleteAllButton}
+              </Button>
+            ) : null}
           </div>
 
           <Card>
@@ -1408,6 +1594,30 @@ export default function ContactsPage() {
             </div>
           </>
         )}
+      </Modal>
+
+      <Modal
+        open={deleteAllModalOpen}
+        onClose={() => {
+          if (!deleteAllRunning) setDeleteAllModalOpen(false)
+        }}
+        title={copy.contacts.deleteAllModalTitle}
+      >
+        <p className="text-sm text-text-body mb-6">
+          {copy.contacts.deleteAllModalDescription.replace("{{count}}", String(total))}
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" disabled={deleteAllRunning} onClick={() => setDeleteAllModalOpen(false)}>
+            {copy.contacts.cancel}
+          </Button>
+          <Button
+            variant="danger"
+            loading={deleteAllRunning}
+            onClick={() => void handleConfirmDeleteAll()}
+          >
+            {copy.contacts.deleteAllConfirm}
+          </Button>
+        </div>
       </Modal>
 
       {importOpen && (

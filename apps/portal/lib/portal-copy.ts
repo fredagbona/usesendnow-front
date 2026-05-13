@@ -786,6 +786,12 @@ export const portalCopy = {
       bulkJobCancelled: "Annulation envoyée.",
       bulkJobCancelFailed: "Impossible d’annuler l’opération.",
       bulkJobEndedCancelled: "La suppression a été annulée.",
+      deleteAllButton: "Supprimer tout",
+      deleteAllModalTitle: "Supprimer tous les contacts ?",
+      deleteAllModalDescription:
+        "Vous allez supprimer définitivement {{count}} contact(s) correspondant aux filtres actuels (recherche et groupe). Cette action est irréversible.",
+      deleteAllConfirm: "Supprimer tout",
+      deleteAllPreparing: "Préparation de la liste…",
       deleteContactConfirm: "Supprimer {{name}} ?",
       deleteContactConsequence:
         "Ce contact sera retiré de tous les tags et campagnes.",
@@ -2526,6 +2532,12 @@ export const portalCopy = {
       bulkJobCancelled: "Cancellation sent.",
       bulkJobCancelFailed: "Unable to cancel the operation.",
       bulkJobEndedCancelled: "The delete was cancelled.",
+      deleteAllButton: "Delete all",
+      deleteAllModalTitle: "Delete all contacts?",
+      deleteAllModalDescription:
+        "You are about to permanently delete {{count}} contact(s) matching the current filters (search and group). This cannot be undone.",
+      deleteAllConfirm: "Delete all",
+      deleteAllPreparing: "Preparing list…",
       deleteContactConfirm: "Delete {{name}}?",
       deleteContactConsequence:
         "This contact will be removed from all tags and campaigns.",

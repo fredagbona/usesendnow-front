@@ -137,6 +137,8 @@ export function useContactsList(
     loading,
     error,
     total,
+    /** Debounced search string used for API list calls (same as the visible list). */
+    effectiveSearch: debouncedSearch,
     pageIndex,
     pageSize: CONTACTS_LIST_PAGE_SIZE,
     canGoPrev,

@@ -136,6 +136,8 @@ function EditGroupModal({
 
 const CONTACTS_PAGE_SIZE = 100
 const ADD_MEMBERS_BATCH = 200
+const GROUP_MODAL_ADD_TOAST_ID = "portal-group-modal-add-members"
+const GROUP_MEMBER_BULK_REMOVE_TOAST_ID = "portal-group-members-bulk-remove"
 
 function AddMembersModal({
   groupId,
@@ -234,29 +236,45 @@ function AddMembersModal({
     let totalAdded = 0
     let aborted = false
     let fatalError = false
+    let anyAsyncBulk = false
+    const BULK_ID = GROUP_MODAL_ADD_TOAST_ID
     try {
       for (let i = 0; i < ids.length; i += ADD_MEMBERS_BATCH) {
         const chunk = ids.slice(i, i + ADD_MEMBERS_BATCH)
+        const hasMoreAfterThis = i + ADD_MEMBERS_BATCH < ids.length
         const res = await apiClient.contactGroups.addMembers(groupId, chunk)
         if (isContactBulkJobAccepted(res)) {
-          toast.info(gCopy.addMembersBulkStarted)
+          anyAsyncBulk = true
+          toast.loading(gCopy.addMembersBulkRunning, { id: BULK_ID })
           setAdding(false)
           await new Promise<void>((resolve) => {
             bulkJobPoll.start(
               res.jobId,
               {
+                onProgress: (p) => {
+                  toast.loading(
+                    gCopy.addMembersBulkProgress
+                      .replace("{{percent}}", String(p.progress))
+                      .replace("{{status}}", p.status),
+                    { id: BULK_ID },
+                  )
+                },
                 onComplete: (progress) => {
                   const st = (progress.status ?? "").toLowerCase()
                   if (st === "failed" || st === "error") {
                     setError(gCopy.addMembersFailed)
+                    toast.error(gCopy.addMembersFailed, { id: BULK_ID })
                     aborted = true
                     fatalError = true
                   } else if (st === "cancelled" || st === "canceled") {
-                    toast.info(gCopy.addMembersBulkEndedCancelled)
+                    toast.info(gCopy.addMembersBulkEndedCancelled, { id: BULK_ID })
                     aborted = true
                   } else {
                     const added = progress.summary?.added ?? progress.processedCount ?? chunk.length
                     totalAdded += added
+                    if (hasMoreAfterThis) {
+                      toast.loading(gCopy.addMembersBulkRunning, { id: BULK_ID })
+                    }
                   }
                   resolve()
                 },
@@ -278,7 +296,13 @@ function AddMembersModal({
       }
       if (totalAdded > 0) {
         const tpl = totalAdded === 1 ? gCopy.addMembersSuccessOne : gCopy.addMembersSuccessMany
-        toast.success(tpl.replace("{{count}}", String(totalAdded)))
+        if (anyAsyncBulk) {
+          toast.success(tpl.replace("{{count}}", String(totalAdded)), { id: BULK_ID })
+        } else {
+          toast.success(tpl.replace("{{count}}", String(totalAdded)))
+        }
+      } else if (anyAsyncBulk && !fatalError && !aborted) {
+        toast.dismiss(BULK_ID)
       }
       onSuccess(totalAdded)
       onClose()
@@ -604,30 +628,45 @@ export default function ContactGroupDetailPage() {
     let totalRemoved = 0
     let aborted = false
     let fatalError = false
+    let anyAsyncBulk = false
+    const BULK_ID = GROUP_MEMBER_BULK_REMOVE_TOAST_ID
     try {
       for (let i = 0; i < ids.length; i += REMOVE_MEMBERS_BATCH) {
         const chunk = ids.slice(i, i + REMOVE_MEMBERS_BATCH)
+        const hasMoreAfterThis = i + REMOVE_MEMBERS_BATCH < ids.length
         const res = await apiClient.contactGroups.removeMembers(groupId, chunk)
         if (isContactBulkJobAccepted(res)) {
-          toast.info(gCopy.removeMembersBulkStarted)
+          anyAsyncBulk = true
+          toast.loading(gCopy.removeMembersBulkRunning, { id: BULK_ID })
           setBulkRemoving(false)
           await new Promise<void>((resolve) => {
             memberBulkPoll.start(
               res.jobId,
               {
+                onProgress: (p) => {
+                  toast.loading(
+                    gCopy.removeMembersBulkProgress
+                      .replace("{{percent}}", String(p.progress))
+                      .replace("{{status}}", p.status),
+                    { id: BULK_ID },
+                  )
+                },
                 onComplete: (progress) => {
                   const st = (progress.status ?? "").toLowerCase()
                   if (st === "failed" || st === "error") {
-                    toast.error(gCopy.removeMemberFailed)
+                    toast.error(gCopy.removeMemberFailed, { id: BULK_ID })
                     aborted = true
                     fatalError = true
                   } else if (st === "cancelled" || st === "canceled") {
-                    toast.info(gCopy.addMembersBulkEndedCancelled)
+                    toast.info(gCopy.addMembersBulkEndedCancelled, { id: BULK_ID })
                     aborted = true
                   } else {
                     const rm =
                       progress.summary?.removed ?? progress.processedCount ?? chunk.length
                     totalRemoved += rm
+                    if (hasMoreAfterThis) {
+                      toast.loading(gCopy.removeMembersBulkRunning, { id: BULK_ID })
+                    }
                   }
                   resolve()
                 },
@@ -636,9 +675,6 @@ export default function ContactGroupDetailPage() {
             )
           })
           if (aborted) {
-            if (!fatalError && totalRemoved > 0) {
-              toast.success(gCopy.removeMembersBulkDone.replace("{{count}}", String(totalRemoved)))
-            }
             setSelectedMemberIds(new Set())
             void fetchMembersFirstPage()
             void fetchGroup()
@@ -650,7 +686,16 @@ export default function ContactGroupDetailPage() {
         }
       }
       if (totalRemoved > 0) {
-        toast.success(gCopy.removeMembersBulkDone.replace("{{count}}", String(totalRemoved)))
+        if (anyAsyncBulk) {
+          toast.success(
+            gCopy.removeMembersBulkDone.replace("{{count}}", String(totalRemoved)),
+            { id: BULK_ID },
+          )
+        } else {
+          toast.success(gCopy.removeMembersBulkDone.replace("{{count}}", String(totalRemoved)))
+        }
+      } else if (anyAsyncBulk && !fatalError && !aborted) {
+        toast.dismiss(BULK_ID)
       }
       setSelectedMemberIds(new Set())
       void fetchMembersFirstPage()
