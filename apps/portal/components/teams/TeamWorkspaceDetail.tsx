@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -12,7 +12,8 @@ import Card from "@/components/ui/Card"
 import Input from "@/components/ui/Input"
 import Modal from "@/components/ui/Modal"
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"
-import { deriveTeamPageAccess } from "@/lib/team-page-access"
+import { resolveTeamDetailAccess, getTeamMemberUserId, getTeamInstanceAssignmentUserId } from "@/lib/team-page-access"
+import { teamHasNoSeatAvailable } from "@/lib/team-seats"
 
 type Tab = "overview" | "members" | "invitations" | "instances" | "keys" | "danger"
 
@@ -21,7 +22,6 @@ interface TeamWorkspaceDetailProps {
   team: TeamDetail | null
   loading: boolean
   error: string | null
-  currentUserId: string
   onRefresh: () => Promise<void>
 }
 
@@ -34,14 +34,15 @@ export default function TeamWorkspaceDetail({
   team,
   loading,
   error,
-  currentUserId,
   onRefresh,
 }: TeamWorkspaceDetailProps) {
   const { copy } = usePortalLocale()
   const t = copy.teams
   const errs = t.errors as Record<string, string>
   const router = useRouter()
-  const { refreshTeams } = useWorkspace()
+  const { refreshTeams, me, workspace, workspaceCurrent } = useWorkspace()
+  const viewerId = me?.id ?? ""
+  const meTeamMembership = useMemo(() => me?.teams?.find((x) => x.id === teamId) ?? null, [me?.teams, teamId])
   const [tab, setTab] = useState<Tab>("overview")
   const [nameDraft, setNameDraft] = useState("")
   const [savingName, setSavingName] = useState(false)
@@ -51,10 +52,37 @@ export default function TeamWorkspaceDetail({
   const [secretModal, setSecretModal] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState("")
   const [instances, setInstances] = useState<Instance[]>([])
-  const [instId, setInstId] = useState("")
-  const [memberAssignId, setMemberAssignId] = useState("")
+  const [togglingCell, setTogglingCell] = useState<string | null>(null)
   const [keyName, setKeyName] = useState("")
   const [apiKeys, setApiKeys] = useState<TeamApiKeyRow[]>([])
+  const [keyCreateOpen, setKeyCreateOpen] = useState(false)
+  const [creatingKey, setCreatingKey] = useState(false)
+
+  const collaborators = useMemo(() => {
+    if (!team) return []
+    return (team.members ?? [])
+      .filter((m) => String(m.role ?? "").toLowerCase().trim() === "collaborator")
+      .filter((m) => getTeamMemberUserId(m) !== "")
+  }, [team])
+
+  const myInstanceAssignments = useMemo(() => {
+    if (!team || !viewerId.trim()) return []
+    return (team.instanceAssignments ?? []).filter((a) => getTeamInstanceAssignmentUserId(a) === viewerId)
+  }, [team, viewerId])
+
+  const hasInstanceAssignment = useCallback(
+    (memberUserId: string, instanceId: string) => {
+      const rows = team?.instanceAssignments ?? []
+      return rows.some(
+        (a) => getTeamInstanceAssignmentUserId(a) === memberUserId && a.instanceId === instanceId,
+      )
+    },
+    [team],
+  )
+
+  useEffect(() => {
+    setTogglingCell(null)
+  }, [teamId])
 
   useEffect(() => {
     if (team?.name) setNameDraft(team.name)
@@ -78,10 +106,34 @@ export default function TeamWorkspaceDetail({
     }
   }, [teamId])
 
+  const handleCreateTeamApiKey = useCallback(async () => {
+    if (!keyName.trim()) return
+    setCreatingKey(true)
+    try {
+      const res = await apiClient.teams.createApiKey(teamId, { name: keyName.trim() })
+      setKeyName("")
+      setKeyCreateOpen(false)
+      if (res.secret) setSecretModal(res.secret)
+      await loadApiKeys()
+      await onRefresh()
+    } catch (e) {
+      toast.error(e instanceof ApiClientError ? errMsg(e.code, errs) : errs.UNKNOWN)
+    } finally {
+      setCreatingKey(false)
+    }
+  }, [keyName, teamId, loadApiKeys, onRefresh])
+
   useEffect(() => {
     if (tab === "instances") void loadInstances()
     if (tab === "keys") void loadApiKeys()
   }, [tab, loadInstances, loadApiKeys])
+
+  useEffect(() => {
+    if (tab !== "keys") {
+      setKeyCreateOpen(false)
+      setKeyName("")
+    }
+  }, [tab])
 
   const saveName = async () => {
     if (!team || !nameDraft.trim()) return
@@ -100,11 +152,15 @@ export default function TeamWorkspaceDetail({
 
   const sendInvite = async () => {
     if (!inviteEmail.trim()) return
+    if (teamHasNoSeatAvailable(team)) {
+      toast.error(t.inviteNoSeatsHint)
+      return
+    }
     setBusy(true)
     try {
       await apiClient.teams.createInvitation(teamId, { email: inviteEmail.trim(), role: inviteRole })
       setInviteEmail("")
-      toast.success(copy.toasts.profileUpdated)
+      toast.success(t.inviteSent)
       await onRefresh()
     } catch (e) {
       toast.error(e instanceof ApiClientError ? errMsg(e.code, errs) : errs.UNKNOWN)
@@ -115,14 +171,42 @@ export default function TeamWorkspaceDetail({
 
   const inviteRowId = (inv: TeamInvitation) => inv.invitationId ?? inv.id ?? ""
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "overview", label: t.tabOverview },
-    { id: "members", label: t.tabMembers },
-    { id: "invitations", label: t.tabInvitations },
-    { id: "instances", label: t.tabInstances },
-    { id: "keys", label: t.tabApiKeys },
-    { id: "danger", label: t.tabDanger },
-  ]
+  const access = useMemo(
+    () => resolveTeamDetailAccess(teamId, team, viewerId, workspace, workspaceCurrent, meTeamMembership),
+    [teamId, team, viewerId, workspace, workspaceCurrent, meTeamMembership],
+  )
+
+  const inviteSeatsBlocked = useMemo(() => teamHasNoSeatAvailable(team), [team])
+
+  const visibleTabs = useMemo(() => {
+    const row = (id: Tab, label: string, visible: boolean) => ({ id, label, visible })
+    return [
+      row("overview", t.tabOverview, true),
+      row("members", t.tabMembers, true),
+      row("invitations", t.tabInvitations, access.canManage),
+      row("instances", t.tabInstances, access.canManageInstances || access.collaboratorOnly),
+      row("keys", t.tabApiKeys, access.canKeys),
+      row("danger", t.tabDanger, access.isOwner || access.canManage),
+    ].filter((x) => x.visible)
+  }, [
+    access.canManage,
+    access.canManageInstances,
+    access.canKeys,
+    access.collaboratorOnly,
+    access.isOwner,
+    t.tabApiKeys,
+    t.tabDanger,
+    t.tabInstances,
+    t.tabInvitations,
+    t.tabMembers,
+    t.tabOverview,
+  ])
+
+  useEffect(() => {
+    if (!visibleTabs.some((x) => x.id === tab)) {
+      setTab("overview")
+    }
+  }, [visibleTabs, tab])
 
   if (loading && !team) {
     return <p className="text-sm text-text-secondary">{copy.common.loading}</p>
@@ -141,12 +225,10 @@ export default function TeamWorkspaceDetail({
     return null
   }
 
-  const { isOwner, canManage, canKeys, collaboratorOnly } = deriveTeamPageAccess(team, currentUserId)
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2 border-b border-border pb-2">
-        {tabs.map((x) => (
+        {visibleTabs.map((x) => (
           <button
             key={x.id}
             type="button"
@@ -163,12 +245,12 @@ export default function TeamWorkspaceDetail({
 
       {tab === "overview" && (
         <Card>
-          {!isOwner ? <p className="text-sm text-text-secondary mb-4">{t.billingHidden}</p> : null}
+          {!access.isOwner ? <p className="text-sm text-text-secondary mb-4">{t.billingHidden}</p> : null}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1 min-w-0">
               <Input label={t.teamName} value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} />
             </div>
-            {canManage ? (
+            {access.canManage ? (
               <Button variant="primary" loading={savingName} type="button" onClick={() => void saveName()}>
                 {t.rename}
               </Button>
@@ -190,24 +272,25 @@ export default function TeamWorkspaceDetail({
               </thead>
               <tbody>
                 {(team.members ?? []).map((m: TeamMember, memberIndex) => {
+                  const memberId = getTeamMemberUserId(m)
                   const isRowOwner = m.role === "owner"
-                  const isSelf = m.userId === currentUserId
+                  const isSelf = memberId === viewerId
                   return (
                     <tr
-                      key={`${m.userId ?? "member"}-${m.joinedAt ?? ""}-${memberIndex}`}
+                      key={`${memberId || "member"}-${m.joinedAt ?? ""}-${memberIndex}`}
                       className="border-b border-border last:border-0"
                     >
-                      <td className="py-2 pr-2 font-mono text-xs">{m.email ?? m.userId}</td>
+                      <td className="py-2 pr-2 font-mono text-xs">{m.email ?? memberId}</td>
                       <td className="py-2 pr-2">{m.role}</td>
                       <td className="py-2 text-right">
-                        {canManage && !isRowOwner ? (
+                        {access.canManage && !isRowOwner ? (
                           <Button
-                            variant="ghost"
+                            variant="danger"
                             size="sm"
                             type="button"
                             onClick={async () => {
                               try {
-                                await apiClient.teams.removeMember(teamId, m.userId)
+                                await apiClient.teams.removeMember(teamId, memberId)
                                 await onRefresh()
                               } catch (e) {
                                 toast.error(e instanceof ApiClientError ? errMsg(e.code, errs) : errs.UNKNOWN)
@@ -217,7 +300,7 @@ export default function TeamWorkspaceDetail({
                             {t.removeMember}
                           </Button>
                         ) : null}
-                        {isSelf && !isOwner ? (
+                        {isSelf && !access.isOwner ? (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -243,43 +326,60 @@ export default function TeamWorkspaceDetail({
               </tbody>
             </table>
           </div>
-          {isOwner ? <p className="text-xs text-text-muted mt-3">{t.ownerCannotLeave}</p> : null}
+          {access.isOwner ? <p className="text-xs text-text-muted mt-3">{t.ownerCannotLeave}</p> : null}
         </Card>
       )}
 
-      {tab === "invitations" && canManage && (
+      {tab === "invitations" && access.canManage && (
         <Card>
-          <div className="mb-4 flex flex-wrap items-end gap-2">
-            <div className="min-w-[200px] flex-1">
+          {inviteSeatsBlocked ? (
+            <p className="mb-4 text-xs leading-snug text-text-muted">{t.inviteNoSeatsHint}</p>
+          ) : null}
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end max-w-4xl">
+            <div className="w-full min-w-0 sm:flex-1 sm:max-w-md">
               <Input label={t.inviteEmail} value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
             </div>
-            <select
-              className="h-[42px] rounded-none border border-border-strong px-3 text-sm"
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as "admin" | "collaborator")}
+            <div className="w-full sm:w-44 shrink-0">
+              <label className="block text-xs font-medium text-text-secondary mb-1.5" htmlFor="team-invite-role">
+                {t.role}
+              </label>
+              <select
+                id="team-invite-role"
+                className="h-10 w-full rounded-lg border border-border-strong bg-bg px-3 text-sm text-text"
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value as "admin" | "collaborator")}
+              >
+                <option value="admin">{t.roleAdmin}</option>
+                <option value="collaborator">{t.roleCollaborator}</option>
+              </select>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              type="button"
+              loading={busy}
+              disabled={inviteSeatsBlocked}
+              onClick={() => void sendInvite()}
             >
-              <option value="admin">{t.roleAdmin}</option>
-              <option value="collaborator">{t.roleCollaborator}</option>
-            </select>
-            <Button variant="primary" type="button" loading={busy} onClick={() => void sendInvite()}>
               {t.sendInvite}
             </Button>
           </div>
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs uppercase text-text-muted">
-                <th className="pb-2">{t.email}</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2" />
-              </tr>
-            </thead>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-md text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-xs uppercase text-text-muted">
+                  <th className="pb-2 pr-4">{t.email}</th>
+                  <th className="pb-2 pr-4">{t.inviteStatusColumn}</th>
+                  <th className="pb-2 text-right">{t.inviteActionsColumn}</th>
+                </tr>
+              </thead>
             <tbody>
               {(team.invitations ?? []).map((inv: TeamInvitation) => {
                 const id = inviteRowId(inv)
                 return (
                   <tr key={id || String(inv.email)} className="border-b border-border">
                     <td className="py-2">{inv.email}</td>
-                    <td className="py-2">{inv.status}</td>
+                    <td className="py-2">{inv.status?.trim() ? inv.status : t.inviteStatusPending}</td>
                     <td className="py-2 text-right space-x-2">
                       <Button
                         variant="secondary"
@@ -297,7 +397,7 @@ export default function TeamWorkspaceDetail({
                         {t.resendInvite}
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="danger"
                         size="sm"
                         type="button"
                         onClick={async () => {
@@ -317,116 +417,199 @@ export default function TeamWorkspaceDetail({
               })}
             </tbody>
           </table>
-        </Card>
-      )}
-
-      {tab === "invitations" && !canManage && (
-        <Card>
-          <p className="text-sm text-text-secondary">{t.collaboratorKeysHidden}</p>
-        </Card>
-      )}
-
-      {tab === "instances" && canManage && (
-        <Card>
-          <p className="text-sm text-text-secondary mb-3">{t.instanceAssignTitle}</p>
-          <div className="grid gap-2 md:grid-cols-3">
-            <select
-              className="border border-border-strong rounded-lg px-3 py-2 text-sm"
-              value={instId}
-              onChange={(e) => setInstId(e.target.value)}
-            >
-              <option value="">{t.instanceId}</option>
-              {instances.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                </option>
-              ))}
-            </select>
-            <Input label={t.memberUserId} value={memberAssignId} onChange={(e) => setMemberAssignId(e.target.value)} />
-            <Button
-              variant="primary"
-              type="button"
-              className="self-end"
-              onClick={async () => {
-                if (!instId || !memberAssignId) return
-                try {
-                  await apiClient.teams.assignInstance(teamId, { instanceId: instId, memberUserId: memberAssignId })
-                  toast.success(copy.toasts.instanceCreated)
-                  await onRefresh()
-                } catch (e) {
-                  toast.error(e instanceof ApiClientError ? errMsg(e.code, errs) : errs.UNKNOWN)
-                }
-              }}
-            >
-              {t.assign}
-            </Button>
           </div>
         </Card>
       )}
 
-      {tab === "instances" && collaboratorOnly && (
+      {tab === "instances" && access.canManageInstances && !access.collaboratorOnly && (
         <Card>
-          <p className="text-sm text-text-secondary">{t.collaboratorKeysHidden}</p>
+          <p className="text-sm text-text-secondary mb-2">{t.instanceAccessGridIntro}</p>
+          {collaborators.length === 0 ? (
+            <p className="text-sm text-text-muted">{t.instanceAccessNoCollaborators}</p>
+          ) : instances.length === 0 ? (
+            <p className="text-sm text-text-muted">{t.instanceAccessNoInstances}</p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full min-w-max text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-bg-muted text-xs uppercase text-text-muted">
+                    <th className="sticky left-0 z-10 min-w-40 bg-bg-muted px-3 py-2.5 font-medium">
+                      {t.instanceAccessCollaboratorColumn}
+                    </th>
+                    {instances.map((i) => (
+                      <th key={i.id} className="whitespace-nowrap px-3 py-2.5 font-medium text-text-secondary">
+                        {i.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {collaborators.map((m, rowIndex) => {
+                    const mid = getTeamMemberUserId(m)
+                    const label = (m.fullName ?? m.email ?? mid).trim() || mid
+                    return (
+                      <tr
+                        key={mid || `collab-${rowIndex}`}
+                        className="border-b border-border last:border-0 odd:bg-bg-subtle/60"
+                      >
+                        <td className="sticky left-0 z-10 bg-bg-muted px-3 py-2 font-medium text-text">{label}</td>
+                        {instances.map((i) => {
+                          const checked = mid ? hasInstanceAssignment(mid, i.id) : false
+                          const busy = togglingCell === `${mid}:${i.id}`
+                          const disabled = !mid || busy
+                          return (
+                            <td key={i.id} className="px-3 py-2 text-center align-middle">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 cursor-pointer rounded border-border-strong accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+                                checked={checked}
+                                disabled={disabled}
+                                aria-label={t.instanceAccessToggleAria
+                                  .replace("{{member}}", label)
+                                  .replace("{{instance}}", i.name)}
+                                onChange={(e) => {
+                                  if (!mid) return
+                                  const nextOn = e.target.checked
+                                  void (async () => {
+                                    setTogglingCell(`${mid}:${i.id}`)
+                                    try {
+                                      if (nextOn) {
+                                        await apiClient.teams.assignInstance(teamId, {
+                                          instanceId: i.id,
+                                          memberUserId: mid,
+                                        })
+                                      } else {
+                                        await apiClient.teams.unassignInstance(teamId, i.id, mid)
+                                      }
+                                      toast.success(t.instanceAccessSaved)
+                                      await onRefresh()
+                                    } catch (err) {
+                                      toast.error(
+                                        err instanceof ApiClientError ? errMsg(err.code, errs) : errs.UNKNOWN,
+                                      )
+                                    } finally {
+                                      setTogglingCell(null)
+                                    }
+                                  })()
+                                }}
+                              />
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       )}
 
-      {tab === "keys" && canKeys && (
+      {tab === "instances" && access.collaboratorOnly && (
         <Card>
-          <p className="text-xs text-text-muted mb-3">{t.keysHintTeam}</p>
-          <div className="mb-4 flex flex-wrap gap-2">
-            <Input label={t.apiKeyName} value={keyName} onChange={(e) => setKeyName(e.target.value)} />
-            <Button
-              variant="primary"
-              type="button"
-              onClick={async () => {
-                if (!keyName.trim()) return
-                try {
-                  const res = await apiClient.teams.createApiKey(teamId, { name: keyName.trim() })
-                  setKeyName("")
-                  if (res.secret) setSecretModal(res.secret)
-                  await loadApiKeys()
-                  await onRefresh()
-                } catch (e) {
-                  toast.error(e instanceof ApiClientError ? errMsg(e.code, errs) : errs.UNKNOWN)
-                }
-              }}
-            >
-              {t.createApiKey}
-            </Button>
-          </div>
-          <ul className="divide-y divide-border">
-            {apiKeys.map((k) => (
-              <li key={k.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="font-medium text-text">{k.name}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      await apiClient.teams.revokeApiKey(teamId, k.id)
-                      await loadApiKeys()
-                      await onRefresh()
-                    } catch (e) {
-                      toast.error(e instanceof ApiClientError ? errMsg(e.code, errs) : errs.UNKNOWN)
-                    }
-                  }}
-                >
-                  {t.revokeApiKey}
+          <p className="text-sm text-text-secondary mb-4">{t.instanceTabCollaboratorHint}</p>
+          {myInstanceAssignments.length === 0 ? (
+            <p className="text-sm text-text-muted">{t.collaboratorNoInstanceAssignments}</p>
+          ) : (
+            <ul className="divide-y divide-border rounded-lg border border-border">
+              {myInstanceAssignments.map((a) => {
+                const name =
+                  a.instance?.name ??
+                  instances.find((x) => x.id === a.instanceId)?.name ??
+                  a.instanceId
+                const wa = a.instance?.waNumber ?? instances.find((x) => x.id === a.instanceId)?.waNumber
+                const status = a.instance?.status
+                return (
+                  <li key={`${a.instanceId}-${a.createdAt ?? ""}`} className="flex flex-col gap-0.5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="font-medium text-text">{name}</span>
+                    <span className="font-mono text-xs text-text-muted">
+                      {[wa, status].filter(Boolean).join(" · ") || null}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </Card>
+      )}
+
+      {tab === "keys" && access.canKeys && (
+        <Card>
+          {apiKeys.length === 0 ? (
+            <div className="flex flex-col items-center justify-center px-4 py-12 text-center md:py-16">
+              <p className="mb-1 text-sm font-medium text-text">{t.keysEmptyTitle}</p>
+              <p className="mb-6 max-w-md text-sm text-text-secondary">{t.keysEmptyDescription}</p>
+              <Button size="sm" variant="primary" type="button" onClick={() => setKeyCreateOpen(true)}>
+                {t.createApiKey}
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <p className="max-w-2xl text-xs text-text-muted">{t.keysHintTeam}</p>
+                <Button size="sm" variant="secondary" type="button" className="shrink-0" onClick={() => setKeyCreateOpen(true)}>
+                  {t.createApiKey}
                 </Button>
-              </li>
-            ))}
-          </ul>
+              </div>
+              <ul className="divide-y divide-border rounded-lg border border-border">
+                {apiKeys.map((k) => (
+                  <li key={k.id} className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
+                    <span className="min-w-0 truncate font-medium text-text">{k.name}</span>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      type="button"
+                      className="shrink-0"
+                      onClick={async () => {
+                        try {
+                          await apiClient.teams.revokeApiKey(teamId, k.id)
+                          await loadApiKeys()
+                          await onRefresh()
+                        } catch (e) {
+                          toast.error(e instanceof ApiClientError ? errMsg(e.code, errs) : errs.UNKNOWN)
+                        }
+                      }}
+                    >
+                      {t.revokeApiKey}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </Card>
       )}
 
-      {tab === "keys" && !canKeys && (
-        <Card>
-          <p className="text-sm text-text-secondary">{t.collaboratorKeysHidden}</p>
-        </Card>
-      )}
+      <Modal
+        open={keyCreateOpen}
+        onClose={() => {
+          setKeyCreateOpen(false)
+          setKeyName("")
+        }}
+        title={t.createApiKey}
+        description={t.keysHintTeam}
+      >
+        <Input label={t.apiKeyName} value={keyName} onChange={(e) => setKeyName(e.target.value)} />
+        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            type="button"
+            onClick={() => {
+              setKeyCreateOpen(false)
+              setKeyName("")
+            }}
+          >
+            {t.cancelAction}
+          </Button>
+          <Button variant="primary" size="sm" type="button" loading={creatingKey} onClick={() => void handleCreateTeamApiKey()}>
+            {t.createApiKey}
+          </Button>
+        </div>
+      </Modal>
 
-      {tab === "danger" && isOwner && (
+      {tab === "danger" && access.isOwner && (
         <Card>
           <p className="text-sm text-error-hover mb-2">{t.deleteTeam}</p>
           <Input label={t.deleteConfirm} value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} />
@@ -453,10 +636,10 @@ export default function TeamWorkspaceDetail({
         </Card>
       )}
 
-      {tab === "danger" && !isOwner && (
+      {tab === "danger" && !access.isOwner && (
         <Card>
           <p className="text-sm text-text-secondary">
-            {canManage ? t.dangerOwnerOnly : t.dangerNoAccess}
+            {access.canManage ? t.dangerOwnerOnly : t.dangerNoAccess}
           </p>
         </Card>
       )}

@@ -12,3 +12,7 @@ GET /api/v1/usage
 ## Réponse succès `200`
 
 La réponse a le même format que `GET /api/v1/billing/usage`.
+
+## Règles workspace
+
+Comme `/api/v1/billing/usage`, cet endpoint exige une **clé API personnelle** (`msgf_live_…`). Une **clé d'équipe** est rejetée en `403` avec le code [`TEAM_KEY_NOT_ALLOWED`](/fr/resources/error-codes#équipes-workspaces).

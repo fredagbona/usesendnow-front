@@ -33,6 +33,17 @@ export function formatDate(dateStr: string): string {
   })
 }
 
+/** Date + time for timelines and detail rows (locale from portal, e.g. fr-FR / en-US). */
+export function formatDateTime(dateStr: string, locale: string): string {
+  return new Date(dateStr).toLocaleString(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
 export function formatMonthYear(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("fr-FR", {
     month: "long",

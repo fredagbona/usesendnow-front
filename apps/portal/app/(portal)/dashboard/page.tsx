@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { fadeIn } from "@/lib/animations"
@@ -8,6 +8,8 @@ import { formatRelativeDate } from "@/lib/format"
 import { apiClient } from "@usesendnow/api-client"
 import type { SubscriptionResponse, Message, Campaign, Plan, PlanLimits } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged, PORTAL_WORKSPACE_CHANGED_EVENT } from "@/lib/workspace-events"
+import { writePortalWorkspace } from "@/lib/workspace-storage"
 import PageHeader from "@/components/layout/PageHeader"
 import Card from "@/components/ui/Card"
 import Badge from "@/components/ui/Badge"
@@ -146,24 +148,38 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [sub, msgs, camps] = await Promise.all([
-          apiClient.billing.getSubscription(),
-          apiClient.messages.list({ limit: 5 }),
-          apiClient.campaigns.list(),
-        ])
-        setSubscription(sub)
-        setMessages(msgs.messages)
-        setCampaigns(camps.slice(0, 3))
-      } catch {
-        // show partial data
-      } finally {
-        setLoading(false)
-      }
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const teamId = params.get("teamId")
+    if (!teamId) return
+    writePortalWorkspace({ mode: "team", teamId, teamName: null, role: null })
+    window.dispatchEvent(new CustomEvent(PORTAL_WORKSPACE_CHANGED_EVENT))
+    router.replace("/dashboard")
+  }, [router])
+
+  const loadDashboard = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [sub, msgs, camps] = await Promise.all([
+        apiClient.billing.getSubscription(),
+        apiClient.messages.list({ limit: 5 }),
+        apiClient.campaigns.list(),
+      ])
+      setSubscription(sub)
+      setMessages(msgs.messages)
+      setCampaigns(camps.slice(0, 3))
+    } catch {
+      // show partial data
+    } finally {
+      setLoading(false)
     }
-    load()
   }, [])
+
+  useEffect(() => {
+    void loadDashboard()
+  }, [loadDashboard])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void loadDashboard()), [loadDashboard])
 
   const sub = subscription?.subscription
   const usage = subscription?.usage

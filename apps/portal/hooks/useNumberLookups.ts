@@ -5,6 +5,7 @@ import { toast } from "@/lib/toast"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
 import type { NumberLookup, CreateLookupResponse, Instance } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export function useNumberLookups() {
   const { copy } = usePortalLocale()
@@ -65,6 +66,15 @@ export function useNumberLookups() {
   }, [copy.hooks.numberLookupsHistoryLoadError])
 
   useEffect(() => { fetchLookups() }, [fetchLookups])
+
+  useEffect(() => {
+    return onPortalWorkspaceChanged(() => {
+      clearPoll()
+      setActiveLookup(null)
+      setPolling(false)
+      void fetchLookups()
+    })
+  }, [clearPoll, fetchLookups])
 
   const submitLookup = async (instanceId: string, numbers: string[]): Promise<CreateLookupResponse | null> => {
     setSubmitting(true)

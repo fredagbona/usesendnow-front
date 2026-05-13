@@ -4,6 +4,7 @@ import Link from "next/link"
 import { UserMultiple02Icon } from "hugeicons-react"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"
+import { getTeamSeatsSummary } from "@/lib/team-seats"
 
 export interface WorkspaceMenuSectionProps {
   onClose: () => void
@@ -42,6 +43,14 @@ export function WorkspaceMenuSection({ onClose }: WorkspaceMenuSectionProps) {
           teams.map((team) => {
             const active = workspace.mode === "team" && workspace.teamId === team.id
             const owner = team.isOwner === true || team.myRole === "owner"
+            const roleKey = String(team.myRole ?? "").toLowerCase()
+            const badgeLabel = owner
+              ? t.ownerBadge
+              : roleKey === "admin"
+                ? t.roleAdmin
+                : roleKey === "collaborator"
+                  ? t.roleCollaborator
+                  : null
             return (
               <button
                 key={team.id}
@@ -55,10 +64,21 @@ export function WorkspaceMenuSection({ onClose }: WorkspaceMenuSectionProps) {
                   active ? "bg-primary-subtle text-primary-text" : "text-text-body hover:bg-bg-subtle",
                 ].join(" ")}
               >
-                <span className="min-w-0 truncate">{team.name}</span>
-                {owner ? (
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{team.name}</span>
+                  {(() => {
+                    const s = getTeamSeatsSummary(team)
+                    if (!s.hasSeatsObject && s.limit == null) return null
+                    return (
+                      <span className="mt-0.5 block text-[10px] font-medium tabular-nums text-text-muted">
+                        {s.used}/{s.limit ?? "—"}
+                      </span>
+                    )
+                  })()}
+                </span>
+                {badgeLabel ? (
                   <span className="shrink-0 rounded-full bg-bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-text-muted">
-                    {t.ownerBadge}
+                    {badgeLabel}
                   </span>
                 ) : null}
               </button>

@@ -41,3 +41,7 @@ GET /api/v1/billing/payments
   }
 }
 ```
+
+## Workspace rules
+
+This endpoint returns the **personal payment history** of the key owner. It requires a **personal API key** (`msgf_live_…`). A **team API key** is rejected with `403` and code [`TEAM_KEY_NOT_ALLOWED`](/resources/error-codes#teams-workspaces). Team payment history is only available to the team owner from the console under `GET /api/billing/payments` with `X-Team-Id`.

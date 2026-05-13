@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { PORTAL_WORKSPACE_CHANGED_EVENT } from "@/lib/workspace-events"
+import { writePortalWorkspace } from "@/lib/workspace-storage"
 import Button from "@/components/ui/Button"
 import Card from "@/components/ui/Card"
 
@@ -27,8 +29,17 @@ export default function InviteAcceptClient() {
     setStatus("loading")
     ;(async () => {
       try {
-        await apiClient.teams.acceptInvitation({ token })
+        const res = await apiClient.teams.acceptInvitation({ token })
         if (!cancelled) {
+          if (res.teamId) {
+            writePortalWorkspace({
+              mode: "team",
+              teamId: res.teamId,
+              teamName: null,
+              role: res.role ?? null,
+            })
+            window.dispatchEvent(new CustomEvent(PORTAL_WORKSPACE_CHANGED_EVENT))
+          }
           setStatus("ok")
           setMessage(t.invitePageSuccess)
           setTimeout(() => router.replace("/dashboard"), 1500)

@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { SubscriptionResponse, Plan } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
-
-const WORKSPACE_CHANGED = "msgflash:workspace-changed"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export function useBilling() {
   const { copy } = usePortalLocale()
@@ -37,11 +36,9 @@ export function useBilling() {
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    const onWorkspaceChanged = () => {
+    return onPortalWorkspaceChanged(() => {
       void fetchBilling()
-    }
-    window.addEventListener(WORKSPACE_CHANGED, onWorkspaceChanged)
-    return () => window.removeEventListener(WORKSPACE_CHANGED, onWorkspaceChanged)
+    })
   }, [fetchBilling])
 
   return { subscription, plans, loading, error, refetch: fetchBilling, setSubscription }

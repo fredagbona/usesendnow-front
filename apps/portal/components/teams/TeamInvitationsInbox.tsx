@@ -7,6 +7,8 @@ import Button from "@/components/ui/Button"
 import Card from "@/components/ui/Card"
 import { useMyTeamInvitations } from "@/hooks/useMyTeamInvitations"
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"
+import { PORTAL_WORKSPACE_CHANGED_EVENT } from "@/lib/workspace-events"
+import { writePortalWorkspace } from "@/lib/workspace-storage"
 
 function errLabel(code: string, errors: Record<string, string>): string {
   return errors[code] ?? errors.UNKNOWN
@@ -20,9 +22,16 @@ export default function TeamInvitationsInbox() {
   const { refreshTeams } = useWorkspace()
   const numberLocale = locale === "fr" ? "fr-FR" : "en-US"
 
-  const accept = async (invitationId: string) => {
+  const accept = async (inv: { invitationId: string; teamId: string; teamName: string; role: string }) => {
     try {
-      await apiClient.teams.acceptInvitation({ invitationId })
+      await apiClient.teams.acceptInvitation({ invitationId: inv.invitationId })
+      writePortalWorkspace({
+        mode: "team",
+        teamId: inv.teamId,
+        teamName: inv.teamName,
+        role: inv.role,
+      })
+      window.dispatchEvent(new CustomEvent(PORTAL_WORKSPACE_CHANGED_EVENT))
       toast.success(copy.toasts.profileUpdated)
       await refetch()
       await refreshTeams()
@@ -72,7 +81,7 @@ export default function TeamInvitationsInbox() {
                   {new Date(inv.expiresAt).toLocaleString(numberLocale)}
                 </p>
               </div>
-              <Button variant="primary" size="sm" type="button" onClick={() => void accept(inv.invitationId)}>
+              <Button variant="primary" size="sm" type="button" onClick={() => void accept(inv)}>
                 {t.accept}
               </Button>
             </li>

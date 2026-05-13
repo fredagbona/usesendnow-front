@@ -14,19 +14,33 @@ GET /api/v1/contacts/groups/{groupId}/members
 | Nom | Type | Requis | Emplacement | Description |
 |---|---|---|---|---|
 | `groupId` | UUID | oui | path | ID du groupe |
-| `limit` | integer | non | query | Taille de page |
-| `cursor` | string | non | query | Curseur |
-| `search` | string | non | query | Recherche sur nom ou téléphone |
+| `limit` | integer | non | query | Taille de page, défaut `50`, max `100` |
+| `cursor` | string | non | query | Curseur opaque retourné par la page précédente |
+| `search` | string | non | query | Recherche insensible à la casse sur le `name` ou `phone` du membre (1-100 caractères) |
 
 ## Réponse succès `200`
 
 ```json
 {
   "data": {
-    "contacts": [],
-    "nextCursor": null,
-    "hasMore": false,
-    "total": 0
+    "contacts": [
+      {
+        "id": "cnt_uuid",
+        "name": "Awa Doe",
+        "phone": "+33612345000",
+        "tags": ["vip"],
+        "addedAt": "2026-04-01T10:00:00.000Z"
+      }
+    ],
+    "limit": 50,
+    "total": 42,
+    "nextCursor": "MjAyNi0wNC0wMVQxMDowMDowMC4wMDBafGNudF91dWlk",
+    "hasMore": true
   }
 }
 ```
+
+## Notes
+
+- Repassez la valeur de `nextCursor` comme `cursor` pour récupérer la page suivante. Arrêtez quand `hasMore` est `false` ou `nextCursor` vaut `null`.
+- Chaque membre inclut `addedAt` (date d'entrée du contact dans le groupe).

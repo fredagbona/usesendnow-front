@@ -1,11 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { ArrowLeft01Icon } from "hugeicons-react"
-import { apiClient } from "@usesendnow/api-client"
-import type { User } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import TeamWorkspaceDetail from "@/components/teams/TeamWorkspaceDetail"
 import { useTeamDetail } from "@/hooks/useTeamDetail"
@@ -16,14 +13,6 @@ export default function TeamDetailPage() {
   const { copy } = usePortalLocale()
   const t = copy.teams
   const { team, loading, error, refetch } = useTeamDetail(teamId)
-  const [me, setMe] = useState<User | null>(null)
-
-  useEffect(() => {
-    void apiClient.auth
-      .me()
-      .then(setMe)
-      .catch(() => setMe(null))
-  }, [])
 
   return (
     <div>
@@ -42,14 +31,7 @@ export default function TeamDetailPage() {
         </h1>
         <p className="text-sm text-[#6B7280] mt-0.5 font-mono">{teamId}</p>
       </div>
-      <TeamWorkspaceDetail
-        teamId={teamId}
-        team={team}
-        loading={loading}
-        error={error}
-        currentUserId={me?.id ?? ""}
-        onRefresh={refetch}
-      />
+      <TeamWorkspaceDetail teamId={teamId} team={team} loading={loading} error={error} onRefresh={refetch} />
     </div>
   )
 }

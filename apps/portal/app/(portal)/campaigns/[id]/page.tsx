@@ -7,7 +7,7 @@ import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
 import { useCampaign } from "@/hooks/useCampaigns"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
-import { formatDate } from "@/lib/format"
+import { formatDate, formatDateTime } from "@/lib/format"
 import type { Campaign, CampaignDetailStats, CampaignMessage } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
@@ -55,6 +55,18 @@ function canCancel(status: string) {
   return ["scheduled", "running", "paused", "paused_quota", "paused_plan"].includes(status)
 }
 
+/** Progress fill color aligned with campaign status (badge semantics). */
+function campaignProgressBarFillClass(status: string, progressPercent: number): string {
+  if (status === "failed") return "bg-error"
+  if (status === "cancelled") return "bg-text-muted"
+  if (status === "completed" || progressPercent >= 100) return "bg-success"
+  if (status === "paused" || status === "paused_quota" || status === "paused_plan") return "bg-[#EA580C]"
+  if (status === "scheduled") return "bg-[#D97706]"
+  if (status === "running") return "bg-[#3B82F6]"
+  if (status === "draft") return "bg-text-muted"
+  return "bg-primary-ink"
+}
+
 function getCampaignTotal(campaign: Campaign | null, stats: CampaignDetailStats | null) {
   if (stats?.stats.total != null) return stats.stats.total
   if (!campaign) return 0
@@ -94,13 +106,21 @@ function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-function TimelineRow({ label, value }: { label: string; value: string | null | undefined }) {
+function TimelineRow({
+  label,
+  value,
+  dateLocale,
+}: {
+  label: string
+  value: string | null | undefined
+  dateLocale: string
+}) {
   if (!value) return null
 
   return (
     <div className="flex items-start justify-between gap-3 border-b border-bg-muted py-3 last:border-0">
       <span className="text-sm text-text-secondary">{label}</span>
-      <span className="text-sm text-text">{formatDate(value)}</span>
+      <span className="text-sm text-text tabular-nums">{formatDateTime(value, dateLocale)}</span>
     </div>
   )
 }
@@ -384,39 +404,29 @@ export default function CampaignDetailPage() {
       )}
 
       <Card>
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-text">{d.overviewTitle}</h2>
-            <p className="mt-1 text-xs text-text-muted">
-              {total === 0
-                ? d.overviewNotStarted
-                : d.overviewPercentDone.replace("{{pct}}", String(progressPercent))}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-semibold text-text">{progressPercent}%</p>
-            <p className="text-xs text-text-muted">
-              {d.progressCaption.replace("{{pct}}", String(Math.min(progressPercent, 100)))}
-            </p>
-          </div>
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-text">{d.overviewTitle}</h2>
+          {total === 0 ? (
+            <p className="mt-1 text-xs text-text-muted">{d.overviewNotStarted}</p>
+          ) : null}
         </div>
 
-        <div className="mb-5 h-2 w-full rounded-full bg-bg-muted">
-          <div
-            className={[
-              "h-2 rounded-full transition-all",
-              status === "completed" || progressPercent >= 100 ? "bg-success" : "bg-primary-ink",
-            ].join(" ")}
-            style={{ width: `${Math.min(progressPercent, 100)}%` }}
-          />
+        <div className="mb-5 flex items-center gap-3">
+          <div className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-bg-muted">
+            <div
+              className={["h-full rounded-full transition-all", campaignProgressBarFillClass(status, progressPercent)].join(" ")}
+              style={{ width: `${Math.min(total > 0 ? progressPercent : 0, 100)}%` }}
+            />
+          </div>
+          {total > 0 ? (
+            <span className="shrink-0 text-sm font-semibold tabular-nums text-text">{Math.min(progressPercent, 100)}%</span>
+          ) : null}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
           <StatBox numberLocale={numberLocale} label={d.stats.planned} value={stats?.stats.planned ?? total} />
           <StatBox numberLocale={numberLocale} label={d.stats.queued} value={stats?.stats.queued ?? campaign.stats.queued} colorClass="text-text-muted" />
           <StatBox numberLocale={numberLocale} label={d.stats.sent} value={stats?.stats.sent ?? campaign.stats.sent} colorClass="text-info" />
-          <StatBox numberLocale={numberLocale} label={d.stats.delivered} value={stats?.stats.delivered ?? campaign.stats.delivered} colorClass="text-success" />
-          <StatBox numberLocale={numberLocale} label={d.stats.read} value={stats?.stats.read ?? campaign.stats.read ?? 0} colorClass="text-purple" />
           <StatBox numberLocale={numberLocale} label={d.stats.failed} value={stats?.stats.failed ?? campaign.stats.failed} colorClass="text-error" />
           <StatBox numberLocale={numberLocale} label={d.stats.cancelled} value={stats?.stats.cancelled ?? campaign.stats.cancelled ?? 0} colorClass="text-warning-text" />
         </div>
@@ -469,12 +479,12 @@ export default function CampaignDetailPage() {
 
         <Card>
           <h2 className="mb-4 text-sm font-semibold text-text">{d.timelineTitle}</h2>
-          <TimelineRow label={d.timelineScheduledFor} value={timeline?.scheduledFor ?? campaign.schedule} />
-          <TimelineRow label={d.timelineProcessingStarted} value={timeline?.processingStartedAt ?? campaign.stats.processingStartedAt} />
-          <TimelineRow label={d.timelineLastEnqueued} value={timeline?.lastEnqueuedAt ?? campaign.stats.lastEnqueuedAt} />
-          <TimelineRow label={d.timelineLastActivity} value={timeline?.lastActivityAt ?? stats?.startedAt} />
-          <TimelineRow label={d.timelineCompleted} value={timeline?.completedAt ?? campaign.stats.completedAt} />
-          <TimelineRow label={d.timelineCancelled} value={timeline?.cancelledAt ?? campaign.stats.cancelledAt} />
+          <TimelineRow dateLocale={numberLocale} label={d.timelineScheduledFor} value={timeline?.scheduledFor ?? campaign.schedule} />
+          <TimelineRow dateLocale={numberLocale} label={d.timelineProcessingStarted} value={timeline?.processingStartedAt ?? campaign.stats.processingStartedAt} />
+          <TimelineRow dateLocale={numberLocale} label={d.timelineLastEnqueued} value={timeline?.lastEnqueuedAt ?? campaign.stats.lastEnqueuedAt} />
+          <TimelineRow dateLocale={numberLocale} label={d.timelineLastActivity} value={timeline?.lastActivityAt ?? stats?.startedAt} />
+          <TimelineRow dateLocale={numberLocale} label={d.timelineCompleted} value={timeline?.completedAt ?? campaign.stats.completedAt} />
+          <TimelineRow dateLocale={numberLocale} label={d.timelineCancelled} value={timeline?.cancelledAt ?? campaign.stats.cancelledAt} />
         </Card>
       </div>
 

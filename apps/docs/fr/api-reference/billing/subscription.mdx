@@ -47,3 +47,7 @@ GET /api/v1/billing/subscription
 <Note>
 Le plan Free expose maintenant `maxApiKeys: 1` côté `subscription.plan.limits`.
 </Note>
+
+## Règles workspace
+
+Cet endpoint reflète le **compte personnel** du propriétaire de la clé. Il exige une **clé API personnelle** (`msgf_live_…`). Une **clé d'équipe** est rejetée en `403` avec le code [`TEAM_KEY_NOT_ALLOWED`](/fr/resources/error-codes#équipes-workspaces). Pour des données billing d'équipe côté console, utilisez `GET /api/billing/subscription` avec `Authorization: Bearer <jwt>` et l'en-tête optionnel `X-Team-Id`. Voir [Team context](/fr/api-reference/teams/team-context).

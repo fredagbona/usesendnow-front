@@ -17,6 +17,10 @@ description: Consultez les plans, la souscription courante, la consommation et l
 Le billing public via API key est en lecture seule. Les actions sensibles comme checkout, annulation ou downgrade se font depuis le dashboard.
 </Note>
 
+<Warning>
+Les lectures billing (`/me`, `/usage`, `/billing/subscription`, `/billing/usage`, `/billing/payments`) exigent une **clé API personnelle** (`msgf_live_…`). Une **clé d'équipe** (`msgf_team_…`) est rejetée en `403` `TEAM_KEY_NOT_ALLOWED`. Pour des données billing d'équipe, utilisez l'API console avec `Authorization: Bearer <jwt>` et l'en-tête optionnel `X-Team-Id` — voir [Team context](/fr/api-reference/teams/team-context).
+</Warning>
+
 ## Paramètres
 
 Ces routes sont toutes en `GET`.
@@ -186,4 +190,5 @@ Réponse :
 | Code | HTTP | Quand |
 |---|---|---|
 | `UNAUTHORIZED` | 401 | Clé invalide ou absente |
+| `TEAM_KEY_NOT_ALLOWED` | 403 | Clé d'équipe utilisée sur une route billing réservée au personnel |
 | `API_RATE_LIMIT_EXCEEDED` | 429 | Trop de requêtes par seconde |

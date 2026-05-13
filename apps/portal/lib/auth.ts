@@ -1,3 +1,5 @@
+import { clearPortalWorkspace } from "@/lib/workspace-storage"
+
 const TOKEN_KEY = "usn_token"
 
 export const getToken = (): string | null => {
@@ -11,6 +13,7 @@ export const setToken = (token: string): void => {
 
 export const clearToken = (): void => {
   localStorage.removeItem(TOKEN_KEY)
+  clearPortalWorkspace()
 }
 
 export const isAuthenticated = (): boolean => !!getToken()

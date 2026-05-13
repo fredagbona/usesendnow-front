@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Webhook } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export function useWebhooks() {
   const { copy } = usePortalLocale()
@@ -11,7 +12,7 @@ export function useWebhooks() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchWebhooks = async () => {
+  const fetchWebhooks = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -22,9 +23,13 @@ export function useWebhooks() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [copy.hooks.webhooksLoadError])
 
-  useEffect(() => { fetchWebhooks() }, [copy.hooks.webhooksLoadError])
+  useEffect(() => {
+    void fetchWebhooks()
+  }, [fetchWebhooks])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void fetchWebhooks()), [fetchWebhooks])
 
   const addWebhook = (webhook: Webhook) => {
     setWebhooks((prev) => [webhook, ...prev])

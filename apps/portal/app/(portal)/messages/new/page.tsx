@@ -8,6 +8,7 @@ import type { MessageType, SendMessagePayload, Template, UploadedMedia, Instance
 import { useContacts } from "@/hooks/useContacts"
 import { useInstances } from "@/hooks/useInstances"
 import { useTemplates } from "@/hooks/useTemplates"
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { entriesToVariableMap, getCustomVariables, getCustomVariableKey, variableMapToEntries, type CustomVariableEntry } from "@/lib/templateEngine"
 import { ACCEPTED_MIME, ACCEPTED_LABELS, FILE_LIMITS, FILE_UPLOAD_TYPES, GLOBAL_MAX_FILE_SIZE, formatBytes } from "@/lib/messageComposer"
@@ -31,15 +32,18 @@ type ComposeMode = "freeform" | "template"
 export default function NewMessagePage() {
   const router = useRouter()
   const { copy } = usePortalLocale()
+  const h = copy.hooks
   const messageTypes = copy.messages.detail.types
   const m = copy.messages.compose
   const cList = copy.campaigns.list
   const { instances } = useInstances()
+  const { filterInstancesForWorkspace } = useWorkspace()
   const { templates } = useTemplates()
   const { contacts } = useContacts()
   const connectedInstances = useMemo(
-    () => instances.filter((instance) => instance.status === "connected"),
-    [instances],
+    () =>
+      filterInstancesForWorkspace(instances.filter((instance) => instance.status === "connected")),
+    [instances, filterInstancesForWorkspace],
   )
   const [composeMode, setComposeMode] = useState<ComposeMode>("freeform")
   const [recipientMode, setRecipientMode] = useState<RecipientMode>("manual")
@@ -78,6 +82,11 @@ export default function NewMessagePage() {
     () => (selectedTemplate ? getCustomVariables(selectedTemplate.variables) : []),
     [selectedTemplate],
   )
+
+  const schedulePastExpiryWarning = useMemo(() => {
+    if (composeMode !== "freeform" || !sendForm.scheduledAt || !uploadedMedia) return false
+    return new Date(sendForm.scheduledAt).getTime() > new Date(uploadedMedia.expiresAt).getTime()
+  }, [composeMode, sendForm.scheduledAt, uploadedMedia])
 
   useEffect(() => {
     uploadedMediaRef.current = uploadedMedia
@@ -235,6 +244,9 @@ export default function NewMessagePage() {
           setMediaError(cList.mediaTooLarge)
         } else if (err.code === "MEDIA_UPLOAD_NOT_CONFIGURED") {
           setMediaError(m.mediaUploadUnavailable)
+        } else if (err.code === "TEAM_ACCESS_DENIED") {
+          toast.error(h.teamAccessDenied)
+          setMediaError(cList.mediaUploadFailed)
         } else {
           setMediaError(cList.mediaUploadFailed)
         }
@@ -338,6 +350,10 @@ export default function NewMessagePage() {
           toast.error(m.sendErrorTemplateInvalid)
         } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
           toast.error(m.sendErrorQuota)
+        } else if (err.code === "INSTANCE_NOT_ASSIGNED") {
+          toast.error(h.instanceNotAssigned)
+        } else if (err.code === "TEAM_ACCESS_DENIED") {
+          toast.error(h.teamAccessDenied)
         } else if (err.code === "NOT_FOUND") {
           toast.error(m.sendErrorNotFound)
         } else if (err.code === "VALIDATION_ERROR") {
@@ -362,15 +378,6 @@ export default function NewMessagePage() {
     if (composeMode === "freeform" && FILE_UPLOAD_TYPES.includes(sendForm.type) && !sendForm.mediaUrl) {
       setMediaError(m.noFileSelected)
       return
-    }
-
-    if (composeMode === "freeform" && sendForm.scheduledAt && uploadedMedia) {
-      const scheduledAt = new Date(sendForm.scheduledAt)
-      const expiresAt = new Date(uploadedMedia.expiresAt)
-      if (scheduledAt.getTime() > expiresAt.getTime()) {
-        setMediaError(m.schedulePastExpiryError)
-        return
-      }
     }
 
     await runSend()
@@ -571,6 +578,10 @@ export default function NewMessagePage() {
           )}
 
           {previewError && <Alert variant="warning" message={previewError} onClose={() => setPreviewError(null)} />}
+
+          {schedulePastExpiryWarning ? (
+            <Alert variant="warning" message={m.schedulePastExpiryHint} />
+          ) : null}
 
           <div className="flex flex-wrap justify-end gap-3">
             <Button type="button" variant="secondary" onClick={() => router.push("/messages")}>{m.cancel}</Button>

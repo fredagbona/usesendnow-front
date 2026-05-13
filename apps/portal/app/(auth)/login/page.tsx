@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
 import { fadeIn } from "@/lib/animations"
 import { getToken, setToken } from "@/lib/auth"
+import { clearPortalWorkspace } from "@/lib/workspace-storage"
 import { apiClient } from "@usesendnow/api-client"
 import { ApiClientError } from "@usesendnow/api-client"
 import { EyeIcon, ViewOffIcon } from "hugeicons-react"
@@ -59,6 +60,7 @@ function LoginForm() {
     setLoading(true)
     try {
       const data = await apiClient.auth.login(email, password)
+      clearPortalWorkspace()
       setToken(data.token)
       router.push("/dashboard")
     } catch (err) {

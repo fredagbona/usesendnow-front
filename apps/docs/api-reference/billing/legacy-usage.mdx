@@ -12,3 +12,7 @@ GET /api/v1/usage
 ## Success response `200`
 
 The response has the same format as `GET /api/v1/billing/usage`.
+
+## Workspace rules
+
+Like `/api/v1/billing/usage`, this endpoint requires a **personal API key** (`msgf_live_…`). A **team API key** is rejected with `403` and code [`TEAM_KEY_NOT_ALLOWED`](/resources/error-codes#teams-workspaces).

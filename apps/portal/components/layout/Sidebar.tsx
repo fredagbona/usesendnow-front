@@ -20,6 +20,8 @@ import {
 import type { User } from "@usesendnow/types"
 import BrandMark from "@/components/shared/BrandMark"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"
+import { isPortalNavHrefVisible } from "@/lib/nav-capabilities"
 
 interface SidebarProps {
   outboundUsed?: number
@@ -39,10 +41,11 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname()
   const { copy, locale } = usePortalLocale()
+  const { capabilities, workspaceCurrent } = useWorkspace()
   const numberLocale = locale === "fr" ? "fr-FR" : "en-US"
   const sb = copy.sidebar
   const planLabel = planName ?? copy.profile.planFallbackFree
-  const NAV_ITEMS = [
+  const ALL_NAV = [
     { label: copy.nav.dashboard, href: "/dashboard", icon: Home01Icon },
     { label: copy.nav.instances, href: "/instances", icon: SmartPhone01Icon },
     { label: copy.nav.warmup, href: "/health", icon: BarChartIcon },
@@ -53,10 +56,13 @@ export default function Sidebar({
     { label: copy.nav.webhooks, href: "/webhooks", icon: WebhookIcon },
     { label: copy.nav.numberLookups, href: "/number-lookups", icon: Search01Icon },
   ] as const
-  const BOTTOM_ITEMS = [
+  const ALL_BOTTOM = [
     { label: copy.nav.apiKeys, href: "/api-keys", icon: Key01Icon },
     { label: copy.nav.billing, href: "/billing", icon: CreditCardIcon },
   ] as const
+  const NAV_ITEMS = ALL_NAV.filter((item) => isPortalNavHrefVisible(item.href, capabilities, workspaceCurrent))
+  const BOTTOM_ITEMS = ALL_BOTTOM.filter((item) => isPortalNavHrefVisible(item.href, capabilities, workspaceCurrent))
+  const showBillingNav = isPortalNavHrefVisible("/billing", capabilities, workspaceCurrent)
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/")
@@ -141,35 +147,38 @@ export default function Sidebar({
           })}
         </ul>
 
-        <div className="my-2 mx-1 border-t border-border" />
-
-        <ul className="space-y-0.5">
-          {BOTTOM_ITEMS.map((item) => {
-            const active = isActive(item.href)
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  title={collapsed ? item.label : undefined}
-                  className={navItem(active, collapsed)}
-                >
-                  <item.icon
-                    className={[
-                      "w-4 h-4 shrink-0",
-                      active
-                        ? "text-text [html[data-theme='dark']_&]:text-primary"
-                        : "text-text-secondary [html[data-theme='dark']_&]:text-text-muted",
-                    ].join(" ")}
-                  />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                  {!collapsed && active && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                  )}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+        {BOTTOM_ITEMS.length > 0 ? (
+          <>
+            <div className="my-2 mx-1 border-t border-border" />
+            <ul className="space-y-0.5">
+              {BOTTOM_ITEMS.map((item) => {
+                const active = isActive(item.href)
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      title={collapsed ? item.label : undefined}
+                      className={navItem(active, collapsed)}
+                    >
+                      <item.icon
+                        className={[
+                          "w-4 h-4 shrink-0",
+                          active
+                            ? "text-text [html[data-theme='dark']_&]:text-primary"
+                            : "text-text-secondary [html[data-theme='dark']_&]:text-text-muted",
+                        ].join(" ")}
+                      />
+                      {!collapsed && <span className="truncate">{item.label}</span>}
+                      {!collapsed && active && (
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                      )}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </>
+        ) : null}
       </nav>
 
       {/* Bottom section */}
@@ -206,17 +215,19 @@ export default function Sidebar({
         {!collapsed && (
           <div className="px-3 py-2 rounded-xl bg-bg-subtle border border-border flex items-center justify-between">
             <span className="text-xs font-medium text-text-secondary truncate mr-2">{planLabel}</span>
-            <Link
-              href="/billing"
-              className="text-xs font-semibold text-primary-ink hover:text-text transition-colors shrink-0"
-            >
-              {copy.topnav.upgrade}
-            </Link>
+            {showBillingNav ? (
+              <Link
+                href="/billing"
+                className="text-xs font-semibold text-primary-ink hover:text-text transition-colors shrink-0"
+              >
+                {copy.topnav.upgrade}
+              </Link>
+            ) : null}
           </div>
         )}
 
         {/* Plan dot — collapsed */}
-        {collapsed && (
+        {collapsed && showBillingNav ? (
           <Link
             href="/billing"
             title={sb.upgradePlanTooltip.replace("{{upgrade}}", copy.topnav.upgrade).replace("{{planName}}", planLabel)}
@@ -224,7 +235,7 @@ export default function Sidebar({
           >
             <div className="w-2 h-2 rounded-full bg-primary" />
           </Link>
-        )}
+        ) : null}
       </div>
     </aside>
   )
@@ -243,8 +254,9 @@ export function MobileDrawer({
 }) {
   const pathname = usePathname()
   const { copy } = usePortalLocale()
+  const { capabilities, workspaceCurrent } = useWorkspace()
   const planLabel = planName ?? copy.profile.planFallbackFree
-  const NAV_ITEMS = [
+  const ALL_NAV = [
     { label: copy.nav.dashboard, href: "/dashboard", icon: Home01Icon },
     { label: copy.nav.instances, href: "/instances", icon: SmartPhone01Icon },
     { label: copy.nav.warmup, href: "/health", icon: BarChartIcon },
@@ -255,11 +267,13 @@ export function MobileDrawer({
     { label: copy.nav.webhooks, href: "/webhooks", icon: WebhookIcon },
     { label: copy.nav.numberLookups, href: "/number-lookups", icon: Search01Icon },
   ] as const
-
-  const BOTTOM_ITEMS = [
+  const ALL_BOTTOM = [
     { label: copy.nav.apiKeys, href: "/api-keys", icon: Key01Icon },
     { label: copy.nav.billing, href: "/billing", icon: CreditCardIcon },
   ] as const
+  const NAV_ITEMS = ALL_NAV.filter((item) => isPortalNavHrefVisible(item.href, capabilities, workspaceCurrent))
+  const BOTTOM_ITEMS = ALL_BOTTOM.filter((item) => isPortalNavHrefVisible(item.href, capabilities, workspaceCurrent))
+  const showBillingNav = isPortalNavHrefVisible("/billing", capabilities, workspaceCurrent)
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/")
 
@@ -318,49 +332,54 @@ export function MobileDrawer({
             })}
           </ul>
 
-          <div className="my-2 mx-1 border-t border-border" />
-
-          <ul className="space-y-0.5">
-            {BOTTOM_ITEMS.map((item) => {
-              const active = isActive(item.href)
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={onClose}
-                    className={[
-                      "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
-                      active
-                        ? "bg-primary-subtle text-primary-text shadow-[inset_0_0_0_1px_rgba(10,10,10,0.18)]"
-                        : "text-text-secondary hover:bg-primary-subtle hover:text-text",
-                    ].join(" ")}
-                  >
-                    <item.icon
-                      className={[
-                        "w-5 h-5 shrink-0",
-                        active
-                          ? "text-text [html[data-theme='dark']_&]:text-primary"
-                          : "text-text-secondary [html[data-theme='dark']_&]:text-text-muted",
-                      ].join(" ")}
-                    />
-                    {item.label}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
+          {BOTTOM_ITEMS.length > 0 ? (
+            <>
+              <div className="my-2 mx-1 border-t border-border" />
+              <ul className="space-y-0.5">
+                {BOTTOM_ITEMS.map((item) => {
+                  const active = isActive(item.href)
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={onClose}
+                        className={[
+                          "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
+                          active
+                            ? "bg-primary-subtle text-primary-text shadow-[inset_0_0_0_1px_rgba(10,10,10,0.18)]"
+                            : "text-text-secondary hover:bg-primary-subtle hover:text-text",
+                        ].join(" ")}
+                      >
+                        <item.icon
+                          className={[
+                            "w-5 h-5 shrink-0",
+                            active
+                              ? "text-text [html[data-theme='dark']_&]:text-primary"
+                              : "text-text-secondary [html[data-theme='dark']_&]:text-text-muted",
+                          ].join(" ")}
+                        />
+                        {item.label}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          ) : null}
         </nav>
 
         <div className="border-t border-border p-3 shrink-0">
           <div className="px-3 py-2 rounded-xl bg-bg-subtle border border-border flex items-center justify-between">
             <span className="text-sm font-medium text-text-secondary">{planLabel}</span>
-            <Link
-              href="/billing"
-              onClick={onClose}
-              className="text-sm font-semibold text-primary-ink hover:text-text transition-colors"
-            >
-              {copy.topnav.upgrade}
-            </Link>
+            {showBillingNav ? (
+              <Link
+                href="/billing"
+                onClick={onClose}
+                className="text-sm font-semibold text-primary-ink hover:text-text transition-colors"
+              >
+                {copy.topnav.upgrade}
+              </Link>
+            ) : null}
           </div>
         </div>
       </div>

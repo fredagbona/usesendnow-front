@@ -1,0 +1,35 @@
+---
+title: POST Annuler un lookup
+description: Annule un lookup asynchrone en attente ou en cours de traitement.
+---
+
+## Endpoint
+
+```txt
+POST /api/v1/number-lookups/{id}/cancel
+```
+
+## Paramètres
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---:|---|---|
+| `id` | UUID | oui | path | ID du lookup |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "lookup_uuid",
+    "status": "cancelled",
+    "completedAt": "2026-05-07T10:00:08.000Z"
+  }
+}
+```
+
+## Erreurs courantes
+
+| Code | HTTP | Quand |
+|---|---|---|
+| `LOOKUP_NOT_FOUND` | 404 | Lookup introuvable |
+| `LOOKUP_CANNOT_BE_CANCELLED` | 400 | Lookup déjà terminé, en échec ou annulé |

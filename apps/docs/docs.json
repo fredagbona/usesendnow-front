@@ -107,7 +107,11 @@
               "api-reference/contacts/get",
               "api-reference/contacts/update",
               "api-reference/contacts/delete",
-              "api-reference/contacts/bulk-delete"
+              "api-reference/contacts/bulk-delete",
+              "api-reference/contacts/bulk-jobs-list",
+              "api-reference/contacts/bulk-jobs-get",
+              "api-reference/contacts/bulk-jobs-progress",
+              "api-reference/contacts/bulk-jobs-cancel"
             ],
             "icon": "users"
           },
@@ -132,6 +136,8 @@
               "api-reference/number-lookups/create",
               "api-reference/number-lookups/list",
               "api-reference/number-lookups/get",
+              "api-reference/number-lookups/progress",
+              "api-reference/number-lookups/cancel",
               "api-reference/number-lookups/import-contacts"
             ],
             "icon": "phone"
@@ -264,7 +270,11 @@
               "fr/api-reference/contacts/get",
               "fr/api-reference/contacts/update",
               "fr/api-reference/contacts/delete",
-              "fr/api-reference/contacts/bulk-delete"
+              "fr/api-reference/contacts/bulk-delete",
+              "fr/api-reference/contacts/bulk-jobs-list",
+              "fr/api-reference/contacts/bulk-jobs-get",
+              "fr/api-reference/contacts/bulk-jobs-progress",
+              "fr/api-reference/contacts/bulk-jobs-cancel"
             ],
             "icon": "users"
           },
@@ -289,6 +299,8 @@
               "fr/api-reference/number-lookups/create",
               "fr/api-reference/number-lookups/list",
               "fr/api-reference/number-lookups/get",
+              "fr/api-reference/number-lookups/progress",
+              "fr/api-reference/number-lookups/cancel",
               "fr/api-reference/number-lookups/import-contacts"
             ],
             "icon": "phone"

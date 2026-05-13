@@ -46,3 +46,7 @@ GET /api/v1/billing/usage
   }
 }
 ```
+
+## Règles workspace
+
+Cet endpoint reflète le **compte personnel** du propriétaire de la clé. Il exige une **clé API personnelle** (`msgf_live_…`). Une **clé d'équipe** est rejetée en `403` avec le code [`TEAM_KEY_NOT_ALLOWED`](/fr/resources/error-codes#équipes-workspaces). Voir [Team context](/fr/api-reference/teams/team-context).

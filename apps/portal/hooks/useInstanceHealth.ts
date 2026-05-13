@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { InstanceHealth } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export function useInstanceHealth(instanceId: string) {
   const { copy } = usePortalLocale()
@@ -28,6 +29,8 @@ export function useInstanceHealth(instanceId: string) {
   useEffect(() => {
     fetchHealth()
   }, [fetchHealth])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void fetchHealth()), [fetchHealth])
 
   return { health, loading, error, refetch: fetchHealth }
 }

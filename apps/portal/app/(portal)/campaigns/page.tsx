@@ -311,7 +311,7 @@ export default function CampaignsPage() {
                 ? { body: form.directBody.trim() }
                 : {
                     mediaUrl: form.directMediaUrl,
-                    ...(form.directBody.trim() ? { body: form.directBody.trim() } : {}),
+                    body: form.directBody.trim(),
                   }),
             }),
       }

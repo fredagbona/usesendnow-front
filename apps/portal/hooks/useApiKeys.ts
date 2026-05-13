@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { ApiKey, ApiKeyUsage } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export function useApiKeys() {
   const { copy } = usePortalLocale()
@@ -14,7 +15,7 @@ export function useApiKeys() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchApiKeys = async () => {
+  const fetchApiKeys = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -31,9 +32,13 @@ export function useApiKeys() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [copy.apiKeys.loadError])
 
-  useEffect(() => { fetchApiKeys() }, [copy.apiKeys.loadError])
+  useEffect(() => {
+    void fetchApiKeys()
+  }, [fetchApiKeys])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void fetchApiKeys()), [fetchApiKeys])
 
   const addApiKey = (key: ApiKey) => {
     setApiKeys((prev) => [key, ...prev])

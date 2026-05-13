@@ -1,19 +1,24 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { apiClient, ApiClientError } from "@usesendnow/api-client"
 import type { Payment } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
-const WORKSPACE_CHANGED = "msgflash:workspace-changed"
+export interface UsePaymentsOptions {
+  /** When false, no billing payments request is made (e.g. team collaborator without payment visibility). */
+  enabled?: boolean
+}
 
-export function usePayments() {
+export function usePayments(options?: UsePaymentsOptions) {
+  const enabled = options?.enabled !== false
   const { copy } = usePortalLocale()
   const [payments, setPayments] = useState<Payment[]>([])
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(enabled)
   const [error, setError] = useState<string | null>(null)
   /** Backend 403 BILLING_PAYMENTS_TEAM_OWNER_ONLY — hide list, show owner-only copy */
   const [paymentsTeamOwnerOnly, setPaymentsTeamOwnerOnly] = useState(false)
@@ -46,17 +51,29 @@ export function usePayments() {
     [copy.hooks.paymentsLoadError],
   )
 
+  const enabledRef = useRef(enabled)
+  enabledRef.current = enabled
+
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false)
+      setPayments([])
+      setTotal(0)
+      setTotalPages(1)
+      setPage(1)
+      setPaymentsTeamOwnerOnly(false)
+      setError(null)
+      return
+    }
     void fetchPayments(1)
-  }, [fetchPayments])
+  }, [fetchPayments, enabled])
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    const onWorkspaceChanged = () => {
+    return onPortalWorkspaceChanged(() => {
+      if (!enabledRef.current) return
       void fetchPayments(1)
-    }
-    window.addEventListener(WORKSPACE_CHANGED, onWorkspaceChanged)
-    return () => window.removeEventListener(WORKSPACE_CHANGED, onWorkspaceChanged)
+    })
   }, [fetchPayments])
 
   const goToPage = (p: number) => {

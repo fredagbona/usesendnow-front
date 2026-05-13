@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Contact, ContactSort } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export const CONTACTS_LIST_PAGE_SIZE = 100
 
@@ -42,6 +43,14 @@ export function useContactsList(
     setPageIndex(0)
     setStartCursors([null])
   }, [debouncedSearch, sort, groupIdFilter])
+
+  useEffect(() => {
+    return onPortalWorkspaceChanged(() => {
+      setPageIndex(0)
+      setStartCursors([null])
+      setReloadToken((t) => t + 1)
+    })
+  }, [])
 
   useEffect(() => {
     let cancelled = false

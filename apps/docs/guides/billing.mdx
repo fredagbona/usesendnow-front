@@ -17,6 +17,10 @@ description: Read your current plan, usage, and billing history from the public 
 Public billing through an API key is read-only. Sensitive actions such as checkout, cancellation, or downgrade happen from the dashboard.
 </Note>
 
+<Warning>
+Billing reads (`/me`, `/usage`, `/billing/subscription`, `/billing/usage`, `/billing/payments`) require a **personal API key** (`msgf_live_…`). A **team API key** (`msgf_team_…`) is rejected with `403` `TEAM_KEY_NOT_ALLOWED`. For team-aware billing data, use the console API with `Authorization: Bearer <jwt>` and the optional `X-Team-Id` header — see [Team context](/api-reference/teams/team-context).
+</Warning>
+
 ## Query parameters
 
 All of these routes are `GET`.
@@ -186,4 +190,5 @@ Response:
 | Code | HTTP | When |
 |---|---|---|
 | `UNAUTHORIZED` | 401 | Missing or invalid key |
+| `TEAM_KEY_NOT_ALLOWED` | 403 | Team API key used on a personal-only billing route |
 | `API_RATE_LIMIT_EXCEEDED` | 429 | Too many requests per second |

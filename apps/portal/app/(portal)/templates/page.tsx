@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "@/lib/toast"
@@ -10,7 +10,7 @@ import { formatDate } from "@/lib/format"
 import { parseTemplateVariables } from "@/lib/templateEngine"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { renderWithStrongCount, renderWithStrongName } from "@/lib/render-copy-placeholders"
-import type { Template, TemplateType } from "@usesendnow/types"
+import type { Template, TemplateType, MessageType, UploadedMedia } from "@usesendnow/types"
 import PageHeader from "@/components/layout/PageHeader"
 import Button from "@/components/ui/Button"
 import Badge from "@/components/ui/Badge"
@@ -26,6 +26,8 @@ import { HighlightedTemplateBody } from "@/components/templates/HighlightedTempl
 import { TemplateVariableGuide } from "@/components/templates/TemplateVariableGuide"
 import { File01Icon } from "hugeicons-react"
 import { apiClient as api, ApiClientError } from "@usesendnow/api-client"
+import { useManagedTemporaryMedia } from "@/hooks/useManagedTemporaryMedia"
+import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 
 const TEMPLATE_TYPES: TemplateType[] = ["text", "image", "video", "audio", "document"]
 
@@ -39,6 +41,8 @@ function TemplateEditModal({
   onClose: () => void
 }) {
   const { copy } = usePortalLocale()
+  const h = copy.hooks
+  const list = copy.campaigns.list
   const t = copy.templates
   const tNew = t.new
   const typeLabels = t.detail.typeLabels
@@ -48,9 +52,48 @@ function TemplateEditModal({
   const [mediaUrl, setMediaUrl] = useState(template.mediaUrl ?? "")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const serverMediaUrlRef = useRef(template.mediaUrl?.trim() ? template.mediaUrl : null)
+
+  const messageMediaType = template.type as MessageType
+
+  const onUploadSuccess = useCallback((media: UploadedMedia) => {
+    setMediaUrl(media.url)
+  }, [])
+
+  const onClearMedia = useCallback(() => {
+    setMediaUrl("")
+  }, [])
+
+  const {
+    uploadedMedia,
+    uploading,
+    uploadProgress,
+    mediaError,
+    mediaNotice,
+    fileInputRef,
+    handleFileSelect,
+    handleRemoveFile,
+    shouldCleanupMediaRef,
+  } = useManagedTemporaryMedia({
+    mediaType: messageMediaType,
+    listCopy: list,
+    bytesMegabyte: copy.common.bytesMegabyte,
+    onUploadSuccess,
+    onClear: onClearMedia,
+    onTeamAccessDenied: () => toast.error(h.teamAccessDenied),
+  })
 
   const detectedVariables = useMemo(() => parseTemplateVariables(body), [body])
   const requiresMedia = template.type !== "text"
+
+  const existingRemoteMediaUrl =
+    requiresMedia &&
+    Boolean(mediaUrl.trim()) &&
+    !uploadedMedia &&
+    serverMediaUrlRef.current != null &&
+    mediaUrl.trim() === serverMediaUrlRef.current.trim()
+      ? mediaUrl.trim()
+      : null
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -63,6 +106,7 @@ function TemplateEditModal({
         body: body.trim() || null,
         mediaUrl: requiresMedia ? mediaUrl.trim() || null : null,
       })
+      shouldCleanupMediaRef.current = false
       onSuccess(response)
       onClose()
       toast.success(t.templateUpdated)
@@ -71,6 +115,8 @@ function TemplateEditModal({
         setError(t.invalidTemplate)
       } else if (err instanceof ApiClientError && err.code === "VALIDATION_ERROR") {
         setError(t.validationError)
+      } else if (err instanceof ApiClientError && err.code === "MEDIA_URL_EXPIRED") {
+        setError(tNew.mediaUrlExpired)
       } else {
         setError(t.templateUpdateFailed)
       }
@@ -96,13 +142,33 @@ function TemplateEditModal({
         />
         <TemplateVariableGuide variables={detectedVariables} />
         {requiresMedia && (
-          <Input
-            label={t.detail.mediaUrlTitle}
-            type="url"
-            value={mediaUrl}
-            onChange={(e) => setMediaUrl(e.target.value)}
-            placeholder={t.mediaUrlPlaceholder}
-          />
+          <div className="space-y-4">
+            <p className="text-sm font-medium text-text-body">{tNew.mediaSectionTitle}</p>
+            <MediaUploadPanel
+              type={messageMediaType}
+              uploading={uploading}
+              uploadProgress={uploadProgress}
+              uploadedMedia={uploadedMedia}
+              mediaNotice={mediaNotice}
+              mediaError={mediaError}
+              scheduledAt=""
+              panelContext="template"
+              existingRemoteMediaUrl={existingRemoteMediaUrl}
+              fileInputRef={fileInputRef}
+              onFileChange={handleFileSelect}
+              onRemove={handleRemoveFile}
+            />
+            {!uploadedMedia && !existingRemoteMediaUrl && (
+              <Input
+                label={tNew.externalUrlOptional}
+                hint={tNew.externalUrlHint}
+                type="url"
+                value={mediaUrl}
+                onChange={(e) => setMediaUrl(e.target.value)}
+                placeholder={t.mediaUrlPlaceholder}
+              />
+            )}
+          </div>
         )}
         {error && <Alert variant="error" message={error} onClose={() => setError(null)} />}
         <div className="flex justify-end gap-2 pt-1">

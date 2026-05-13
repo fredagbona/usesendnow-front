@@ -40,4 +40,24 @@ description: Common questions about MsgFlash, plans, API keys, and webhooks.
   <Accordion title="What is a team API key vs my personal API key?">
     Personal keys start with `msgf_live_` and only access your personal workspace. Team keys start with `msgf_team_` and require the `X-Team-Id` header matching the team. They cannot be mixed.
   </Accordion>
+
+  <Accordion title="Can a team API key call /v1/me, /v1/usage, or /v1/billing/*?">
+    No. Personal-account routes (`/v1/me`, `/v1/usage`, `/v1/billing/subscription`, `/v1/billing/usage`, `/v1/billing/payments`) reject team keys with `403 TEAM_KEY_NOT_ALLOWED`. Use a personal key for those, or the console JWT API for team-aware billing.
+  </Accordion>
+
+  <Accordion title="How do I act in a team from the console (JWT)?">
+    Add the optional header `X-Team-Id: <team uuid>` on any `/api/*` resource call. Without it, the call targets your personal workspace. If the team is unknown or you no longer belong to it, the API returns `404 TEAM_NOT_FOUND`.
+  </Accordion>
+
+  <Accordion title="Can a collaborator manage billing in a team?">
+    No. Owners read and mutate billing. Admins read subscription and usage but cannot mutate (`403 BILLING_TEAM_MUTATION_FORBIDDEN`). Only the team owner can view team payment history (`403 BILLING_PAYMENTS_TEAM_OWNER_ONLY` otherwise). Collaborators have no billing access.
+  </Accordion>
+
+  <Accordion title="What happens to my teams if I downgrade my plan?">
+    Plan changes are blocked with `409 PLAN_CHANGE_BLOCKED_ACTIVE_TEAMS` when the target plan cannot host your current teams or seats. Delete teams or reduce seats first, then retry the downgrade.
+  </Accordion>
+
+  <Accordion title="Cursor pagination — how do I iterate a long list?">
+    Endpoints like `GET /api/v1/contacts`, `/contacts/groups`, group `/members`, and `/contacts/bulk-jobs` return `nextCursor` and `hasMore`. Pass `nextCursor` back as `cursor` until `hasMore` is `false`. Do not switch `sort` mid-pagination.
+  </Accordion>
 </AccordionGroup>

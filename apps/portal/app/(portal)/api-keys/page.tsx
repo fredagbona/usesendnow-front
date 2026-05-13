@@ -21,6 +21,7 @@ import { SkeletonTableRow } from "@/components/ui/Skeleton"
 import { Key01Icon, AlertDiamondIcon, Copy01Icon, CheckmarkCircle01Icon } from "hugeicons-react"
 import { portalBrand } from "@/lib/brand"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"
 
 
 
@@ -89,6 +90,9 @@ export default function ApiKeysPage() {
   const apiCopy = copy.apiKeys
   const isFr = locale === "fr"
   const { apiKeys, usage, periodKey, totalRequests, loading, error, addApiKey, removeApiKey } = useApiKeys()
+  const { capabilities } = useWorkspace()
+  const canManageKeys = capabilities.canManageApiKeys !== false
+  const keysGateHint = copy.hooks.teamAccessDenied
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [secretModal, setSecretModal] = useState<{ secret: string; keyPrefix: string } | null>(null)
   const [revokeTarget, setRevokeTarget] = useState<{ id: string; name: string } | null>(null)
@@ -160,7 +164,12 @@ export default function ApiKeysPage() {
             >
               {apiCopy.docs}
             </a>
-            <Button variant="primary" onClick={() => setCreateModalOpen(true)}>
+            <Button
+              variant="primary"
+              disabled={!canManageKeys}
+              title={!canManageKeys ? keysGateHint : undefined}
+              onClick={() => setCreateModalOpen(true)}
+            >
               {apiCopy.newKey}
             </Button>
           </div>
@@ -197,8 +206,8 @@ export default function ApiKeysPage() {
             icon={<Key01Icon className="w-8 h-8" />}
             title={apiCopy.emptyTitle}
             description={apiCopy.emptyDescription}
-            ctaLabel={apiCopy.newKey}
-            onCta={() => setCreateModalOpen(true)}
+            ctaLabel={canManageKeys ? apiCopy.newKey : undefined}
+            onCta={canManageKeys ? () => setCreateModalOpen(true) : undefined}
           />
         ) : (
           <div className="space-y-5">

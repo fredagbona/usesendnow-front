@@ -131,6 +131,14 @@ export const portalCopy = {
       teamsListLoadError: teamsFr.loadListError,
       teamDetailLoadError: teamsFr.loadDetailError,
       teamsInvitationsMineLoadError: teamsFr.loadInvitesError,
+      teamWorkspaceAccessLost:
+        "Vous n'avez plus accès à l'équipe « {{teamName}} ». Espace personnel restauré.",
+      instanceNotAssigned: "Cette instance n'est pas assignée à ce membre dans cette équipe.",
+      teamAccessDenied: "Vous n'avez pas les droits nécessaires pour cette action dans cet espace d'équipe.",
+      workspaceNotAvailable: "Cet espace d'équipe n'est plus disponible. Passage à l'espace personnel.",
+      workspaceCurrentLoadError:
+        "Impossible de charger l'espace de travail (API). Vérifiez la connexion et NEXT_PUBLIC_API_URL.",
+      workspaceBillingOwnerOnlyHint: "Réservé au propriétaire de l'équipe.",
     },
     auth: {
       layoutMarketing: {
@@ -601,6 +609,11 @@ export const portalCopy = {
           notice: "Note de service",
         },
         templateNamePlaceholder: "ex. Relance panier abandonné",
+        mediaSectionTitle: "Fichier média",
+        externalUrlOptional: "URL externe permanente (optionnel)",
+        externalUrlHint:
+          "Si vous ne passez pas par l’upload, vous pouvez coller une URL publique permanente. L’upload géré est recommandé.",
+        mediaUrlExpired: "Le fichier n’est plus disponible. Recharge-le.",
         examplesBodies: {
           followup:
             "Bonjour {{contact.firstName}}, vous avez laissé un article dans votre panier. Utilisez {{custom.code}} pour 10% de réduction.",
@@ -1186,6 +1199,10 @@ export const portalCopy = {
         tempHostNotice: "Le fichier est hébergé temporairement et supprimé automatiquement après expiration.",
         publicLinkNotice: "Le lien généré est public. N’uploadez pas de document sensible.",
         scheduleExpiryWarning: "Si la date prévue dépasse l’expiration, l’envoi peut échouer.",
+        fileDetailsTemplate: "{{size}} · {{mime}}",
+        templateRetentionHint:
+          "Rattaché à un template, le fichier est conservé tant que le template existe (expiration prolongée automatiquement côté serveur).",
+        existingLinkedMediaLabel: "Média lié actuellement",
         chooseFile: "Choisir un fichier",
         acceptedMax: "{{accepted}} · max {{size}}",
         mediaFieldLabel: {
@@ -1264,7 +1281,7 @@ export const portalCopy = {
         bestPractice1:
           "Vérifiez que l'instance est bien connectée avant de lancer l'envoi.",
         bestPractice2:
-          "Pour un média temporaire, gardez une date planifiée avant son expiration.",
+          "Pour un média temporaire, l’expiration affichée est indicative : une fois le message ou la campagne enregistré, le backend peut repousser la suppression tant qu’il y a une référence.",
         bestPractice3:
           "Les liens médias sont publics. Évitez les documents sensibles.",
         bestPractice4:
@@ -1273,8 +1290,8 @@ export const portalCopy = {
           "Les messages avec boutons nécessitent un compte WhatsApp Business.",
         voiceSuggestedNotice:
           "Le fichier ressemble à une note vocale. Le type a été prérempli en conséquence.",
-        schedulePastExpiryError:
-          "Le média doit rester valide jusqu'à l'envoi. Si la date prévue dépasse l'expiration, l'envoi peut échouer.",
+        schedulePastExpiryHint:
+          "La date planifiée est après l’indication d’expiration du fichier. Vous pouvez quand même enregistrer : une fois le message créé, le média peut être conservé tant qu’il reste en file ou référencé.",
         uploadFailedStatusLine: "Échec de l'upload média.",
         previewFailedStatusLine: "Impossible de générer l'aperçu.",
         sendFailedStatusLine: "Échec de l'envoi. Corrigez les champs puis réessayez.",
@@ -1548,8 +1565,6 @@ export const portalCopy = {
         planPausedBody: "Mettez à niveau le plan pour reprendre la campagne.",
         overviewTitle: "Vue d'ensemble",
         overviewNotStarted: "La campagne n'a pas encore démarré.",
-        overviewPercentDone: "{{pct}}% terminé",
-        progressCaption: "{{pct}}% de progression",
         stats: {
           planned: "Planifiés",
           queued: "En file",
@@ -1861,6 +1876,14 @@ export const portalCopy = {
       teamsListLoadError: teamsEn.loadListError,
       teamDetailLoadError: teamsEn.loadDetailError,
       teamsInvitationsMineLoadError: teamsEn.loadInvitesError,
+      teamWorkspaceAccessLost:
+        'You no longer have access to team "{{teamName}}". Switched to Personal workspace.',
+      instanceNotAssigned: "This instance is not assigned to you in this team workspace.",
+      teamAccessDenied: "You do not have permission for this action in this team workspace.",
+      workspaceNotAvailable: "That team workspace is no longer available. Switched to Personal.",
+      workspaceCurrentLoadError:
+        "Could not load workspace (API). Check your connection and NEXT_PUBLIC_API_URL.",
+      workspaceBillingOwnerOnlyHint: "Only the team owner can change billing.",
     },
     auth: {
       layoutMarketing: {
@@ -2328,6 +2351,11 @@ export const portalCopy = {
           notice: "Service notice",
         },
         templateNamePlaceholder: "e.g. Abandoned cart follow-up",
+        mediaSectionTitle: "Media file",
+        externalUrlOptional: "Permanent external URL (optional)",
+        externalUrlHint:
+          "If you do not use upload, you can paste a permanent public URL. Managed upload is recommended.",
+        mediaUrlExpired: "This file is no longer available. Upload it again.",
         examplesBodies: {
           followup:
             "Hi {{contact.firstName}}, you left an item in your cart. Use {{custom.code}} for 10% off.",
@@ -2910,6 +2938,10 @@ export const portalCopy = {
         tempHostNotice: "The file is hosted temporarily and deleted automatically after expiry.",
         publicLinkNotice: "The generated link is public. Do not upload sensitive documents.",
         scheduleExpiryWarning: "If the scheduled time is after expiry, sending may fail.",
+        fileDetailsTemplate: "{{size}} · {{mime}}",
+        templateRetentionHint:
+          "When attached to a template, the file is kept until the template is removed (the server extends expiry automatically).",
+        existingLinkedMediaLabel: "Currently linked media",
         chooseFile: "Choose file",
         acceptedMax: "{{accepted}} · max {{size}}",
         mediaFieldLabel: {
@@ -2985,14 +3017,15 @@ export const portalCopy = {
         bestPracticesKicker: "Best practices",
         bestPracticesTitle: "Before you send",
         bestPractice1: "Make sure the instance is connected before sending.",
-        bestPractice2: "For temporary media, schedule before the file expires.",
+        bestPractice2:
+          "For temporary media, the expiry shown is indicative: once a message or campaign is saved, the backend may defer deletion while a reference exists.",
         bestPractice3: "Media links are public. Avoid sensitive documents.",
         bestPractice4: "Voice notes can be sent as audio or voice note depending on your use case.",
         bestPractice5: "Messages with buttons require a WhatsApp Business account.",
         voiceSuggestedNotice:
           "This file looks like a voice note. The message type was prefilled accordingly.",
-        schedulePastExpiryError:
-          "Media must stay valid until send time. If the scheduled time is after expiry, sending may fail.",
+        schedulePastExpiryHint:
+          "The scheduled time is after the file’s indicated expiry. You can still submit: once the message exists, the media may be kept while it is queued or referenced.",
         uploadFailedStatusLine: "Media upload failed.",
         previewFailedStatusLine: "Unable to generate preview.",
         sendFailedStatusLine: "Send failed. Fix the fields and try again.",
@@ -3264,8 +3297,6 @@ export const portalCopy = {
         planPausedBody: "Upgrade your plan to resume the campaign.",
         overviewTitle: "Overview",
         overviewNotStarted: "The campaign has not started yet.",
-        overviewPercentDone: "{{pct}}% complete",
-        progressCaption: "{{pct}}% progress",
         stats: {
           planned: "Planned",
           queued: "Queued",

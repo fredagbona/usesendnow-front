@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Contact } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export function useContacts() {
   const { copy } = usePortalLocale()
@@ -11,7 +12,7 @@ export function useContacts() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -22,9 +23,13 @@ export function useContacts() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [copy.hooks.contactsLoadError])
 
-  useEffect(() => { fetchContacts() }, [copy.hooks.contactsLoadError])
+  useEffect(() => {
+    void fetchContacts()
+  }, [fetchContacts])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void fetchContacts()), [fetchContacts])
 
   const addContact = (contact: Contact) => {
     setContacts((prev) => [contact, ...prev])

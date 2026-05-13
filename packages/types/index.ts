@@ -1,5 +1,13 @@
 // ─── Auth ───────────────────────────────────────────────────────────────────
 
+/** Row from `GET /api/auth/me` → `teams[]` (spec 37 §2.1). */
+export interface UserTeamSummary {
+  id: string
+  name: string
+  role: string
+  isOwner: boolean
+}
+
 export interface User {
   id: string
   fullName: string
@@ -8,6 +16,8 @@ export interface User {
   plan: string
   displayName: string | null
   avatarUrl: string | null
+  /** Teams the user belongs to — populate switcher at boot; do not gate features on `plan` alone. */
+  teams?: UserTeamSummary[]
 }
 
 export interface AuthResponse {
@@ -261,6 +271,7 @@ export interface CreateCampaignPayload {
   instanceId: string
   templateId?: string
   type?: Extract<MessageType, "text" | "image" | "video" | "audio" | "document" | "voice_note">
+  /** Plain text when `type` is `text`; caption for media types (with `mediaUrl`). POST /api/campaigns canonical field — not `caption` / `text`. */
   body?: string
   mediaUrl?: string
   variables?: Record<string, string | number>
@@ -539,6 +550,59 @@ export interface SubscriptionResponse {
     start: string
     end: string
   } | null
+}
+
+/** `GET /api/workspace/current` — spec 37 §2.2 (shape may grow with backend). */
+export interface WorkspaceViewer {
+  id: string
+  email?: string
+  fullName?: string
+  displayName?: string | null
+  avatarUrl?: string | null
+}
+
+export interface WorkspaceCapabilities {
+  canSendMessages?: boolean
+  canCreateCampaigns?: boolean
+  canPublishStatuses?: boolean
+  canUseWebhooks?: boolean
+  canUseNumberLookups?: boolean
+  canMutateBilling?: boolean
+  canViewPayments?: boolean
+  canManageMembers?: boolean
+  canManageInstances?: boolean
+  canManageApiKeys?: boolean
+  canManageWebhooks?: boolean
+  canManageTemplates?: boolean
+  isRestrictedCollaborator?: boolean
+}
+
+export interface WorkspaceCurrentTeam {
+  id: string
+  name: string
+  role?: string
+  isOwner?: boolean
+  createdAt?: string
+  seats?: TeamSeats
+}
+
+export interface WorkspaceCurrentPayload {
+  kind: "personal" | "team"
+  viewer: WorkspaceViewer
+  owner?: WorkspaceViewer | null
+  team: WorkspaceCurrentTeam | null
+  plan?: Pick<Plan, "code" | "name"> & Partial<Plan>
+  limits?: PlanLimits
+  features?: PlanFeatures
+  subscription?: Subscription | null
+  usage?: UsageData | null
+  period?: { start: string; end: string } | null
+  capabilities?: WorkspaceCapabilities
+}
+
+export interface TeamInvitationAcceptResult {
+  teamId: string
+  role?: string
 }
 
 // ─── Status (WhatsApp) ────────────────────────────────────────────────────────
@@ -1110,6 +1174,15 @@ export interface TeamInvitationMine {
   createdAt: string
 }
 
+/** Seat counters — `GET /api/teams`, `GET /api/teams/:id`, `GET /api/workspace/current` (team.team.seats). */
+export interface TeamSeats {
+  limit: number
+  active: number
+  pending: number
+  used: number
+  available: number
+}
+
 export interface TeamSummary {
   id: string
   name: string
@@ -1117,11 +1190,14 @@ export interface TeamSummary {
   isOwner?: boolean
   activeMemberCount?: number
   maxSeats?: number | null
+  seats?: TeamSeats
   createdAt?: string
 }
 
 export interface TeamMember {
-  userId: string
+  /** Member user id — API may send `id` or `userId` (spec 37 §4.1). */
+  id?: string
+  userId?: string
   email?: string
   fullName?: string
   role?: string
@@ -1151,11 +1227,34 @@ export interface CreateTeamApiKeyResponse extends TeamApiKeyRow {
   secret?: string
 }
 
+/** Denormalized instance on assignment rows (GET team / GET instance-assignments — spec 37 §4.1). */
+export interface TeamInstanceAssignmentInstanceInfo {
+  id: string
+  name: string
+  waNumber: string
+  status: string
+}
+
+/** Row from `GET /api/teams/:id` (`instanceAssignments[]`) or `GET …/instance-assignments`. */
+export interface TeamInstanceAssignment {
+  teamId: string
+  instanceId: string
+  userId: string
+  assignedByUserId: string
+  createdAt: string
+  instance?: TeamInstanceAssignmentInstanceInfo
+}
+
 export interface TeamDetail extends TeamSummary {
   members?: TeamMember[]
+  /** Pending invites for the team settings UI (normalized from API `pendingInvitations` when needed). */
   invitations?: TeamInvitation[]
+  /** Raw API field — prefer reading `invitations` after `normalizeTeamDetailPayload`. */
+  pendingInvitations?: TeamInvitation[]
   usageThisMonth?: Record<string, number> | number | null
   instances?: Array<Record<string, unknown>>
+  /** Collaborator instance scoping — spec 37 §3.5. */
+  instanceAssignments?: TeamInstanceAssignment[]
 }
 
 export interface CreateTeamInviteInput {

@@ -46,3 +46,7 @@ GET /api/v1/billing/usage
   }
 }
 ```
+
+## Workspace rules
+
+This endpoint reflects the **personal account** of the key owner. It requires a **personal API key** (`msgf_live_…`). A **team API key** is rejected with `403` and code [`TEAM_KEY_NOT_ALLOWED`](/resources/error-codes#teams-workspaces). See [Team context](/api-reference/teams/team-context).

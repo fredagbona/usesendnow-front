@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { TeamInvitationMine } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export function useMyTeamInvitations() {
   const { copy } = usePortalLocale()
@@ -28,6 +29,8 @@ export function useMyTeamInvitations() {
   useEffect(() => {
     void fetchInvites()
   }, [fetchInvites])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void fetchInvites()), [fetchInvites])
 
   return { items, loading, error, refetch: fetchInvites }
 }

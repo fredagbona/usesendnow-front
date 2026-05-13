@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { ContactBulkJobProgress } from "@usesendnow/types"
 import { isBulkJobProgressTerminal } from "@/lib/waitForContactBulkJob"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export interface ContactBulkJobPollHandlers {
   onProgress?: (p: ContactBulkJobProgress) => void
@@ -38,6 +39,8 @@ export function useContactBulkJobPoll() {
   useEffect(() => {
     activeJobIdRef.current = activeJobId
   }, [activeJobId])
+
+  useEffect(() => onPortalWorkspaceChanged(() => stop()), [stop])
 
   useEffect(() => {
     if (!activeJobId) return

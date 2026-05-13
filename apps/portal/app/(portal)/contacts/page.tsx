@@ -710,7 +710,7 @@ export default function ContactsPage() {
     setSelectedIds(new Set())
   }, [pageIndex, sort, groupFilterId])
 
-  const allSelected = contacts.length > 0 && contactIds.every((id) => selectedIds.has(id))
+  const allSelected = Boolean(contacts.length > 0 && contactIds.every((id) => selectedIds.has(id)))
 
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -1089,6 +1089,8 @@ export default function ContactsPage() {
                         <th className="text-left text-xs font-medium text-text-secondary uppercase tracking-wide pb-3 pr-4 w-10">
                           <input
                             type="checkbox"
+                            checked={false}
+                            onChange={() => {}}
                             disabled
                             className="h-4 w-4 rounded border-border-strong accent-primary cursor-not-allowed"
                           />

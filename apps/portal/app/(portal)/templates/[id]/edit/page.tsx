@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { apiClient as api, ApiClientError } from "@usesendnow/api-client"
-import type { Template, TemplateType } from "@usesendnow/types"
+import type { Template, TemplateType, MessageType, UploadedMedia } from "@usesendnow/types"
 import { fadeIn } from "@/lib/animations"
 import { parseTemplateVariables } from "@/lib/templateEngine"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
@@ -21,6 +21,8 @@ import { HighlightedTemplateBody } from "@/components/templates/HighlightedTempl
 import { SkeletonCard } from "@/components/ui/Skeleton"
 import { toast } from "@/lib/toast"
 import { ArrowLeft01Icon, File01Icon, InformationCircleIcon } from "hugeicons-react"
+import { useManagedTemporaryMedia } from "@/hooks/useManagedTemporaryMedia"
+import { MediaUploadPanel } from "@/components/messages/MediaUploadPanel"
 
 const TEMPLATE_TYPES: TemplateType[] = ["text", "image", "video", "audio", "document"]
 
@@ -28,6 +30,8 @@ export default function TemplateEditPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const { copy } = usePortalLocale()
+  const h = copy.hooks
+  const list = copy.campaigns.list
   const t = copy.templates
   const d = t.detail
   const tNew = t.new
@@ -40,6 +44,38 @@ export default function TemplateEditPage() {
   const [type, setType] = useState<TemplateType>("text")
   const [body, setBody] = useState("")
   const [mediaUrl, setMediaUrl] = useState("")
+  const serverMediaUrlRef = useRef<string | null>(null)
+
+  const messageMediaType = type as MessageType
+
+  const onUploadSuccess = useCallback((media: UploadedMedia) => {
+    setMediaUrl(media.url)
+  }, [])
+
+  const onClearMedia = useCallback(() => {
+    setMediaUrl("")
+  }, [])
+
+  const {
+    uploadedMedia,
+    uploading,
+    uploadProgress,
+    mediaError,
+    mediaNotice,
+    fileInputRef,
+    handleFileSelect,
+    handleRemoveFile,
+    resetMediaState,
+    releaseUploadedMedia,
+    shouldCleanupMediaRef,
+  } = useManagedTemporaryMedia({
+    mediaType: messageMediaType,
+    listCopy: list,
+    bytesMegabyte: copy.common.bytesMegabyte,
+    onUploadSuccess,
+    onClear: onClearMedia,
+    onTeamAccessDenied: () => toast.error(h.teamAccessDenied),
+  })
 
   useEffect(() => {
     let active = true
@@ -53,7 +89,9 @@ export default function TemplateEditPage() {
         setName(data.name)
         setType(data.type)
         setBody(data.body ?? "")
-        setMediaUrl(data.mediaUrl ?? "")
+        const mu = data.mediaUrl ?? ""
+        setMediaUrl(mu)
+        serverMediaUrlRef.current = mu.trim() ? mu : null
       } catch (err) {
         if (!active) return
         if (err instanceof ApiClientError && err.code === "NOT_FOUND") {
@@ -77,6 +115,24 @@ export default function TemplateEditPage() {
   const requiresMedia = type !== "text"
   const canSave = name.trim().length > 0 && (type === "text" ? body.trim().length > 0 : mediaUrl.trim().length > 0)
 
+  const existingRemoteMediaUrl =
+    requiresMedia &&
+    Boolean(mediaUrl.trim()) &&
+    !uploadedMedia &&
+    serverMediaUrlRef.current != null &&
+    mediaUrl.trim() === serverMediaUrlRef.current.trim()
+      ? mediaUrl.trim()
+      : null
+
+  const handleTypeChange = (next: TemplateType) => {
+    if (next === type) return
+    releaseUploadedMedia()
+    resetMediaState()
+    setMediaUrl("")
+    serverMediaUrlRef.current = null
+    setType(next)
+  }
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!template || !canSave) return
@@ -89,6 +145,7 @@ export default function TemplateEditPage() {
         body: body.trim() || null,
         mediaUrl: requiresMedia ? mediaUrl.trim() || null : null,
       })
+      shouldCleanupMediaRef.current = false
       setTemplate(response)
       toast.success(t.templateUpdated)
       router.push(`/templates/${template.id}`)
@@ -97,6 +154,8 @@ export default function TemplateEditPage() {
         setError(t.invalidTemplate)
       } else if (err instanceof ApiClientError && err.code === "VALIDATION_ERROR") {
         setError(t.validationError)
+      } else if (err instanceof ApiClientError && err.code === "MEDIA_URL_EXPIRED") {
+        setError(tNew.mediaUrlExpired)
       } else {
         setError(t.templateUpdateFailed)
       }
@@ -181,7 +240,7 @@ export default function TemplateEditPage() {
 
               <Input label={tNew.templateName} value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
 
-              <Select label={t.type} value={type} onChange={(e) => setType(e.target.value as TemplateType)}>
+              <Select label={t.type} value={type} onChange={(e) => handleTypeChange(e.target.value as TemplateType)}>
                 {TEMPLATE_TYPES.map((templateType) => (
                   <option key={templateType} value={templateType}>
                     {d.typeLabels[templateType]}
@@ -199,14 +258,33 @@ export default function TemplateEditPage() {
               />
 
               {requiresMedia && (
-                <Input
-                  label={d.mediaUrlTitle}
-                  type="url"
-                  value={mediaUrl}
-                  onChange={(e) => setMediaUrl(e.target.value)}
-                  placeholder={t.mediaUrlPlaceholder}
-                  required
-                />
+                <div className="space-y-4">
+                  <p className="text-sm font-medium text-text-body">{tNew.mediaSectionTitle}</p>
+                  <MediaUploadPanel
+                    type={messageMediaType}
+                    uploading={uploading}
+                    uploadProgress={uploadProgress}
+                    uploadedMedia={uploadedMedia}
+                    mediaNotice={mediaNotice}
+                    mediaError={mediaError}
+                    scheduledAt=""
+                    panelContext="template"
+                    existingRemoteMediaUrl={existingRemoteMediaUrl}
+                    fileInputRef={fileInputRef}
+                    onFileChange={handleFileSelect}
+                    onRemove={handleRemoveFile}
+                  />
+                  {!uploadedMedia && !existingRemoteMediaUrl && (
+                    <Input
+                      label={tNew.externalUrlOptional}
+                      hint={tNew.externalUrlHint}
+                      type="url"
+                      value={mediaUrl}
+                      onChange={(e) => setMediaUrl(e.target.value)}
+                      placeholder={t.mediaUrlPlaceholder}
+                    />
+                  )}
+                </div>
               )}
 
               <div className="rounded-xl border border-border bg-bg-subtle p-4 text-sm leading-7 text-text">

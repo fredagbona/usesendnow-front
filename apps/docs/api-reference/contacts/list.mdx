@@ -1,6 +1,6 @@
 ---
 title: GET List contacts
-description: List your account contacts.
+description: List your account contacts with cursor pagination and optional search.
 ---
 
 ## Endpoint
@@ -9,20 +9,41 @@ description: List your account contacts.
 GET /api/v1/contacts
 ```
 
+## Query parameters
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `limit` | integer | no | Page size, default `50`, max `100` |
+| `cursor` | string | no | Opaque cursor returned by the previous page |
+| `search` | string | no | Case-insensitive match on `name` or `phone` (1-100 chars) |
+| `sort` | string | no | `createdAt_desc` (default) or `name_asc` |
+
 ## Success response `200`
 
 ```json
 {
-  "data": [
-    {
-      "id": "cnt_uuid",
-      "name": "Awa Doe",
-      "phone": "+33612345000",
-      "tags": ["vip"],
-      "meta": {},
-      "createdAt": "2026-04-01T10:00:00.000Z",
-      "updatedAt": "2026-04-01T10:00:00.000Z"
-    }
-  ]
+  "data": {
+    "contacts": [
+      {
+        "id": "cnt_uuid",
+        "name": "Awa Doe",
+        "phone": "+33612345000",
+        "tags": ["vip"],
+        "temperature": null,
+        "createdAt": "2026-04-01T10:00:00.000Z",
+        "updatedAt": "2026-04-01T10:00:00.000Z"
+      }
+    ],
+    "total": 240,
+    "limit": 50,
+    "sort": "createdAt_desc",
+    "nextCursor": "MjAyNi0wNC0wMVQxMDowMDowMC4wMDBafGNudF91dWlk",
+    "hasMore": true
+  }
 }
 ```
+
+## Notes
+
+- Pass the `nextCursor` value back as `cursor` to fetch the next page. Stop when `hasMore` is `false` or `nextCursor` is `null`.
+- The cursor encodes the sort tuple (`createdAt|id` or `name|id`). Do not mix sorts across pages.

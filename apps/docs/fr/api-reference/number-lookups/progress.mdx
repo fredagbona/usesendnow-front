@@ -1,0 +1,43 @@
+---
+title: GET Progression d'un lookup
+description: Retourne la progression courante et les compteurs intermédiaires d'un lookup asynchrone.
+---
+
+## Endpoint
+
+```txt
+GET /api/v1/number-lookups/{id}/progress
+```
+
+## Paramètres
+
+| Champ | Type | Requis | Emplacement | Description |
+|---|---|---:|---|---|
+| `id` | UUID | oui | path | ID du lookup |
+
+## Réponse succès `200`
+
+```json
+{
+  "data": {
+    "id": "lookup_uuid",
+    "status": "processing",
+    "progress": 60,
+    "requestedCount": 400,
+    "normalizedCount": 392,
+    "checkedCount": 240,
+    "onWhatsAppCount": 151,
+    "notOnWhatsAppCount": 89,
+    "invalidCount": 8,
+    "error": null,
+    "createdAt": "2026-05-07T10:00:00.000Z",
+    "updatedAt": "2026-05-07T10:00:07.000Z",
+    "completedAt": null
+  }
+}
+```
+
+## Notes
+
+- Utilisez cet endpoint pour poller toutes les `2s` sur les lookups asynchrones.
+- Arrêtez le polling quand `status` devient `done`, `failed` ou `cancelled`.

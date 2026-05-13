@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { ContactGroup } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 const PAGE_LIMIT = 50
 
@@ -46,6 +47,8 @@ export function useContactGroups(searchQuery = "") {
   useEffect(() => {
     void fetchFirstPage()
   }, [fetchFirstPage])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void fetchFirstPage()), [fetchFirstPage])
 
   const loadMore = useCallback(async () => {
     if (!hasMore || !nextCursor || loadingMore) return

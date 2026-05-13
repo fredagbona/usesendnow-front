@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Campaign, CampaignStatus } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export function useCampaigns() {
   const { copy } = usePortalLocale()
@@ -11,7 +12,7 @@ export function useCampaigns() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -22,9 +23,13 @@ export function useCampaigns() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [copy.hooks.campaignsListLoadError])
 
-  useEffect(() => { fetchCampaigns() }, [copy.hooks.campaignsListLoadError])
+  useEffect(() => {
+    void fetchCampaigns()
+  }, [fetchCampaigns])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void fetchCampaigns()), [fetchCampaigns])
 
   const updateCampaignStatus = useCallback((id: string, status: CampaignStatus) => {
     setCampaigns((prev) =>
@@ -57,20 +62,24 @@ export function useCampaign(id: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetch = async () => {
-      setLoading(true)
-      try {
-        const data = await apiClient.campaigns.get(id)
-        setCampaign(data)
-      } catch {
-        setError(copy.hooks.campaignNotFound)
-      } finally {
-        setLoading(false)
-      }
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await apiClient.campaigns.get(id)
+      setCampaign(data)
+    } catch {
+      setError(copy.hooks.campaignNotFound)
+    } finally {
+      setLoading(false)
     }
-    fetch()
   }, [id, copy.hooks.campaignNotFound])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void load()), [load])
 
   const updateStatus = useCallback((status: CampaignStatus) => {
     setCampaign((prev) => prev ? { ...prev, status } : prev)

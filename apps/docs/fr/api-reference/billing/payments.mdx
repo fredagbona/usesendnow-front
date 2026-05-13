@@ -41,3 +41,7 @@ GET /api/v1/billing/payments
   }
 }
 ```
+
+## Règles workspace
+
+Cet endpoint retourne l'**historique de paiements personnel** du propriétaire de la clé. Il exige une **clé API personnelle** (`msgf_live_…`). Une **clé d'équipe** est rejetée en `403` avec le code [`TEAM_KEY_NOT_ALLOWED`](/fr/resources/error-codes#équipes-workspaces). L'historique d'équipe n'est disponible qu'au propriétaire de l'équipe depuis la console via `GET /api/billing/payments` avec `X-Team-Id`.

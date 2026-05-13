@@ -5,6 +5,7 @@ import { toast } from "@/lib/toast"
 import { apiClient } from "@usesendnow/api-client"
 import type { ContactImport } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export function useContactImports() {
   const { copy } = usePortalLocale()
@@ -53,6 +54,14 @@ export function useContactImports() {
 
   useEffect(() => {
     fetchImports()
+  }, [fetchImports])
+
+  useEffect(() => {
+    return onPortalWorkspaceChanged(() => {
+      pollingRefs.current.forEach((interval) => clearInterval(interval))
+      pollingRefs.current.clear()
+      void fetchImports()
+    })
   }, [fetchImports])
 
   useEffect(() => {

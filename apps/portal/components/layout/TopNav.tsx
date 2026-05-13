@@ -19,6 +19,8 @@ import { usePortalTheme } from "@/components/ui/ThemeProvider"
 import GlobalSearch from "@/components/layout/GlobalSearch"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { WorkspaceMenuSection } from "@/components/workspace/WorkspaceSwitcher"
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"
+import { isPortalNavHrefVisible } from "@/lib/nav-capabilities"
 
 interface TopNavProps {
   user?: User | null
@@ -30,6 +32,7 @@ export default function TopNav({ user, planName, onMobileMenu }: TopNavProps) {
   const router = useRouter()
   const { theme, toggleTheme } = usePortalTheme()
   const { copy, toggleLocale } = usePortalLocale()
+  const { capabilities, workspaceCurrent } = useWorkspace()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -153,14 +156,16 @@ export default function TopNav({ user, planName, onMobileMenu }: TopNavProps) {
                   <UserIcon className="w-4 h-4 text-text-secondary" />
                   {copy.topnav.profile}
                 </Link>
-                <Link
-                  href="/billing"
-                  onClick={() => setDropdownOpen(false)}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-text-body hover:bg-bg-subtle hover:text-text transition-colors duration-150"
-                >
-                  <Invoice01Icon className="w-4 h-4 text-text-secondary" />
-                  {copy.topnav.billing}
-                </Link>
+                {isPortalNavHrefVisible("/billing", capabilities, workspaceCurrent) ? (
+                  <Link
+                    href="/billing"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-text-body hover:bg-bg-subtle hover:text-text transition-colors duration-150"
+                  >
+                    <Invoice01Icon className="w-4 h-4 text-text-secondary" />
+                    {copy.topnav.billing}
+                  </Link>
+                ) : null}
               </div>
 
               <div className="border-t border-border p-1">

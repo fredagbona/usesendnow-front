@@ -12,6 +12,7 @@ import { formatDate, formatMonthYear } from "@/lib/format"
 import type { Plan } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import PageHeader from "@/components/layout/PageHeader"
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"
 import Button from "@/components/ui/Button"
 import Badge from "@/components/ui/Badge"
 import Card from "@/components/ui/Card"
@@ -217,6 +218,8 @@ function PlanCard({
   isDowngrade,
   isScheduled,
   actioning,
+  billingMutationsDisabled,
+  billingMutationsTitle,
   onSelect,
 }: {
   plan: Plan
@@ -225,6 +228,8 @@ function PlanCard({
   isDowngrade: boolean
   isScheduled: boolean   // this plan is the scheduled downgrade target
   actioning: string | null
+  billingMutationsDisabled?: boolean
+  billingMutationsTitle?: string
   onSelect: (plan: Plan) => void
 }) {
   const { copy, locale } = usePortalLocale()
@@ -269,6 +274,8 @@ function PlanCard({
           variant={isUpgrade ? "primary" : "secondary"}
           size="sm"
           loading={actioning === plan.code}
+          disabled={billingMutationsDisabled}
+          title={billingMutationsDisabled ? billingMutationsTitle : undefined}
           onClick={() => onSelect(plan)}
           className="w-full justify-center"
         >
@@ -297,7 +304,13 @@ function BillingPageContent() {
   const { copy, locale } = usePortalLocale()
   const billingCopy = copy.billing
   const { subscription, plans, loading, error, refetch } = useBilling()
-  const { payments, page, totalPages, loading: paymentsLoading, goToPage, paymentsTeamOwnerOnly } = usePayments()
+  const { capabilities } = useWorkspace()
+  const canViewPayments = capabilities.canViewPayments !== false
+  const { payments, page, totalPages, loading: paymentsLoading, goToPage, paymentsTeamOwnerOnly } = usePayments({
+    enabled: canViewPayments,
+  })
+  const billingMutationsDisabled = capabilities.canMutateBilling === false
+  const billingOwnerHint = copy.hooks.workspaceBillingOwnerOnlyHint
   const [planModalOpen, setPlanModalOpen] = useState(false)
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [cancelScheduledModalOpen, setCancelScheduledModalOpen] = useState(false)
@@ -353,6 +366,7 @@ function BillingPageContent() {
   }, [searchParams, refetch])
 
   const handleSelectPlan = async (plan: Plan) => {
+    if (billingMutationsDisabled) return
     if (plan.code === "free") return
     const planIdx = PLAN_ORDER.indexOf(plan.code)
     const isUpgrade = planIdx > currentPlanIdx
@@ -394,6 +408,7 @@ function BillingPageContent() {
   }
 
   const handleCancel = async () => {
+    if (billingMutationsDisabled) return
     setCancelling(true)
     try {
       await apiClient.billing.cancel()
@@ -424,6 +439,7 @@ function BillingPageContent() {
   }
 
   const handleCancelScheduledChange = async () => {
+    if (billingMutationsDisabled) return
     setCancellingScheduled(true)
     try {
       await apiClient.billing.cancelScheduledChange()
@@ -522,6 +538,8 @@ function BillingPageContent() {
             variant="secondary"
             size="sm"
             className="shrink-0"
+            disabled={billingMutationsDisabled}
+            title={billingMutationsDisabled ? billingOwnerHint : undefined}
             onClick={() => setCancelScheduledModalOpen(true)}
           >
             {billingCopy.cancelScheduledChange}
@@ -539,6 +557,8 @@ function BillingPageContent() {
             variant="secondary"
             size="sm"
             className="shrink-0"
+            disabled={billingMutationsDisabled}
+            title={billingMutationsDisabled ? billingOwnerHint : undefined}
             onClick={() => setCancelScheduledModalOpen(true)}
           >
             {billingCopy.cancelTermination}
@@ -596,6 +616,7 @@ function BillingPageContent() {
       )}
 
       {/* ── Historique des paiements ─────────────────────────────────────── */}
+      {canViewPayments && (
       <div>
         <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">
           {billingCopy.paymentHistory}
@@ -714,6 +735,7 @@ function BillingPageContent() {
           )}
         </Card>
       </div>
+      )}
 
       {/* ── Annuler l'abonnement ─────────────────────────────────────────── */}
       {canCancel && (
@@ -724,7 +746,7 @@ function BillingPageContent() {
             {currentPlan.name ? ` ${currentPlan.name}` : ""} {billingCopy.cancelSubscriptionUntilPrefix}{" "}
             {periodEnd ? formatDate(periodEnd) : billingCopy.cancelSubscriptionUntilFallback}, {billingCopy.cancelSubscriptionThenFree}
           </p>
-          <Button variant="danger" onClick={() => setCancelModalOpen(true)}>
+          <Button variant="danger" disabled={billingMutationsDisabled} title={billingMutationsDisabled ? billingOwnerHint : undefined} onClick={() => setCancelModalOpen(true)}>
             {billingCopy.cancelSubscriptionCta}
           </Button>
         </div>
@@ -753,6 +775,8 @@ function BillingPageContent() {
                   size="sm"
                   className="shrink-0"
                   loading={cancellingScheduled}
+                  disabled={billingMutationsDisabled}
+                  title={billingMutationsDisabled ? billingOwnerHint : undefined}
                   onClick={handleCancelScheduledChange}
                 >
                   {billingCopy.cancelChange}
@@ -771,6 +795,8 @@ function BillingPageContent() {
                     isDowngrade={planIdx < currentPlanIdx && plan.code !== "free"}
                     isScheduled={plan.code === scheduledPlan}
                     actioning={actioning}
+                    billingMutationsDisabled={billingMutationsDisabled}
+                    billingMutationsTitle={billingOwnerHint}
                     onSelect={handleSelectPlan}
                   />
                 )
@@ -798,7 +824,7 @@ function BillingPageContent() {
           <Button variant="secondary" onClick={() => setCancelModalOpen(false)}>
             {billingCopy.modals.keepPlan}
           </Button>
-          <Button variant="danger" loading={cancelling} onClick={handleCancel}>
+          <Button variant="danger" loading={cancelling} disabled={billingMutationsDisabled} title={billingMutationsDisabled ? billingOwnerHint : undefined} onClick={handleCancel}>
             {billingCopy.modals.confirmCancel}
           </Button>
         </div>

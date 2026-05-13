@@ -5,6 +5,7 @@ import { toast } from "@/lib/toast"
 import { apiClient } from "@usesendnow/api-client"
 import type { Message } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 interface MessagesFilter {
   instanceId?: string
@@ -42,6 +43,8 @@ export function useMessages(filters: MessagesFilter = {}) {
   useEffect(() => {
     fetchMessages()
   }, [fetchMessages])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void fetchMessages()), [fetchMessages])
 
   const loadMore = async () => {
     if (!nextCursor || loadingMore) return
@@ -85,20 +88,24 @@ export function useMessage(id: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetch = async () => {
-      setLoading(true)
-      try {
-        const data = await apiClient.messages.get(id)
-        setMessage(data)
-      } catch {
-        setError(copy.hooks.messageNotFound)
-      } finally {
-        setLoading(false)
-      }
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await apiClient.messages.get(id)
+      setMessage(data)
+    } catch {
+      setError(copy.hooks.messageNotFound)
+    } finally {
+      setLoading(false)
     }
-    fetch()
   }, [id, copy.hooks.messageNotFound])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  useEffect(() => onPortalWorkspaceChanged(() => void load()), [load])
 
   return { message, loading, error }
 }

@@ -69,12 +69,21 @@ import type {
   CreateTeamPayload,
   CreateTeamApiKeyResponse,
   TeamApiKeyRow,
+  WorkspaceCurrentPayload,
+  TeamInvitationAcceptResult,
+  TeamInstanceAssignment,
 } from "@usesendnow/types"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const getBaseUrl = () =>
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000"
+function getBaseUrl(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_API_URL
+  const trimmed = typeof fromEnv === "string" ? fromEnv.trim() : ""
+  if (trimmed.length > 0) {
+    return trimmed.replace(/\/+$/, "")
+  }
+  return "http://localhost:3000"
+}
 
 const getToken = (): string | null => {
   if (typeof window === "undefined") return null
@@ -97,35 +106,98 @@ class ApiClientError extends Error {
 /** Same storage key as `apps/portal/lib/workspace-storage` — authenticated requests send `X-Team-Id` in team workspace when allowed. */
 const PORTAL_WORKSPACE_STORAGE_KEY = "msgflash_portal_workspace_v1"
 
+const PORTAL_WORKSPACE_CHANGED_EVENT = "msgflash:workspace-changed"
+
 /**
- * Routes that must stay “actor personal” — no X-Team-Id:
- * - Auth / profile
- * - Listing all teams you belong to (`GET /api/teams`) and creating a team (`POST /api/teams`)
- * - Your pending invites inbox + accept (not scoped to the active workspace team)
+ * Routes that skip `x-team-id` unless the URL targets the **same** team as the active portal workspace
+ * (see specs/portal/39 + team detail scoping).
+ * - Auth / profile, billing catalog
+ * - `/api/teams` list, `/api/teams/invitations/*` (not team-scoped by id)
  */
 function shouldAttachPortalWorkspaceHeaders(path: string, isPublic: boolean): boolean {
   if (isPublic) return false
   const base = path.includes("?") ? path.slice(0, path.indexOf("?")) : path
   if (base.startsWith("/api/auth/")) return false
-  if (base === "/api/teams") return false
-  if (base === "/api/teams/invitations/mine") return false
-  if (base === "/api/teams/invitations/accept") return false
+  if (base === "/api/billing/plans") return false
+  if (base === "/api/teams" || base.startsWith("/api/teams/")) {
+    const pathTeamId = teamIdFromScopedTeamsPath(base)
+    const active = getActivePortalTeamIdFromWindow()
+    return Boolean(pathTeamId && active && pathTeamId === active)
+  }
   return true
 }
 
-function portalWorkspaceHeaders(): Record<string, string> {
-  if (typeof window === "undefined") return {}
+function parseActiveTeamIdFromStorageJson(raw: string): string | null {
   try {
-    const raw = window.localStorage.getItem(PORTAL_WORKSPACE_STORAGE_KEY)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as { mode?: string; teamId?: unknown }
-    if (parsed.mode === "team" && typeof parsed.teamId === "string" && parsed.teamId.length > 0) {
-      return { "X-Team-Id": parsed.teamId }
-    }
+    const parsed = JSON.parse(raw) as unknown
+    if (parsed === null || parsed === undefined) return null
+    if (typeof parsed !== "object" || Array.isArray(parsed)) return null
+    const rec = parsed as Record<string, unknown>
+    if (typeof rec.teamId === "string" && rec.teamId.length > 0) return rec.teamId
+    if (rec.mode === "team" && typeof rec.teamId === "string" && rec.teamId.length > 0) return rec.teamId
   } catch {
     /* ignore */
   }
+  return null
+}
+
+function getActivePortalTeamIdFromWindow(): string | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = window.localStorage.getItem(PORTAL_WORKSPACE_STORAGE_KEY)
+    if (!raw) return null
+    return parseActiveTeamIdFromStorageJson(raw)
+  } catch {
+    return null
+  }
+}
+
+/** First path segment after `/api/teams/` when it is a team UUID (not `invitations`, etc.). */
+function teamIdFromScopedTeamsPath(base: string): string | null {
+  if (base === "/api/teams") return null
+  if (!base.startsWith("/api/teams/")) return null
+  const rest = base.slice("/api/teams/".length)
+  const first = rest.split("/")[0] ?? ""
+  if (!first || first === "invitations") return null
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRe.test(first) ? first : null
+}
+
+function portalWorkspaceHeaders(): Record<string, string> {
+  const teamId = getActivePortalTeamIdFromWindow()
+  if (teamId) return { "x-team-id": teamId }
   return {}
+}
+
+function resetPortalWorkspaceInClient(): void {
+  if (typeof window === "undefined") return
+  try {
+    window.localStorage.removeItem(PORTAL_WORKSPACE_STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+function dispatchPortalWorkspaceChanged(): void {
+  if (typeof window === "undefined") return
+  window.dispatchEvent(new CustomEvent(PORTAL_WORKSPACE_CHANGED_EVENT))
+}
+
+function handleTeamMissingOnConsole(isPublic: boolean, code: string): void {
+  if (isPublic || code !== "TEAM_NOT_FOUND") return
+  resetPortalWorkspaceInClient()
+  dispatchPortalWorkspaceChanged()
+}
+
+function consoleJwtFetchHeaders(path: string): Record<string, string> {
+  const base = path.includes("?") ? path.slice(0, path.indexOf("?")) : path
+  const headers: Record<string, string> = {}
+  const token = getToken()
+  if (token) headers.Authorization = `Bearer ${token}`
+  if (shouldAttachPortalWorkspaceHeaders(base, false)) {
+    Object.assign(headers, portalWorkspaceHeaders())
+  }
+  return headers
 }
 
 /** Backend may nest payload as `{ data: T }` or `{ data: { data: T } }`. */
@@ -181,21 +253,42 @@ async function request<T>(
     }
   }
 
-  const res = await fetch(`${getBaseUrl()}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
+  const url = `${getBaseUrl()}${path}`
+  let res: Response
+  try {
+    res = await fetch(url, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to fetch"
+    throw new ApiClientError("NETWORK_UNAVAILABLE", message, 0)
+  }
 
-  const json = (await res.json()) as { data?: unknown; error?: ApiError }
+  const rawText = await res.text()
+  let json: { data?: unknown; error?: ApiError }
+  const trimmed = rawText.trim()
+  if (trimmed.length === 0) {
+    json = {}
+  } else {
+    try {
+      json = JSON.parse(trimmed) as { data?: unknown; error?: ApiError }
+    } catch {
+      throw new ApiClientError("INVALID_RESPONSE", "Unable to parse server response", res.status)
+    }
+  }
 
   if (!res.ok || json.error) {
     const err = json.error ?? { code: "UNKNOWN_ERROR", message: "An error occurred" }
+
+    handleTeamMissingOnConsole(isPublic, err.code)
 
     if (res.status === 401) {
       const hadToken = !!getToken()
       if (hadToken && typeof window !== "undefined") {
         localStorage.removeItem("usn_token")
+        resetPortalWorkspaceInClient()
         window.location.href = "/login"
       }
     }
@@ -211,7 +304,9 @@ async function uploadRequest<T>(
   formData: FormData,
   onProgress?: (progress: number) => void,
 ): Promise<T> {
-  const headers: Record<string, string> = {}
+  const workspaceHeaders =
+    shouldAttachPortalWorkspaceHeaders(path, false) ? portalWorkspaceHeaders() : {}
+  const headers: Record<string, string> = { ...workspaceHeaders }
   const token = getToken()
   if (token) {
     headers["Authorization"] = `Bearer ${token}`
@@ -243,6 +338,7 @@ async function uploadRequest<T>(
 
         if (xhr.status < 200 || xhr.status >= 300 || json.error) {
           const err = json.error ?? { code: "UNKNOWN_ERROR", message: "An error occurred" }
+          handleTeamMissingOnConsole(false, err.code)
           reject(new ApiClientError(err.code, err.message, xhr.status))
           return
         }
@@ -261,16 +357,29 @@ async function uploadRequest<T>(
     })
   }
 
-  const res = await fetch(`${getBaseUrl()}${path}`, {
-    method: "POST",
-    headers,
-    body: formData,
-  })
+  const uploadUrl = `${getBaseUrl()}${path}`
+  let res: Response
+  try {
+    res = await fetch(uploadUrl, {
+      method: "POST",
+      headers,
+      body: formData,
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to fetch"
+    throw new ApiClientError("NETWORK_UNAVAILABLE", message, 0)
+  }
 
-  const json = (await res.json()) as { data?: unknown; error?: ApiError }
+  let json: { data?: unknown; error?: ApiError }
+  try {
+    json = (await res.json()) as { data?: unknown; error?: ApiError }
+  } catch {
+    throw new ApiClientError("INVALID_RESPONSE", "Unable to parse server response", res.status)
+  }
 
   if (!res.ok || json.error) {
     const err = json.error ?? { code: "UNKNOWN_ERROR", message: "An error occurred" }
+    handleTeamMissingOnConsole(false, err.code)
     throw new ApiClientError(err.code, err.message, res.status)
   }
 
@@ -453,9 +562,9 @@ const contacts = {
     const url = groupId
       ? `/api/contacts/export?groupId=${groupId}`
       : "/api/contacts/export"
-    const token = getToken()
+    const pathOnly = url.includes("?") ? url.slice(0, url.indexOf("?")) : url
     const res = await fetch(`${getBaseUrl()}${url}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: consoleJwtFetchHeaders(pathOnly),
     })
     if (!res.ok) throw new Error("Export failed")
     const blob = await res.blob()
@@ -465,13 +574,12 @@ const contacts = {
   },
 
   import: async (file: File, groupId?: string): Promise<ImportResult> => {
-    const token = getToken()
     const formData = new FormData()
     formData.append("file", file)
     if (groupId) formData.append("groupId", groupId)
     const res = await fetch(`${getBaseUrl()}/api/contacts/import`, {
       method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: consoleJwtFetchHeaders("/api/contacts/import"),
       body: formData,
     })
     const json = (await res.json()) as { data?: unknown; error?: ApiError }
@@ -678,6 +786,29 @@ function pickFirstRoleString(...vals: unknown[]): string | undefined {
   return undefined
 }
 
+/** API returns `pendingInvitations` (spec 37 §4.1); portal uses `invitations`. */
+function normalizeTeamDetailInvitations(
+  payload: TeamDetail & { team?: TeamDetail },
+  inner?: TeamDetail,
+): TeamInvitation[] | undefined {
+  const env = payload as unknown as Record<string, unknown>
+  const innerRec = (inner ?? null) as unknown as Record<string, unknown> | null
+
+  const candidates: unknown[] = [
+    payload.invitations,
+    env.pendingInvitations,
+    env.pending_invitations,
+    inner?.invitations,
+    inner?.pendingInvitations,
+    innerRec?.pendingInvitations,
+    innerRec?.pending_invitations,
+  ]
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c as TeamInvitation[]
+  }
+  return undefined
+}
+
 function normalizeTeamDetailPayload(payload: TeamDetail & { team?: TeamDetail }): TeamDetail {
   const env = payload as unknown as Record<string, unknown>
   if (payload.team && typeof payload.team === "object") {
@@ -700,9 +831,11 @@ function normalizeTeamDetailPayload(payload: TeamDetail & { team?: TeamDetail })
     return {
       ...inner,
       members: payload.members ?? inner.members,
-      invitations: payload.invitations ?? inner.invitations,
+      invitations: normalizeTeamDetailInvitations(payload, inner),
       usageThisMonth: payload.usageThisMonth ?? inner.usageThisMonth,
       instances: payload.instances ?? inner.instances,
+      instanceAssignments: payload.instanceAssignments ?? inner.instanceAssignments,
+      seats: payload.seats ?? inner.seats,
       myRole: myRoleMerged ?? inner.myRole ?? payload.myRole,
       isOwner: isOwnerMerged ? true : (inner.isOwner ?? payload.isOwner),
       maxSeats: inner.maxSeats ?? payload.maxSeats,
@@ -718,11 +851,19 @@ function normalizeTeamDetailPayload(payload: TeamDetail & { team?: TeamDetail })
     flat.currentUserRole,
   )
   const isOwnerFlat = payload.isOwner === true || parseTruthyOwnerFlag(flat.isOwner)
+  const invitationsFlat = normalizeTeamDetailInvitations(payload, undefined)
   return {
     ...payload,
+    invitations: invitationsFlat ?? payload.invitations,
     myRole: myRoleFlat ?? payload.myRole,
     isOwner: isOwnerFlat ? true : payload.isOwner,
   }
+}
+
+// ─── Workspace bootstrap (spec 37 §2) ───────────────────────────────────────
+
+const workspace = {
+  current: () => get<WorkspaceCurrentPayload>("/api/workspace/current"),
 }
 
 // ─── Teams (workspaces) ──────────────────────────────────────────────────────
@@ -739,6 +880,15 @@ function normalizeApiKeyList(payload: TeamApiKeyRow[] | { items?: TeamApiKeyRow[
   return payload.items ?? []
 }
 
+function normalizeInstanceAssignmentsList(
+  payload:
+    | TeamInstanceAssignment[]
+    | { items?: TeamInstanceAssignment[]; assignments?: TeamInstanceAssignment[]; data?: TeamInstanceAssignment[] },
+): TeamInstanceAssignment[] {
+  if (Array.isArray(payload)) return payload
+  return payload.items ?? payload.assignments ?? payload.data ?? []
+}
+
 const teams = {
   listMineInvitations: () =>
     get<TeamInvitationMine[] | { items?: TeamInvitationMine[] }>("/api/teams/invitations/mine").then(
@@ -746,12 +896,15 @@ const teams = {
     ),
 
   acceptInvitation: (body: { invitationId?: string; token?: string }) =>
-    post<{ success?: boolean }>("/api/teams/invitations/accept", body),
+    post<TeamInvitationAcceptResult>("/api/teams/invitations/accept", body),
 
   list: () =>
     get<TeamSummary[] | { items?: TeamSummary[]; teams?: TeamSummary[] }>("/api/teams").then(normalizeTeamListPayload),
 
-  create: (payload: CreateTeamPayload) => post<TeamDetail>("/api/teams", payload),
+  create: (payload: CreateTeamPayload) =>
+    post<TeamDetail>("/api/teams", payload).then((t) =>
+      normalizeTeamDetailPayload(t as TeamDetail & { team?: TeamDetail }),
+    ),
 
   get: (teamId: string) =>
     get<TeamDetail & { team?: TeamDetail }>(`/api/teams/${teamId}`).then(normalizeTeamDetailPayload),
@@ -782,6 +935,11 @@ const teams = {
     return del<{ success?: boolean }>(`/api/teams/${teamId}/instance-assignments?${q}`)
   },
 
+  listInstanceAssignments: (teamId: string) =>
+    get<
+      TeamInstanceAssignment[] | { items?: TeamInstanceAssignment[]; assignments?: TeamInstanceAssignment[] }
+    >(`/api/teams/${teamId}/instance-assignments`).then(normalizeInstanceAssignmentsList),
+
   listApiKeys: (teamId: string) =>
     get<TeamApiKeyRow[] | { items?: TeamApiKeyRow[] }>(`/api/teams/${teamId}/api-keys`).then(normalizeApiKeyList),
 
@@ -807,6 +965,7 @@ export const apiClient = {
   apiKeys,
   webhooks,
   billing,
+  workspace,
   statuses,
   numberLookups,
   teams,

@@ -14,6 +14,10 @@ interface MediaUploadPanelProps {
   mediaNotice: string | null
   mediaError: string | null
   scheduledAt: string
+  /** Message compose: schedule vs expiry hint. Template: softer copy, no schedule line. */
+  panelContext?: "message" | "template"
+  /** When the URL is already set (e.g. edit load) but no `UploadedMedia` in this session. */
+  existingRemoteMediaUrl?: string | null
   fileInputRef: React.RefObject<HTMLInputElement | null>
   onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void
   onRemove: () => void
@@ -27,6 +31,8 @@ export function MediaUploadPanel({
   mediaNotice,
   mediaError,
   scheduledAt,
+  panelContext = "message",
+  existingRemoteMediaUrl = null,
   fileInputRef,
   onFileChange,
   onRemove,
@@ -40,11 +46,15 @@ export function MediaUploadPanel({
   const accepted = ACCEPTED_LABELS[type] ?? ""
 
   const fileDetailsLine = uploadedMedia
-    ? m.fileDetails
+    ? (panelContext === "template" && m.fileDetailsTemplate
+        ? m.fileDetailsTemplate
+        : m.fileDetails)
         .replace("{{size}}", formatBytes(uploadedMedia.sizeBytes, mbUnit))
         .replace("{{mime}}", uploadedMedia.type)
         .replace("{{date}}", formatFullDate(uploadedMedia.expiresAt))
     : ""
+
+  const showExistingRemote = Boolean(existingRemoteMediaUrl) && !uploadedMedia && !uploading
 
   return (
     <div className="space-y-2">
@@ -89,9 +99,44 @@ export function MediaUploadPanel({
             <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5 text-text-secondary">
               <p>{m.tempHostNotice}</p>
               <p className="mt-1">{m.publicLinkNotice}</p>
-              {scheduledAt && (
+              {panelContext === "template" && m.templateRetentionHint ? (
+                <p className="mt-1 text-text-secondary">{m.templateRetentionHint}</p>
+              ) : null}
+              {panelContext === "message" && scheduledAt ? (
                 <p className="mt-1">{m.scheduleExpiryWarning}</p>
-              )}
+              ) : null}
+            </div>
+          </div>
+        ) : showExistingRemote ? (
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-text-secondary">{m.existingLinkedMediaLabel}</p>
+                <p className="mt-1 break-all font-mono text-xs text-text">{existingRemoteMediaUrl}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg hover:text-text"
+                >
+                  {m.replace}
+                </button>
+                <button
+                  type="button"
+                  onClick={onRemove}
+                  className="rounded-lg border border-border p-2 text-text-muted transition-colors hover:bg-bg hover:text-error"
+                >
+                  <Delete02Icon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5 text-text-secondary">
+              <p>{m.tempHostNotice}</p>
+              <p className="mt-1">{m.publicLinkNotice}</p>
+              {panelContext === "template" && m.templateRetentionHint ? (
+                <p className="mt-1">{m.templateRetentionHint}</p>
+              ) : null}
             </div>
           </div>
         ) : (

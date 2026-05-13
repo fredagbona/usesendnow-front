@@ -9,6 +9,7 @@ import { entriesToVariableMap, getContextVariables, getCustomVariables, getCusto
 import { useCampaigns } from "@/hooks/useCampaigns"
 import { useContacts } from "@/hooks/useContacts"
 import { useInstances } from "@/hooks/useInstances"
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"
 import { useTemplates } from "@/hooks/useTemplates"
 import { useContactGroups } from "@/hooks/useContactGroups"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
@@ -34,6 +35,7 @@ import { Megaphone01Icon, ArrowLeft01Icon, InformationCircleIcon } from "hugeico
 export default function NewCampaignPage() {
   const router = useRouter()
   const { copy, locale } = usePortalLocale()
+  const h = copy.hooks
   const np = copy.campaigns.newPage
   const list = copy.campaigns.list
   const dRepeat = copy.campaigns.detail.repeat
@@ -41,9 +43,11 @@ export default function NewCampaignPage() {
   const { prependCampaign } = useCampaigns()
   const { contacts } = useContacts()
   const { instances } = useInstances()
+  const { filterInstancesForWorkspace } = useWorkspace()
   const connectedInstances = useMemo(
-    () => instances.filter((instance) => instance.status === "connected"),
-    [instances],
+    () =>
+      filterInstancesForWorkspace(instances.filter((instance) => instance.status === "connected")),
+    [instances, filterInstancesForWorkspace],
   )
   const { templates } = useTemplates()
   const { groups } = useContactGroups()
@@ -208,7 +212,10 @@ export default function NewCampaignPage() {
       if (err instanceof ApiClientError) {
         if (err.code === "MEDIA_TYPE_NOT_ALLOWED") setMediaError(list.mediaTypeNotAllowed)
         else if (err.code === "MEDIA_TOO_LARGE") setMediaError(list.mediaTooLarge)
-        else setMediaError(list.mediaUploadFailed)
+        else if (err.code === "TEAM_ACCESS_DENIED") {
+          toast.error(h.teamAccessDenied)
+          setMediaError(list.mediaUploadFailed)
+        } else setMediaError(list.mediaUploadFailed)
       } else {
         setMediaError(list.mediaUploadFailed)
       }
@@ -319,11 +326,12 @@ export default function NewCampaignPage() {
           },
         }
       } else {
+        const body = form.directBody.trim()
         payload = {
           name: form.name.trim(),
           instanceId: form.instanceId,
           type: form.directType,
-          body: form.directType === "text" ? form.directBody.trim() : undefined,
+          body,
           mediaUrl: isDirectMediaType ? form.directMediaUrl : undefined,
           schedule: form.schedule ? new Date(form.schedule).toISOString() : new Date().toISOString(),
           repeat,
@@ -354,6 +362,10 @@ export default function NewCampaignPage() {
           toast.error(np.errorCampaignsNotOnPlan)
         } else if (err.code === "MONTHLY_OUTBOUND_QUOTA_EXCEEDED") {
           toast.error(np.errorQuotaExceeded)
+        } else if (err.code === "INSTANCE_NOT_ASSIGNED") {
+          toast.error(h.instanceNotAssigned)
+        } else if (err.code === "TEAM_ACCESS_DENIED") {
+          toast.error(h.teamAccessDenied)
         } else if (err.code === "NOT_FOUND") {
           toast.error(np.errorNotFound)
         } else if (err.code === "VALIDATION_ERROR") {

@@ -68,3 +68,33 @@ description: Main error codes returned by the MsgFlash public API.
 | `PROVIDER_TIMEOUT` | 502 | WhatsApp provider timeout |
 | `PROVIDER_UNAVAILABLE` | 502 | Provider temporarily unavailable |
 | `PROVIDER_ERROR` | 502 | Generic provider error |
+
+---
+
+## Teams & workspaces
+
+These codes appear when the request mixes the wrong API key type with `X-Team-Id`, or when a team-scoped resource is accessed without the right role. See [Team context](/api-reference/teams/team-context) and the [Teams & workspaces guide](/guides/teams-workspaces).
+
+| Code | HTTP | Description |
+|---|---|---|
+| `TEAM_KEY_REQUIRED` | 403 | Personal API key (`msgf_live_…`) used with `X-Team-Id`. Use a team key (`msgf_team_…`) instead, or drop the header. |
+| `TEAM_KEY_NOT_ALLOWED` | 403 | Team API key used on a personal-only `v1` route (`/me`, `/usage`, `/billing/subscription`, `/billing/usage`, `/billing/payments`). Use a personal key. |
+| `TEAM_NOT_FOUND` | 404 | `X-Team-Id` is not a team you currently belong to (deleted, removed, or wrong ID). |
+| `TEAM_ACCESS_DENIED` | 403 | Authenticated but the role is not allowed for this action (e.g. collaborator trying to manage team API keys). |
+| `TEAM_FEATURE_UNAVAILABLE` | 403 | Account plan does not include team creation (Free / Starter). Upgrade to Pro or Plus. |
+| `TEAM_LIMIT_REACHED` | 403 | Owner reached the maximum number of teams allowed by their plan. |
+| `TEAM_SEAT_LIMIT_REACHED` | 403 | Team already has the maximum number of members for the owner’s plan. |
+| `INSTANCE_NOT_ASSIGNED` | 403 | Collaborator targeting an instance that has not been assigned to them in this team workspace. |
+| `INVITE_INVALID_OR_EXPIRED` | 400 | Invitation token / id is unknown, already used, or past its 24h expiry. |
+| `INVITE_EMAIL_MISMATCH` | 403 | The JWT user email does not match the invited address. |
+| `INVITE_DUPLICATE_MEMBER` | 409 | Invitee is already an active member of the team. |
+| `PLAN_CHANGE_BLOCKED_ACTIVE_TEAMS` | 409 | Downgrade refused because the new plan cannot host the current teams / seats. Delete teams or reduce seats first. |
+
+### Console-only (JWT, dashboard or portal)
+
+These appear only on `/api/billing/*` JWT routes when called with `X-Team-Id`:
+
+| Code | HTTP | Description |
+|---|---|---|
+| `BILLING_PAYMENTS_TEAM_OWNER_ONLY` | 403 | `GET /api/billing/payments` in team workspace is reserved to the team owner. |
+| `BILLING_TEAM_MUTATION_FORBIDDEN` | 403 | `POST` mutations (`checkout`, `cancel`, `downgrade`, `cancel-scheduled-change`) in team workspace are reserved to the team owner. |

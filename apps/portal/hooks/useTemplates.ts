@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@usesendnow/api-client"
 import type { Template } from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export function useTemplates(initialPage = 1, limit = 20) {
   const { copy } = usePortalLocale()
   const [templates, setTemplates] = useState<Template[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(initialPage)
+  const [workspaceEpoch, setWorkspaceEpoch] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -29,7 +31,14 @@ export function useTemplates(initialPage = 1, limit = 20) {
 
   useEffect(() => {
     void fetchTemplates(page)
-  }, [fetchTemplates, page])
+  }, [fetchTemplates, page, workspaceEpoch])
+
+  useEffect(() => {
+    return onPortalWorkspaceChanged(() => {
+      setPage(1)
+      setWorkspaceEpoch((e) => e + 1)
+    })
+  }, [])
 
   const goToPage = (p: number) => setPage(p)
 

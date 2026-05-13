@@ -1,6 +1,6 @@
 ---
 title: GET Lister les groupes
-description: Liste les groupes de contacts de votre compte.
+description: Liste les groupes de contacts de votre compte avec pagination par curseur et recherche optionnelle.
 ---
 
 ## Endpoint
@@ -9,13 +9,37 @@ description: Liste les groupes de contacts de votre compte.
 GET /api/v1/contacts/groups
 ```
 
+## Paramètres query
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `limit` | integer | non | Taille de page, défaut `50`, max `100` |
+| `cursor` | string | non | Curseur opaque retourné par la page précédente |
+| `search` | string | non | Recherche insensible à la casse sur `name` ou `description` (1-100 caractères) |
+
 ## Réponse succès `200`
 
 ```json
 {
   "data": {
-    "groups": [],
-    "total": 0
+    "groups": [
+      {
+        "id": "grp_uuid",
+        "name": "VIPs",
+        "description": "Contacts prioritaires",
+        "color": "#facc15",
+        "contactCount": 42,
+        "createdAt": "2026-04-01T10:00:00.000Z"
+      }
+    ],
+    "total": 7,
+    "limit": 50,
+    "nextCursor": null,
+    "hasMore": false
   }
 }
 ```
+
+## Notes
+
+- Repassez la valeur de `nextCursor` comme `cursor` pour récupérer la page suivante. Arrêtez quand `hasMore` est `false` ou `nextCursor` vaut `null`.

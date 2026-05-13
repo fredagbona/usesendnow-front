@@ -6,6 +6,7 @@ import type { GlobalSearchResponse } from "@usesendnow/types"
 import { portalCopy } from "@/lib/portal-copy"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import type { PortalLocale } from "@/lib/portal-locale"
+import { onPortalWorkspaceChanged } from "@/lib/workspace-events"
 
 export type GlobalSearchCategory = "page" | "instance" | "message" | "campaign" | "contact" | "group"
 
@@ -132,8 +133,13 @@ export function useGlobalSearch(rawQuery: string) {
   const [loading, setLoading] = useState(false)
   const [apiResults, setApiResults] = useState<GlobalSearchResult[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [workspaceEpoch, setWorkspaceEpoch] = useState(0)
 
   const query = useMemo(() => normalize(deferredQuery), [deferredQuery])
+
+  useEffect(() => {
+    return onPortalWorkspaceChanged(() => setWorkspaceEpoch((e) => e + 1))
+  }, [])
 
   useEffect(() => {
     if (!query || query.length < 2) {
@@ -166,7 +172,7 @@ export function useGlobalSearch(rawQuery: string) {
       cancelled = true
       clearTimeout(t)
     }
-  }, [query, deferredQuery, copy, locale])
+  }, [query, deferredQuery, copy, locale, workspaceEpoch])
 
   const results = useMemo(() => {
     if (!query) return []

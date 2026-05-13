@@ -40,4 +40,24 @@ description: Questions fréquentes sur MsgFlash, les plans, les clés API et les
   <Accordion title="Clé API d'équipe vs clé personnelle ?">
     Les clés personnelles commencent par `msgf_live_` et n'accèdent qu'à votre espace personnel. Les clés d'équipe commencent par `msgf_team_` et exigent l'en-tête `X-Team-Id` correspondant à l'équipe. On ne les mélange pas.
   </Accordion>
+
+  <Accordion title="Une clé d'équipe peut-elle appeler /v1/me, /v1/usage ou /v1/billing/* ?">
+    Non. Les routes du compte personnel (`/v1/me`, `/v1/usage`, `/v1/billing/subscription`, `/v1/billing/usage`, `/v1/billing/payments`) rejettent les clés d'équipe avec `403 TEAM_KEY_NOT_ALLOWED`. Utilisez une clé personnelle pour ces routes, ou l'API console (JWT) pour le billing en contexte d'équipe.
+  </Accordion>
+
+  <Accordion title="Comment agir dans une équipe depuis la console (JWT) ?">
+    Ajoutez l'en-tête optionnel `X-Team-Id: <team uuid>` sur n'importe quel appel `/api/*` de ressource. Sans cet en-tête, l'appel cible votre espace personnel. Si l'équipe est inconnue ou si vous n'en êtes plus membre, l'API renvoie `404 TEAM_NOT_FOUND`.
+  </Accordion>
+
+  <Accordion title="Un collaborateur peut-il gérer la facturation d'une équipe ?">
+    Non. Le propriétaire lit et modifie la facturation. Les admins lisent la souscription et l'usage mais ne peuvent pas modifier (`403 BILLING_TEAM_MUTATION_FORBIDDEN`). Seul le propriétaire peut voir l'historique de paiements de l'équipe (`403 BILLING_PAYMENTS_TEAM_OWNER_ONLY` sinon). Les collaborateurs n'ont aucun accès facturation.
+  </Accordion>
+
+  <Accordion title="Que se passe-t-il pour mes équipes si je rétrograde mon plan ?">
+    Le changement de plan est bloqué avec `409 PLAN_CHANGE_BLOCKED_ACTIVE_TEAMS` quand le plan cible ne peut pas accueillir vos équipes ou sièges actuels. Supprimez des équipes ou réduisez les sièges d'abord, puis réessayez le downgrade.
+  </Accordion>
+
+  <Accordion title="Pagination par curseur — comment itérer une longue liste ?">
+    Les endpoints comme `GET /api/v1/contacts`, `/contacts/groups`, `/members` d'un groupe et `/contacts/bulk-jobs` retournent `nextCursor` et `hasMore`. Repassez `nextCursor` comme `cursor` jusqu'à ce que `hasMore` soit `false`. Ne changez pas le `sort` en cours de pagination.
+  </Accordion>
 </AccordionGroup>

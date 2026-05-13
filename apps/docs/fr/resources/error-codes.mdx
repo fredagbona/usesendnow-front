@@ -68,3 +68,33 @@ description: Principaux codes d'erreur retournés par l'API publique MsgFlash.
 | `PROVIDER_TIMEOUT` | 502 | Timeout côté provider WhatsApp |
 | `PROVIDER_UNAVAILABLE` | 502 | Provider temporairement indisponible |
 | `PROVIDER_ERROR` | 502 | Erreur générique côté provider |
+
+---
+
+## Équipes & workspaces
+
+Ces codes apparaissent quand la requête combine un mauvais type de clé API avec `X-Team-Id`, ou quand une ressource d'équipe est accédée sans le rôle adéquat. Voir [Team context](/fr/api-reference/teams/team-context) et le [guide Équipes & workspaces](/fr/guides/teams-workspaces).
+
+| Code | HTTP | Description |
+|---|---|---|
+| `TEAM_KEY_REQUIRED` | 403 | Clé personnelle (`msgf_live_…`) utilisée avec `X-Team-Id`. Utilisez une clé d'équipe (`msgf_team_…`) ou retirez l'en-tête. |
+| `TEAM_KEY_NOT_ALLOWED` | 403 | Clé d'équipe utilisée sur une route `v1` réservée au compte personnel (`/me`, `/usage`, `/billing/subscription`, `/billing/usage`, `/billing/payments`). Utilisez une clé personnelle. |
+| `TEAM_NOT_FOUND` | 404 | `X-Team-Id` ne correspond à aucune équipe dont vous êtes membre actif (supprimée, retirée ou ID erroné). |
+| `TEAM_ACCESS_DENIED` | 403 | Authentifié mais le rôle ne permet pas cette action (ex. collaborateur tentant de gérer des clés d'équipe). |
+| `TEAM_FEATURE_UNAVAILABLE` | 403 | Le plan de votre compte n'inclut pas la création d'équipes (Free / Starter). Passez à Pro ou Plus. |
+| `TEAM_LIMIT_REACHED` | 403 | Le propriétaire a atteint le nombre maximum d'équipes autorisé par son plan. |
+| `TEAM_SEAT_LIMIT_REACHED` | 403 | L'équipe a déjà le nombre maximum de membres autorisé par le plan du propriétaire. |
+| `INSTANCE_NOT_ASSIGNED` | 403 | Collaborateur qui cible une instance non assignée à lui dans ce workspace d'équipe. |
+| `INVITE_INVALID_OR_EXPIRED` | 400 | Token / id d'invitation inconnu, déjà utilisé ou expiré (24h). |
+| `INVITE_EMAIL_MISMATCH` | 403 | L'email du JWT ne correspond pas à l'email invité. |
+| `INVITE_DUPLICATE_MEMBER` | 409 | L'invité est déjà membre actif de l'équipe. |
+| `PLAN_CHANGE_BLOCKED_ACTIVE_TEAMS` | 409 | Downgrade refusé : le nouveau plan ne peut pas héberger les équipes / sièges actuels. Supprimez des équipes ou réduisez les sièges d'abord. |
+
+### Console (JWT, dashboard ou portail)
+
+Ces codes n'apparaissent que sur les routes JWT `/api/billing/*` appelées avec `X-Team-Id` :
+
+| Code | HTTP | Description |
+|---|---|---|
+| `BILLING_PAYMENTS_TEAM_OWNER_ONLY` | 403 | `GET /api/billing/payments` en workspace d'équipe est réservé au propriétaire de l'équipe. |
+| `BILLING_TEAM_MUTATION_FORBIDDEN` | 403 | Les mutations `POST` (`checkout`, `cancel`, `downgrade`, `cancel-scheduled-change`) en workspace d'équipe sont réservées au propriétaire de l'équipe. |

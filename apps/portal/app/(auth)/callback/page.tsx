@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { setToken } from "@/lib/auth"
+import { clearPortalWorkspace } from "@/lib/workspace-storage"
 import AuthTransition from "@/components/shared/AuthTransition"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 
@@ -17,6 +18,7 @@ function CallbackHandler() {
     const error = searchParams.get("error")
 
     if (token) {
+      clearPortalWorkspace()
       setToken(token)
       router.replace("/dashboard")
     } else if (error === "oauth_failed") {
