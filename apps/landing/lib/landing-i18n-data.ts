@@ -99,6 +99,7 @@ type LandingMessages = {
   }
   footer: {
     product: string
+    discover: string
     resources: string
     legal: string
     description: string
@@ -107,7 +108,12 @@ type LandingMessages = {
       automations: string
       campaigns: string
       wordpress: string
+      useCases: string
       pricing: string
+      comparison: string
+      risks: string
+      blog: string
+      faq: string
       api: string
       docs: string
       webhook: string
@@ -320,6 +326,7 @@ const FR: LandingMessages = {
   },
   footer: {
     product: "Produit",
+    discover: "Découvrir",
     resources: "Ressources",
     legal: "Légal",
     description: "Infrastructure WhatsApp pour vos produits, automatisations et scénarios à volume.",
@@ -328,7 +335,12 @@ const FR: LandingMessages = {
       automations: "Automations",
       campaigns: "Campagnes",
       wordpress: "WordPress",
+      useCases: "Cas d'usage",
       pricing: "Tarifs",
+      comparison: "Comparatif",
+      risks: "Risques",
+      blog: "Blog",
+      faq: "FAQ",
       api: "API",
       docs: "Documentation",
       webhook: "Webhook",
@@ -541,6 +553,7 @@ const EN: LandingMessages = {
   },
   footer: {
     product: "Product",
+    discover: "Discover",
     resources: "Resources",
     legal: "Legal",
     description: "WhatsApp infrastructure for your products, automations, and high-volume scenarios.",
@@ -549,7 +562,12 @@ const EN: LandingMessages = {
       automations: "Automations",
       campaigns: "Campaigns",
       wordpress: "WordPress",
+      useCases: "Use cases",
       pricing: "Pricing",
+      comparison: "Comparison",
+      risks: "Risks",
+      blog: "Blog",
+      faq: "FAQ",
       api: "API",
       docs: "Documentation",
       webhook: "Webhook",

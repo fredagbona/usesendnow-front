@@ -5,6 +5,10 @@ export const landingBrand = {
   docsUrl: "https://docs.msgflash.com",
   wordpressUrl: "/wordpress",
   campaignsUrl: "/campaigns",
+  useCasesUrl: "/use-cases",
+  comparisonUrl: "/comparatif",
+  risksUrl: "/risques",
+  blogUrl: "https://blog.msgflash.com",
   /** Include `/` so hash links work from `/wordpress`, `/campaigns`, etc. */
   homeAnchors: {
     features: "/#fonctionnalites",

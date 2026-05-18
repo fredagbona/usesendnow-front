@@ -16,13 +16,23 @@ export function Footer({}: FooterProps) {
         { label: messages.footer.links.campaigns, href: landingBrand.campaignsUrl },
         { label: messages.footer.links.wordpress, href: landingBrand.wordpressUrl },
         { label: messages.footer.links.pricing, href: landingBrand.homeAnchors.pricing },
-        { label: messages.footer.links.api, href: landingBrand.docsUrl },
+      ],
+    },
+    {
+      title: messages.footer.discover,
+      links: [
+        { label: messages.footer.links.useCases, href: landingBrand.useCasesUrl },
+        { label: messages.footer.links.comparison, href: landingBrand.comparisonUrl },
+        { label: messages.footer.links.risks, href: landingBrand.risksUrl },
+        { label: messages.footer.links.blog, href: landingBrand.blogUrl, external: true },
+        { label: messages.footer.links.faq, href: landingBrand.homeAnchors.faq },
       ],
     },
     {
       title: messages.footer.resources,
       links: [
         { label: messages.footer.links.docs, href: landingBrand.docsUrl },
+        { label: messages.footer.links.api, href: landingBrand.docsUrl },
         { label: messages.footer.links.webhook, href: `${landingBrand.docsUrl}/webhooks` },
         { label: messages.footer.links.status, href: landingBrand.appUrl },
       ],
@@ -48,7 +58,7 @@ export function Footer({}: FooterProps) {
             </p>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-3">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {footerColumns.map((column) => (
               <div key={column.title}>
                 <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.1em] text-[#F0F0F0]">
@@ -57,8 +67,11 @@ export function Footer({}: FooterProps) {
                 <div className="mt-4 space-y-3">
                   {column.links.map((link) => (
                     <a
-                      key={link.label}
+                      key={`${column.title}-${link.href}`}
                       href={link.href}
+                      {...("external" in link && link.external
+                        ? { target: "_blank", rel: "noopener noreferrer" }
+                        : {})}
                       className="block font-(family-name:--font-poppins) text-sm text-[#8E8E8E] transition-colors hover:text-[#FFD600]"
                     >
                       {link.label}
