@@ -12,6 +12,7 @@ import {
   ZapIcon,
 } from "hugeicons-react"
 import { fadeUp, staggerContainer } from "../../lib/animations"
+import { landingBrand } from "../../lib/brand"
 import { useLandingI18n } from "../../lib/landing-i18n"
 
 interface ConfigurationStepsProps {}
@@ -25,15 +26,20 @@ export function ConfigurationSteps({}: ConfigurationStepsProps) {
       icon: Link01Icon,
       description: (
         <>
-          {locale === "en"
-            ? "Download the msgflash plugin from the official WordPress directory or "
-            : "Téléchargez le plugin msgflash depuis le répertoire officiel WordPress ou "}
-          <a href="/msgflash-v1.0.0.zip" className="text-[#FFD600] underline underline-offset-2 hover:text-[#FFE044]">
-            {locale === "en" ? "here" : "ici"}
+          {locale === "en" ? "Install the " : "Installez le "}
+          <a
+            href={landingBrand.wordpressPluginUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#FFD600] underline underline-offset-2 hover:text-[#FFE044]"
+          >
+            {locale === "en"
+              ? "msgflash plugin from the official WordPress directory"
+              : "plugin msgflash depuis le répertoire officiel WordPress"}
           </a>
           {locale === "en"
             ? ". Once activated, paste your unique API key (available in your msgflash dashboard) to connect your WhatsApp instance to your store."
-            : ". Une fois activé, collez votre Clé API unique (disponible depuis votre dashboard msgflash) pour lier votre instance WhatsApp à votre site."}
+            : ". Une fois activé, collez votre clé API unique (disponible depuis votre dashboard msgflash) pour lier votre instance WhatsApp à votre site."}
         </>
       ),
     },

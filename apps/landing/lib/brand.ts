@@ -4,6 +4,8 @@ export const landingBrand = {
   appUrl: "https://app.msgflash.com",
   docsUrl: "https://docs.msgflash.com",
   wordpressUrl: "/wordpress",
+  wordpressPluginUrl:
+    "https://wordpress.org/plugins/msgflash-messaging-automation-for-woocommerce/",
   campaignsUrl: "/campaigns",
   useCasesUrl: "/use-cases",
   comparisonUrl: "/comparatif",

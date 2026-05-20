@@ -5,6 +5,7 @@ import { Navbar } from "../../components/sections/Navbar"
 import { Footer } from "../../components/sections/Footer"
 import { ConfigurationSteps } from "../../components/sections/ConfigurationSteps"
 import { Button } from "../../components/ui/Button"
+import { landingBrand } from "../../lib/brand"
 import { detectLandingLocaleFromHeaders } from "../../lib/landing-locale.server"
 import { getLandingMessages } from "../../lib/landing-i18n-data"
 
@@ -74,7 +75,7 @@ export default async function WordPressPage() {
               </p>
 
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                <Button href="/msgflash-v1.0.0.zip" showArrow>
+                <Button href={landingBrand.wordpressPluginUrl} showArrow>
                   {messages.wordpress.primaryCta}
                 </Button>
               </div>
@@ -221,7 +222,7 @@ export default async function WordPressPage() {
               {locale === "en" ? "Ready to connect WordPress to WhatsApp?" : "Prêt à connecter WordPress à WhatsApp ?"}
             </h2>
             <div className="mt-6 flex items-center justify-between">
-              <Button href="/msgflash-v1.0.0.zip" showArrow>
+              <Button href={landingBrand.wordpressPluginUrl} showArrow>
                 {messages.wordpress.primaryCta}
               </Button>
             </div>

@@ -14,7 +14,7 @@ export function Footer({}: FooterProps) {
       links: [
         { label: messages.footer.links.automations, href: landingBrand.homeAnchors.features },
         { label: messages.footer.links.campaigns, href: landingBrand.campaignsUrl },
-        { label: messages.footer.links.wordpress, href: landingBrand.wordpressUrl },
+        { label: messages.footer.links.wordpress, href: landingBrand.wordpressPluginUrl, external: true },
         { label: messages.footer.links.pricing, href: landingBrand.homeAnchors.pricing },
       ],
     },
