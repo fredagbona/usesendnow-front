@@ -27,7 +27,7 @@ const copy = {
     secondary: "Tester gratuitement",
     tableHeaders: ["Critère", "MsgFlash", "Twilio", "360dialog", "Wati"],
     rows: [
-      { criterion: "Prix mensuel", msgflash: "9 € à 79 €", twilio: "0 $ + 0.005 $ / msg", dialog360: "49 € / mois + Meta", wati: "49 $ / mois + Meta" },
+      { criterion: "Prix mensuel", msgflash: "0 € à 39 €", twilio: "0 $ + 0.005 $ / msg", dialog360: "49 € / mois + Meta", wati: "49 $ / mois + Meta" },
       { criterion: "Coût par message (France)", msgflash: "Inclus dans l'abonnement", twilio: "~0.143 $ marketing + 0.005 $ markup", dialog360: "~0.143 $ marketing + 0.005 $ markup", wati: "Meta pass-through + plan" },
       { criterion: "Setup", msgflash: "2 min (QR code)", twilio: "1-2 semaines (validation)", dialog360: "1-2 semaines (validation)", wati: "< 1 heure" },
       { criterion: "Validation Meta", msgflash: "Non requise", twilio: "Requise", dialog360: "Requise", wati: "Requise" },
