@@ -81,7 +81,7 @@ Ces codes apparaissent quand la requête combine un mauvais type de clé API ave
 | `TEAM_KEY_NOT_ALLOWED` | 403 | Clé d'équipe utilisée sur une route `v1` réservée au compte personnel (`/me`, `/usage`, `/billing/subscription`, `/billing/usage`, `/billing/payments`). Utilisez une clé personnelle. |
 | `TEAM_NOT_FOUND` | 404 | `X-Team-Id` ne correspond à aucune équipe dont vous êtes membre actif (supprimée, retirée ou ID erroné). |
 | `TEAM_ACCESS_DENIED` | 403 | Authentifié mais le rôle ne permet pas cette action (ex. collaborateur tentant de gérer des clés d'équipe). |
-| `TEAM_FEATURE_UNAVAILABLE` | 403 | Le plan de votre compte n'inclut pas la création d'équipes (Free / Starter). Passez à Pro ou Plus. |
+| `TEAM_FEATURE_UNAVAILABLE` | 403 | Le plan de votre compte n'inclut pas la création d'équipes (Free). Passez à Pro ou MAX. |
 | `TEAM_LIMIT_REACHED` | 403 | Le propriétaire a atteint le nombre maximum d'équipes autorisé par son plan. |
 | `TEAM_SEAT_LIMIT_REACHED` | 403 | L'équipe a déjà le nombre maximum de membres autorisé par le plan du propriétaire. |
 | `INSTANCE_NOT_ASSIGNED` | 403 | Collaborateur qui cible une instance non assignée à lui dans ce workspace d'équipe. |

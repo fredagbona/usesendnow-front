@@ -45,7 +45,6 @@
               "guides/number-lookups",
               "guides/webhooks",
               "guides/instances",
-              "guides/statuses",
               "guides/billing",
               "guides/teams-workspaces"
             ],
@@ -152,13 +151,6 @@
             "icon": "webhook"
           },
           {
-            "group": "API Reference · Statuses",
-            "pages": [
-              "api-reference/statuses/create"
-            ],
-            "icon": "circle-dot"
-          },
-          {
             "group": "API Reference · Billing",
             "pages": [
               "api-reference/billing/plans",
@@ -208,7 +200,6 @@
               "fr/guides/number-lookups",
               "fr/guides/webhooks",
               "fr/guides/instances",
-              "fr/guides/statuses",
               "fr/guides/billing",
               "fr/guides/teams-workspaces"
             ],
@@ -313,13 +304,6 @@
               "fr/api-reference/webhooks/delete"
             ],
             "icon": "webhook"
-          },
-          {
-            "group": "Référence API · Statuts",
-            "pages": [
-              "fr/api-reference/statuses/create"
-            ],
-            "icon": "circle-dot"
           },
           {
             "group": "Référence API · Facturation",

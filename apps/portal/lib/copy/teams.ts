@@ -25,7 +25,7 @@ export const teamsFr = {
   youAre: "Vous : {{role}}",
   upgradeTitle: "Création d’équipes indisponible sur votre plan",
   upgradeBody:
-    "Les équipes sont réservées aux plans Pro et Plus. Vous pouvez toujours être invité dans une équipe existante.",
+    "Les équipes sont réservées aux plans Pro et MAX. Vous pouvez toujours être invité dans une équipe existante.",
   upgradeCta: "Voir l’abonnement",
   limitReached: "Limite d’équipes atteinte pour votre plan.",
   featureUnavailable: "Fonction équipes indisponible.",
@@ -157,7 +157,7 @@ export const teamsEn = {
   youAre: "You: {{role}}",
   upgradeTitle: "Team creation is not available on your plan",
   upgradeBody:
-    "Creating teams is available on Pro and Plus. You can still be invited to an existing team on any plan.",
+    "Creating teams is available on Pro and MAX. You can still be invited to an existing team on any plan.",
   upgradeCta: "View billing",
   limitReached: "Team limit reached for your plan.",
   featureUnavailable: "Teams feature unavailable.",

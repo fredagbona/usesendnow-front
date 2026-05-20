@@ -727,7 +727,7 @@ const billing = {
   getPlans: () => get<Plan[]>("/api/billing/plans", true),
 
   checkout: (planCode: string) =>
-    post<{ checkoutUrl: string }>("/api/billing/checkout", { planCode }),
+    post<{ checkoutUrl: string | null }>("/api/billing/checkout", { planCode }),
 
   cancel: () => post<{ message: string; effectiveAt: string }>("/api/billing/cancel"),
 

@@ -1,84 +1,45 @@
 ---
 title: Plans et quotas
-description: Comparatif des plans MsgFlash et lecture de la consommation via l'API publique.
+description: Comparatif des plans MsgFlash (EUR) et suivi de consommation via l'API publique.
 ---
 
 ## Comparatif des plans
 
-| | Free | Starter | Pro | Plus |
-|---|---|---|---|---|
-| Prix mensuel | 0 € | 9 € | 19 € | 39 € |
-| Instances | 1 | 2 | 5 | 20 |
-| Messages + statuts / mois | 20 | 5 000 | 25 000 | 150 000 |
-| Requêtes API / mois | 1 000 | 10 000 | 100 000 | 500 000 |
-| Clés API | 1 | 3 | 5 | 10 |
-| Endpoints webhook | 0 | 3 | 10 | 50 |
-| Groupes de contacts | 2 | 10 | 50 | Illimité |
-| Campagnes | non | oui | oui | oui |
-| Statuts WhatsApp | non | non | oui | oui |
-| Webhooks | non | oui | oui | oui |
+MsgFlash se concentre sur la **délivrabilité**, les **campagnes** et les **notifications transactionnelles** (webhooks, API). Les **statuts WhatsApp** ne font plus partie de l'offre.
+
+| | Free | Pro | MAX |
+| --- | --- | --- | --- |
+| **Prix mensuel** | 0 € | 19 € | 39 € |
+| Instances | 1 | 5 | 20 |
+| Messages + statuts / mois | 500 | 50 000 | 150 000 |
+| Requêtes API / mois | 500 | 150 000 | 500 000 |
+| Clés API | 1 | 5 | 10 |
+| Endpoints webhook | 3 | 15 | 50 |
+| Groupes de contacts | 10 | 50 | Illimité |
+| Campagnes | oui | oui | oui |
+| Webhooks | oui | oui | oui |
+| Lookups numéros | oui | oui | oui |
+| Notes vocales | oui | oui | oui |
+| Équipes (owner) | — | 2 équipes, 4 sièges | 4 équipes, 8 sièges |
+
+<Note>
+Prix affichés en **EUR uniquement**. Le plan Starter est retiré. Les nouveaux abonnements payants sont **Pro** ou **MAX**.
+</Note>
 
 ---
 
 ## Règles de quota
 
-- les messages et les statuts partagent le même quota mensuel
+- Les messages et statuts partagent le quota mensuel sortant
 - `effectiveOutboundUsage = messagesCount + statusesCount`
-- le quota API mensuel est distinct du rate limit temps réel
-- pour les messages planifiés, le quota est revérifié au moment de l'envoi effectif
+- Le quota API mensuel est distinct du rate limit temps réel
+- `features.statuses` est `false` sur tous les plans
 
 ---
 
 ## Suivre votre consommation
 
-### Endpoint historique compatible
-
-```bash
-curl https://srv.msgflash.com/api/v1/usage \
-  -H "x-api-key: msgf_live_your_api_key_here"
-```
-
-### Endpoint billing enrichi
-
 ```bash
 curl https://srv.msgflash.com/api/v1/billing/usage \
-  -H "x-api-key: msgf_live_your_api_key_here"
-```
-
-Exemple :
-
-```json
-{
-  "data": {
-    "plan": {
-      "code": "pro",
-      "name": "Pro"
-    },
-    "limits": {
-      "maxInstances": 5,
-      "maxApiKeys": 10,
-      "maxWebhookEndpoints": 10,
-      "monthlyOutboundQuota": 5000,
-      "monthlyApiRequestQuota": 50000
-    },
-    "features": {
-      "campaigns": true,
-      "statuses": true,
-      "voiceNotes": true,
-      "webhooks": true
-    },
-    "usage": {
-      "messagesCount": 1240,
-      "statusesCount": 85,
-      "effectiveOutboundUsage": 1325,
-      "apiRequestsCount": 4500,
-      "activeInstancesCount": 3,
-      "activeApiKeysCount": 2
-    },
-    "period": {
-      "start": "2026-04-01T00:00:00.000Z",
-      "end": "2026-04-30T23:59:59.999Z"
-    }
-  }
-}
+  -H "x-api-key: msgf_live_votre_cle_api"
 ```

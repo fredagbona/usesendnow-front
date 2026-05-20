@@ -18,7 +18,7 @@ export function Pricing({}: PricingProps) {
   }))
   const plans = messages.pricing.plans.map((plan, index) => ({
     ...plan,
-    featured: index === 2,
+    featured: index === 1,
   }))
   const pricePerMonth = locale === "fr" ? "/ mois" : "/ month"
 
@@ -107,7 +107,7 @@ export function Pricing({}: PricingProps) {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
-            className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+            className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
           >
             {plans.map((plan) => (
               <motion.div

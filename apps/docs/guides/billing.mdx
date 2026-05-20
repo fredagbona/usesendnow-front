@@ -48,27 +48,29 @@ curl https://srv.msgflash.com/api/v1/billing/plans \
 {
   "data": [
     {
-      "code": "starter",
-      "name": "Starter",
-      "priceMonthly": 9,
-      "currency": "EUR",
+      "code": "pro",
+      "name": "Pro",
+      "priceEur": 19,
       "limits": {
-        "maxInstances": 2,
-        "maxApiKeys": 3,
-        "maxWebhookEndpoints": 3,
-        "monthlyOutboundQuota": 500,
-        "monthlyApiRequestQuota": 10000
+        "maxInstances": 5,
+        "maxApiKeys": 5,
+        "maxWebhookEndpoints": 15,
+        "monthlyOutboundQuota": 50000,
+        "monthlyApiRequestQuota": 150000
       },
       "features": {
         "campaigns": true,
         "statuses": false,
         "voiceNotes": true,
-        "webhooks": true
+        "webhooks": true,
+        "numberLookups": true
       }
     }
   ]
 }
 ```
+
+See [Plans and quotas](/resources/plans-and-quotas) for the full **Free / Pro / MAX** comparison (EUR only).
 
 ---
 
@@ -86,12 +88,12 @@ Example:
   "data": {
     "subscription": {
       "plan": {
-        "code": "starter",
-        "name": "Starter",
+        "code": "pro",
+        "name": "Pro",
         "limits": {
-          "maxInstances": 2,
-          "maxApiKeys": 3,
-          "maxWebhookEndpoints": 3
+          "maxInstances": 5,
+          "maxApiKeys": 5,
+          "maxWebhookEndpoints": 15
         },
         "features": {
           "campaigns": true,
@@ -124,7 +126,7 @@ Read limits from `subscription.plan.limits.*`, not from `subscription.plan.maxIn
 </Note>
 
 <Note>
-The Free plan now allows 1 test API key. This does not change the Free outbound quota: 20 messages + statuses per month.
+Paid checkout accepts `pro` or `max` only. Legacy plan codes `starter` and `plus` may still appear on old payment records.
 </Note>
 
 ---
@@ -161,9 +163,9 @@ Response:
       {
         "id": "pay_uuid",
         "provider": "dodo",
-        "planCode": "starter",
-        "planName": "Starter",
-        "amount": 900,
+        "planCode": "pro",
+        "planName": "Pro",
+        "amount": 1900,
         "currency": "EUR",
         "status": "succeeded",
         "periodStart": "2026-04-01T09:43:13.737Z",

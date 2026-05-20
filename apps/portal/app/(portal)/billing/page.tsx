@@ -10,6 +10,12 @@ import { apiClient, ApiClientError } from "@usesendnow/api-client"
 import { toast } from "@/lib/toast"
 import { formatDate, formatMonthYear } from "@/lib/format"
 import type { Plan } from "@usesendnow/types"
+import {
+  PLAN_CONTACT_GROUP_LIMITS,
+  isCheckoutPlanCode,
+  isDisplayPlanCode,
+  planDisplayRank,
+} from "@usesendnow/types"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import PageHeader from "@/components/layout/PageHeader"
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"
@@ -31,27 +37,14 @@ import {
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 
-const PLAN_ORDER = ["free", "starter", "pro", "plus"]
-const PLAN_CONTACT_GROUP_LIMITS: Record<string, number | null> = {
-  free: 2,
-  starter: 10,
-  pro: 50,
-  plus: null,
-}
-
-function formatPrice(priceMonthly: number | undefined, locale: "fr" | "en", billingCopy: ReturnType<typeof usePortalLocale>["copy"]["billing"]): string {
-  if (!priceMonthly || priceMonthly === 0) return `0 ${billingCopy.priceUnit}`
-  return `${(priceMonthly / 100).toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.priceUnit}`
-}
-
-function formatUsdValue(
-  amount: number | undefined,
+function formatEurPrice(
+  priceEur: number | undefined,
   locale: "fr" | "en",
   billingCopy: ReturnType<typeof usePortalLocale>["copy"]["billing"],
 ): string {
-  if (amount === undefined || amount === null) return ""
-  const formatted = amount.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")
-  return billingCopy.priceSecondaryEur.replace("{{amount}}", formatted)
+  if (priceEur === undefined || priceEur === 0) return `0 ${billingCopy.priceUnit}`
+  const formatted = priceEur.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")
+  return `${formatted} ${billingCopy.priceUnit}`
 }
 
 function formatAmount(amount: number, currency: string): string {
@@ -73,45 +66,23 @@ function getPlanLimits(plan: Plan) {
 }
 
 function getPlanDisplayPrice(plan: Plan, locale: "fr" | "en", billingCopy: ReturnType<typeof usePortalLocale>["copy"]["billing"]) {
-  if (plan.priceEur !== undefined) {
-    return {
-      primary: formatUsdValue(plan.priceEur, locale, billingCopy),
-      secondary: "",
-    }
-  }
-
-  if (plan.priceFcfa !== undefined) {
-    return {
-      primary: formatUsdValue(plan.priceFcfa, locale, billingCopy),
-      secondary: "",
-    }
-  }
-
-  if (plan.currency === "XOF" && plan.priceMonthly !== undefined) {
-    const usd = plan.priceMonthly / 100
-    return {
-      primary: formatUsdValue(usd, locale, billingCopy),
-      secondary: "",
-    }
-  }
-
   return {
-    primary: formatPrice(plan.priceMonthly, locale, billingCopy),
+    primary: formatEurPrice(plan.priceEur, locale, billingCopy),
     secondary: "",
   }
 }
 
 function getPlanFeatures(plan: Plan, locale: "fr" | "en", billingCopy: ReturnType<typeof usePortalLocale>["copy"]["billing"]): string[] {
   const limits = getPlanLimits(plan)
-  const displayedMonthlyOutboundQuota =
-    plan.code === "starter" ? 5000 : limits.monthlyOutboundQuota
   const features = plan.features ?? {
     campaigns: plan.canUseCampaigns ?? false,
-    statuses: plan.canUseStatuses ?? false,
+    statuses: false,
     voiceNotes: false,
     webhooks: false,
   }
-  const contactGroupsLimit = PLAN_CONTACT_GROUP_LIMITS[plan.code]
+  const contactGroupsLimit =
+    plan.limits?.maxContactGroups ?? PLAN_CONTACT_GROUP_LIMITS[plan.code]
+  const hasNumberLookups = isDisplayPlanCode(plan.code)
   const contactGroups =
     contactGroupsLimit === null
       ? billingCopy.contactGroupsUnlimited
@@ -122,23 +93,21 @@ function getPlanFeatures(plan: Plan, locale: "fr" | "en", billingCopy: ReturnTyp
   const teamsFeatureLine =
     plan.code === "pro"
       ? billingCopy.teamsPro
-      : plan.code === "plus"
-        ? billingCopy.teamsPlus
-        : plan.code === "free" || plan.code === "starter"
-          ? billingCopy.teamsJoinOnly
-          : undefined
+      : plan.code === "max" || plan.code === "plus"
+        ? billingCopy.teamsMax
+        : billingCopy.teamsJoinOnly
 
   return [
     `${limits.maxInstances} ${limits.maxInstances > 1 ? billingCopy.instances : billingCopy.instance}`,
-    `${displayedMonthlyOutboundQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.messagesPerMonth}`,
+    `${limits.monthlyOutboundQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.messagesPerMonth}`,
     `${limits.monthlyApiRequestQuota.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${billingCopy.apiRequests}`,
     `${limits.maxApiKeys} ${limits.maxApiKeys > 1 ? billingCopy.apiKeys : billingCopy.apiKey}`,
     `${limits.maxWebhookEndpoints} ${limits.maxWebhookEndpoints > 1 ? billingCopy.webhookEndpoints : billingCopy.webhookEndpoint}`,
     contactGroups,
     `${billingCopy.features.campaigns} : ${features.campaigns ? billingCopy.yes : billingCopy.no}`,
-    `${billingCopy.features.statuses} : ${features.statuses ? billingCopy.yes : billingCopy.no}`,
     `${billingCopy.features.webhooks} : ${features.webhooks ? billingCopy.yes : billingCopy.no}`,
     `${billingCopy.features.voiceNotes} : ${features.voiceNotes ? billingCopy.yes : billingCopy.no}`,
+    `${billingCopy.features.numberLookups} : ${hasNumberLookups ? billingCopy.yes : billingCopy.no}`,
     teamsFeatureLine,
   ].filter((feature): feature is string => Boolean(feature))
 }
@@ -158,7 +127,6 @@ function getFallbackPlan(code: string): Plan {
     maxApiKeys: 0,
     maxWebhookEndpoints: 0,
     canUseCampaigns: false,
-    canUseStatuses: false,
     features: {
       campaigns: false,
       statuses: false,
@@ -324,7 +292,7 @@ function BillingPageContent() {
   const periodStart = subscription?.period?.start ?? sub?.currentPeriodStart
   const periodEnd = subscription?.period?.end ?? sub?.currentPeriodEnd
   const currentPlanCode = sub?.plan?.code ?? "free"
-  const currentPlanIdx = PLAN_ORDER.indexOf(currentPlanCode)
+  const currentPlanIdx = planDisplayRank(currentPlanCode)
 
   const currentPlan =
     sub?.plan ??
@@ -333,9 +301,9 @@ function BillingPageContent() {
   const limits = getPlanLimits(currentPlan)
   const currentPlanDisplayPrice = getPlanDisplayPrice(currentPlan, locale, billingCopy)
 
-  const sortedPlans = [...plans].sort(
-    (a, b) => PLAN_ORDER.indexOf(a.code) - PLAN_ORDER.indexOf(b.code)
-  )
+  const sortedPlans = [...plans]
+    .filter((p) => isDisplayPlanCode(p.code))
+    .sort((a, b) => planDisplayRank(a.code) - planDisplayRank(b.code))
 
   const hasScheduledChange = !!sub?.scheduledAction
   const scheduledAction = sub?.scheduledAction ?? null
@@ -368,14 +336,22 @@ function BillingPageContent() {
   const handleSelectPlan = async (plan: Plan) => {
     if (billingMutationsDisabled) return
     if (plan.code === "free") return
-    const planIdx = PLAN_ORDER.indexOf(plan.code)
+    const planIdx = planDisplayRank(plan.code)
     const isUpgrade = planIdx > currentPlanIdx
+
+    if (isUpgrade && !isCheckoutPlanCode(plan.code)) {
+      toast.error(billingCopy.toast.planUnavailable)
+      return
+    }
 
     setActioning(plan.code)
     try {
       if (isUpgrade) {
-        // Upgrade → Dodo checkout (redirect)
         const { checkoutUrl } = await apiClient.billing.checkout(plan.code)
+        if (!checkoutUrl) {
+          toast.info(billingCopy.toast.paymentTemporarilyUnavailable)
+          return
+        }
         window.location.href = checkoutUrl
       } else {
         // Downgrade → schedule at end of period
@@ -485,7 +461,12 @@ function BillingPageContent() {
   const statusConfigMap = getStatusConfig(billingCopy)
   const statusConfig = statusConfigMap[sub?.status as keyof typeof statusConfigMap] ?? statusConfigMap.active
   const isFree = currentPlanCode === "free"
-  const canCancel = !isFree && sub?.status === "active" && !hasScheduledChange && sub?.billingProvider === "dodo"
+  const canCancel =
+    !isFree &&
+    sub?.status === "active" &&
+    !hasScheduledChange &&
+    !!sub?.billingProvider &&
+    sub.billingProvider !== "none"
 
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-8 max-w-4xl">
@@ -601,6 +582,13 @@ function BillingPageContent() {
         </div>
       )}
 
+      {isFree && (
+        <div className="flex items-start gap-3 p-4 bg-bg-subtle border border-border rounded-2xl">
+          <InformationCircleIcon className="w-5 h-5 text-text-muted shrink-0 mt-0.5" />
+          <p className="text-sm text-text-secondary leading-relaxed">{billingCopy.planPolicyNoteFree}</p>
+        </div>
+      )}
+
       {/* ── Usage du mois ───────────────────────────────────────────────── */}
       {usage && limits && periodStart && (
         <div>
@@ -608,9 +596,13 @@ function BillingPageContent() {
             {billingCopy.usageTitle} — <span className="capitalize">{formatMonthYear(periodStart)}</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <UsageCard label={billingCopy.messages} used={usage.messagesCount ?? 0} total={limits.monthlyOutboundQuota} />
-            <UsageCard label={billingCopy.statuses} used={usage.statusesCount ?? 0} total={limits.monthlyOutboundQuota} />
+            <UsageCard
+              label={billingCopy.messages}
+              used={usage.effectiveOutboundUsage ?? usage.messagesCount ?? 0}
+              total={limits.monthlyOutboundQuota}
+            />
             <UsageCard label={billingCopy.apiRequests} used={usage.apiRequestsCount ?? 0} total={limits.monthlyApiRequestQuota} />
+            <UsageCard label={billingCopy.usageInstances} used={usage.activeInstancesCount ?? 0} total={limits.maxInstances} />
           </div>
         </div>
       )}
@@ -783,9 +775,9 @@ function BillingPageContent() {
                 </Button>
               </div>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {sortedPlans.map((plan) => {
-                const planIdx = PLAN_ORDER.indexOf(plan.code)
+                const planIdx = planDisplayRank(plan.code)
                 return (
                   <PlanCard
                     key={plan.code}

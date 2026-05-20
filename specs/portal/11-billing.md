@@ -5,12 +5,15 @@ Route: /billing
 Auth: required
 Status: ready
 
+> **Catalogue plans v2 (2026-05)** — Grille **3 plans** (Free / Pro / MAX), **EUR uniquement**, pas de Starter ni Plus, pas de statuts WhatsApp en UI.  
+> **Source de vérité copy + quotas + landing :** [`35-plan-catalog-and-statuses-frontend.md`](./35-plan-catalog-and-statuses-frontend.md) (§2 tableau quotas, §3 landing, §4 billing).
+
 ---
 
 ## Purpose
 
 Vue complète de la facturation : plan actuel, consommation du mois, comparatif des plans, et gestion de l'abonnement (upgrade, annulation).
-Les prix sont affichés en FCFA (principal) et EUR (secondaire).
+Les prix sont affichés en **EUR uniquement** (`priceEur` — ne plus afficher FCFA).
 
 ---
 
@@ -47,7 +50,7 @@ Layout standard portal.
 - **Header** : titre "Billing & Plans"
 - **CurrentPlanCard** : résumé du plan actif + usage
 - **UsageMetrics** : barres de progression pour chaque quota
-- **PlansComparison** : grille des 4 plans (Free / Starter / Pro / Plus)
+- **PlansComparison** : grille des **3** plans (Free / Pro / MAX) — voir `35-plan-catalog-and-statuses-frontend.md` §2 et §4
 - **DangerZone** : bouton d'annulation (si plan payant actif)
 - **PlanPolicyNote** : note produit expliquant les limites importantes du plan Free
 
@@ -178,16 +181,18 @@ Message : "Your subscription will be cancelled at the end of the current period 
 ## Règles métier
 
 - Plan `free` : pas de bouton annulation (pas d'abonnement à annuler).
-- Le plan `free` inclut désormais `1` clé API pour les tests.
-- Cette ouverture ne change pas le quota outbound du plan `free` : `20` messages + statuts par mois.
+- Le plan `free` inclut `1` clé API, **500** messages/mois, campagnes, **3** webhooks, lookups — voir `35-plan-catalog-and-statuses-frontend.md` §4 (note Free).
 - `billingProvider: 'none'` = plan free ou abonnement sans fournisseur de paiement — pas d'annulation possible.
 - `cancelAtPeriodEnd: true` → afficher la date limite d'accès, pas de nouveau bouton d'annulation.
-- Ordre d'affichage des plans : free → starter → pro → plus.
+- Ordre d'affichage des plans : **free → pro → max**.
+- Checkout / upgrade : **`pro`** et **`max`** uniquement (`starter` / `plus` → 400).
 - Le plan actuel dans la grille doit être visuellement mis en avant (border colorée, badge "Current").
+- **Statuts WhatsApp** : ne pas afficher dans le portail (`canPublishStatuses: false`).
 
 ### Message frontend à afficher partout où l’on explique le Free
 
-- `Le plan Free inclut 1 clé API pour tester l'intégration. Les autres limites ne changent pas: 20 messages + statuts par mois, 1 instance, 0 webhook et 2 groupes de contacts.`
+- `Free includes 500 messages/month, campaigns, 3 webhooks, and number lookups — 1 instance, 1 API key, 10 contact groups. WhatsApp Statuses are not available on any plan.`  
+  (FR : voir §4 de `35-plan-catalog-and-statuses-frontend.md`.)
 
 ---
 

@@ -81,7 +81,7 @@ These codes appear when the request mixes the wrong API key type with `X-Team-Id
 | `TEAM_KEY_NOT_ALLOWED` | 403 | Team API key used on a personal-only `v1` route (`/me`, `/usage`, `/billing/subscription`, `/billing/usage`, `/billing/payments`). Use a personal key. |
 | `TEAM_NOT_FOUND` | 404 | `X-Team-Id` is not a team you currently belong to (deleted, removed, or wrong ID). |
 | `TEAM_ACCESS_DENIED` | 403 | Authenticated but the role is not allowed for this action (e.g. collaborator trying to manage team API keys). |
-| `TEAM_FEATURE_UNAVAILABLE` | 403 | Account plan does not include team creation (Free / Starter). Upgrade to Pro or Plus. |
+| `TEAM_FEATURE_UNAVAILABLE` | 403 | Account plan does not include team creation (Free). Upgrade to Pro or MAX. |
 | `TEAM_LIMIT_REACHED` | 403 | Owner reached the maximum number of teams allowed by their plan. |
 | `TEAM_SEAT_LIMIT_REACHED` | 403 | Team already has the maximum number of members for the owner’s plan. |
 | `INSTANCE_NOT_ASSIGNED` | 403 | Collaborator targeting an instance that has not been assigned to them in this team workspace. |

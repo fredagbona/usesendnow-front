@@ -405,7 +405,7 @@ export const portalCopy = {
       planStatusExpired: "Expiré",
       recurring: "par mois",
       apiRequests: "requêtes API / mois",
-      messagesPerMonth: "messages / statuts par mois",
+      messagesPerMonth: "messages par mois",
       apiKey: "clé API",
       apiKeys: "clés API",
       webhookEndpoint: "endpoint webhook",
@@ -420,14 +420,16 @@ export const portalCopy = {
       availablePlans: "Plans disponibles",
       features: {
         campaigns: "Campagnes",
-        statuses: "Statuts WhatsApp",
         webhooks: "Webhooks",
         voiceNotes: "Notes vocales",
+        numberLookups: "Vérifications de numéros",
       },
+      planPolicyNoteFree:
+        "Le plan Gratuit inclut 500 messages/mois, les campagnes, 3 webhooks et les vérifications de numéros — 1 instance, 1 clé API, 10 groupes de contacts. Les statuts WhatsApp ne sont disponibles sur aucun plan.",
       teamsJoinOnly:
         "Équipes : pas de création d’espace équipe — vous pouvez rejoindre une équipe sur invitation.",
       teamsPro: "Équipes : jusqu’à 2 espaces propriétaire, 4 sièges par équipe.",
-      teamsPlus: "Équipes : jusqu’à 4 espaces propriétaire, 8 sièges par équipe.",
+      teamsMax: "Équipes : jusqu’à 4 espaces propriétaire, 8 sièges par équipe.",
       priceUnit: "€ / mois",
       yes: "oui",
       no: "non",
@@ -445,7 +447,7 @@ export const portalCopy = {
       changePlan: "Changer de plan",
       usageTitle: "Usage",
       messages: "Messages",
-      statuses: "Statuts",
+      usageInstances: "Instances",
       paymentHistory: "Historique des paiements",
       paymentsHistoryTeamOwnerOnly:
         "L’historique des paiements n’est visible que pour le propriétaire de l’équipe. Repassez en espace personnel ou contactez le propriétaire.",
@@ -1683,7 +1685,7 @@ export const portalCopy = {
       close: "Fermer",
       viewWebhooks: "Voir les webhooks",
       planBlocked:
-        "Les webhooks ne sont pas disponibles sur le plan Gratuit. Passez au plan Starter pour y accéder.",
+        "Les webhooks ne sont pas disponibles sur votre plan actuel. Mettez à niveau pour recevoir des notifications en temps réel.",
       list: {
         pageDescription: "Recevez des notifications d'événements en temps réel",
         addCta: "Ajouter un endpoint",
@@ -2154,7 +2156,7 @@ export const portalCopy = {
       planStatusExpired: "Expired",
       recurring: "per month",
       apiRequests: "API requests / month",
-      messagesPerMonth: "messages / statuses per month",
+      messagesPerMonth: "messages per month",
       apiKey: "API key",
       apiKeys: "API keys",
       webhookEndpoint: "webhook endpoint",
@@ -2169,14 +2171,16 @@ export const portalCopy = {
       availablePlans: "Available plans",
       features: {
         campaigns: "Campaigns",
-        statuses: "WhatsApp statuses",
         webhooks: "Webhooks",
         voiceNotes: "Voice notes",
+        numberLookups: "Number lookups",
       },
+      planPolicyNoteFree:
+        "Free includes 500 messages/month, campaigns, 3 webhooks, and number lookups — 1 instance, 1 API key, 10 contact groups. WhatsApp Statuses are not available on any plan.",
       teamsJoinOnly:
         "Teams: you cannot create a team workspace — you can join when invited.",
       teamsPro: "Teams: up to 2 owner workspaces, 4 seats each.",
-      teamsPlus: "Teams: up to 4 owner workspaces, 8 seats each.",
+      teamsMax: "Teams: up to 4 owner workspaces, 8 seats each.",
       priceUnit: "€ / month",
       yes: "yes",
       no: "no",
@@ -2194,7 +2198,7 @@ export const portalCopy = {
       changePlan: "Change plan",
       usageTitle: "Usage",
       messages: "Messages",
-      statuses: "Statuses",
+      usageInstances: "Instances",
       paymentHistory: "Payment history",
       paymentsHistoryTeamOwnerOnly:
         "Payment history is only visible to the team owner. Switch to your personal workspace or contact the owner.",
@@ -3421,7 +3425,7 @@ export const portalCopy = {
       close: "Close",
       viewWebhooks: "View webhooks",
       planBlocked:
-        "Webhooks are not available on the Free plan. Upgrade to the Starter plan to access them.",
+        "Webhooks are not available on your current plan. Upgrade to receive real-time notifications.",
       list: {
         pageDescription: "Receive real-time event notifications",
         addCta: "Add endpoint",

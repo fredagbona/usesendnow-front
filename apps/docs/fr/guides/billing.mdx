@@ -48,27 +48,29 @@ curl https://srv.msgflash.com/api/v1/billing/plans \
 {
   "data": [
     {
-      "code": "starter",
-      "name": "Starter",
-      "priceMonthly": 9,
-      "currency": "EUR",
+      "code": "pro",
+      "name": "Pro",
+      "priceEur": 19,
       "limits": {
-        "maxInstances": 2,
-        "maxApiKeys": 3,
-        "maxWebhookEndpoints": 3,
-        "monthlyOutboundQuota": 500,
-        "monthlyApiRequestQuota": 10000
+        "maxInstances": 5,
+        "maxApiKeys": 5,
+        "maxWebhookEndpoints": 15,
+        "monthlyOutboundQuota": 50000,
+        "monthlyApiRequestQuota": 150000
       },
       "features": {
         "campaigns": true,
         "statuses": false,
         "voiceNotes": true,
-        "webhooks": true
+        "webhooks": true,
+        "numberLookups": true
       }
     }
   ]
 }
 ```
+
+Voir [Plans et quotas](/fr/resources/plans-and-quotas) pour le comparatif **Free / Pro / MAX** (EUR uniquement).
 
 ---
 
@@ -86,12 +88,12 @@ Exemple :
   "data": {
     "subscription": {
       "plan": {
-        "code": "starter",
-        "name": "Starter",
+        "code": "pro",
+        "name": "Pro",
         "limits": {
-          "maxInstances": 2,
-          "maxApiKeys": 3,
-          "maxWebhookEndpoints": 3
+          "maxInstances": 5,
+          "maxApiKeys": 5,
+          "maxWebhookEndpoints": 15
         },
         "features": {
           "campaigns": true,
@@ -161,9 +163,9 @@ Réponse :
       {
         "id": "pay_uuid",
         "provider": "dodo",
-        "planCode": "starter",
-        "planName": "Starter",
-        "amount": 900,
+        "planCode": "pro",
+        "planName": "Pro",
+        "amount": 1900,
         "currency": "EUR",
         "status": "succeeded",
         "periodStart": "2026-04-01T09:43:13.737Z",

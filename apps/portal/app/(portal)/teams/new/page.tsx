@@ -43,7 +43,7 @@ export default function TeamCreatePage() {
     }
   }, [])
 
-  const canCreate = planCode === "pro" || planCode === "plus"
+  const canCreate = planCode === "pro" || planCode === "max" || planCode === "plus"
 
   const addRow = () => setInvites((rows) => [...rows, { email: "", role: "collaborator" }])
   const removeRow = (index: number) => setInvites((rows) => rows.filter((_, i) => i !== index))

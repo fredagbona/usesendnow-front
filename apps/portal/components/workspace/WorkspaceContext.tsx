@@ -29,7 +29,7 @@ import {
 const DEFAULT_CAPABILITIES: WorkspaceCapabilities = {
   canSendMessages: true,
   canCreateCampaigns: true,
-  canPublishStatuses: true,
+  canPublishStatuses: false,
   canUseWebhooks: true,
   canUseNumberLookups: true,
   canMutateBilling: true,

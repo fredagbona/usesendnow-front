@@ -1,6 +1,6 @@
 ---
 title: GET Lister les plans
-description: Retourne le catalogue des plans MsgFlash actifs.
+description: Retourne le catalogue des plans MsgFlash actifs (EUR).
 ---
 
 ## Endpoint
@@ -10,6 +10,8 @@ GET /api/v1/billing/plans
 ```
 
 ## Réponse succès `200`
+
+Plans actifs : **free**, **pro**, **max**. Prix en **EUR** (`priceEur`). Pas de FCFA sur cet endpoint.
 
 ```json
 {
@@ -21,15 +23,54 @@ GET /api/v1/billing/plans
       "limits": {
         "maxInstances": 1,
         "maxApiKeys": 1,
-        "maxWebhookEndpoints": 0,
-        "monthlyOutboundQuota": 20,
-        "monthlyApiRequestQuota": 1000
+        "maxWebhookEndpoints": 3,
+        "monthlyOutboundQuota": 500,
+        "monthlyApiRequestQuota": 500
       },
       "features": {
-        "campaigns": false,
+        "campaigns": true,
         "statuses": false,
         "voiceNotes": true,
-        "webhooks": false
+        "webhooks": true,
+        "numberLookups": true
+      }
+    },
+    {
+      "code": "pro",
+      "name": "Pro",
+      "priceEur": 19,
+      "limits": {
+        "maxInstances": 5,
+        "maxApiKeys": 5,
+        "maxWebhookEndpoints": 15,
+        "monthlyOutboundQuota": 50000,
+        "monthlyApiRequestQuota": 150000
+      },
+      "features": {
+        "campaigns": true,
+        "statuses": false,
+        "voiceNotes": true,
+        "webhooks": true,
+        "numberLookups": true
+      }
+    },
+    {
+      "code": "max",
+      "name": "MAX",
+      "priceEur": 39,
+      "limits": {
+        "maxInstances": 20,
+        "maxApiKeys": 10,
+        "maxWebhookEndpoints": 50,
+        "monthlyOutboundQuota": 150000,
+        "monthlyApiRequestQuota": 500000
+      },
+      "features": {
+        "campaigns": true,
+        "statuses": false,
+        "voiceNotes": true,
+        "webhooks": true,
+        "numberLookups": true
       }
     }
   ]
