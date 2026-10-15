@@ -51,42 +51,42 @@ export default async function PolitiqueConfidentialitePage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-[#0A0A0A] text-[#F0F0F0]">
-        <section className="border-b border-white/8 bg-[radial-gradient(circle_at_top,rgba(255,214,0,0.14),rgba(10,10,10,0)_36%),#0A0A0A] px-6 pb-16 pt-32">
+      <main className="flex-1 bg-[#FCFAF4] text-[#171515]">
+        <section className="border-b border-black/10 bg-[radial-gradient(circle_at_top,rgba(255,214,0,0.16),rgba(252,250,244,0)_36%),#FCFAF4] px-6 pb-16 pt-28 sm:pt-32">
           <div className="mx-auto max-w-6xl">
-            <div className="inline-flex items-center gap-2 border border-[#FFD600]/30 bg-[#FFD600]/8 px-3 py-1.5 font-(family-name:--font-poppins) text-[11px] uppercase tracking-[0.14em] text-[#FFD600]">
+            <div className="inline-flex items-center gap-2 rounded-sm border border-black/10 bg-white px-3 py-1.5 font-(family-name:--font-poppins) text-[11px] uppercase tracking-[0.14em] text-[#A18A00] shadow-[0_8px_24px_rgba(23,21,21,0.05)]">
               {messages.legal.badge}
             </div>
-            <h1 className="mt-6 font-(family-name:--font-geist-sans) text-4xl font-black uppercase tracking-[-0.05em] text-[#F0F0F0] sm:text-5xl md:text-6xl">
+            <h1 className="mt-6 max-w-4xl font-(family-name:--font-geist-sans) text-4xl font-semibold tracking-[-0.06em] text-[#171515] sm:text-5xl md:text-6xl">
               {messages.privacy.title}
             </h1>
-            <p className="mt-5 max-w-3xl font-(family-name:--font-poppins) text-base leading-7 text-[#B7B7B7]">
+            <p className="mt-5 max-w-3xl font-(family-name:--font-poppins) text-base leading-7 text-[#625B54]">
               {messages.privacy.subtitle}
             </p>
-            <p className="mt-4 font-(family-name:--font-poppins) text-sm uppercase tracking-[0.12em] text-[#7E7E7E]">
+            <p className="mt-4 font-(family-name:--font-poppins) text-sm uppercase tracking-[0.12em] text-[#7A7268]">
               {messages.privacy.lastUpdated}
             </p>
           </div>
         </section>
 
-        <section className="px-6 py-16 sm:py-20">
+        <section className="px-6 py-14 sm:py-16">
           <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
-            <aside className="space-y-5 border border-white/8 bg-[#121212] p-6 lg:sticky lg:top-24">
+            <aside className="space-y-5 rounded-sm border border-black/10 bg-white p-6 shadow-[0_18px_50px_rgba(23,21,21,0.06)] lg:sticky lg:top-24">
               <div>
-                <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.1em] text-[#FFD600]">
+                <p className="font-(family-name:--font-geist-sans) text-xs font-semibold uppercase tracking-[0.1em] text-[#A18A00]">
                   {messages.privacy.sideTitle}
                 </p>
-                <p className="mt-3 font-(family-name:--font-poppins) text-sm leading-6 text-[#9B9B9B]">
+                <p className="mt-3 font-(family-name:--font-poppins) text-sm leading-6 text-[#625B54]">
                   {messages.privacy.sideText}
                 </p>
               </div>
-              <div className="border-t border-white/8 pt-5">
-                <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.1em] text-[#F0F0F0]">
+              <div className="border-t border-black/10 pt-5">
+                <p className="font-(family-name:--font-geist-sans) text-xs font-semibold uppercase tracking-[0.1em] text-[#171515]">
                   {messages.legal.contact}
                 </p>
                 <a
                   href={`mailto:${landingBrand.privacyEmail}`}
-                  className="mt-3 inline-block font-(family-name:--font-poppins) text-sm text-[#FFD600] transition-colors hover:text-[#FFF0A6]"
+                  className="mt-3 inline-block font-(family-name:--font-poppins) text-sm text-[#A18A00] transition-colors hover:text-[#6F5C00]"
                 >
                   {landingBrand.privacyEmail}
                 </a>
@@ -94,18 +94,18 @@ export default async function PolitiqueConfidentialitePage() {
             </aside>
 
             <div className="space-y-6">
-              <div className="border border-white/8 bg-[#111111] p-6 sm:p-8">
-                <p className="font-(family-name:--font-poppins) text-base leading-7 text-[#C9C9C9]">
+              <div className="rounded-sm border border-black/10 bg-white p-6 sm:p-8 shadow-[0_18px_50px_rgba(23,21,21,0.06)]">
+                <p className="font-(family-name:--font-poppins) text-base leading-7 text-[#625B54]">
                   {messages.privacy.intro}
                 </p>
               </div>
 
               {sections.map((section) => (
-                <section key={section.title} className="border border-white/8 bg-[#111111] p-6 sm:p-8">
-                  <h2 className="mb-4 font-(family-name:--font-geist-sans) text-xl font-black uppercase tracking-[-0.03em] text-[#F0F0F0] sm:text-2xl">
+                <section key={section.title} className="rounded-sm border border-black/10 bg-white p-6 sm:p-8 shadow-[0_18px_50px_rgba(23,21,21,0.06)]">
+                  <h2 className="mb-4 font-(family-name:--font-geist-sans) text-xl font-semibold tracking-[-0.03em] text-[#171515] sm:text-2xl">
                     {section.title}
                   </h2>
-                  <div className="whitespace-pre-line font-(family-name:--font-poppins) text-sm leading-7 text-[#B8B8B8]">
+                  <div className="whitespace-pre-line font-(family-name:--font-poppins) text-sm leading-7 text-[#625B54]">
                     {section.content}
                   </div>
                 </section>

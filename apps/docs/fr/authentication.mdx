@@ -92,10 +92,8 @@ Guide détaillé :
 
 | Plan | Clés API autorisées |
 |---|---|
-| Free | 1 |
-| Starter | 3 |
-| Pro | 10 |
-| Plus | 10 |
+| Starter | 5 |
+| Growth | 10 |
 
 ---
 
@@ -118,7 +116,10 @@ Guide détaillé :
 |---|---|---|
 | `UNAUTHORIZED` | 401 | Clé manquante, invalide ou révoquée |
 | `FORBIDDEN` | 403 | La clé est valide mais n'a pas accès à la ressource |
-| `SUBSCRIPTION_INACTIVE` | 403 | Le compte n'a plus de souscription exploitable pour l'action demandée |
+| `TRIAL_EXPIRED` | 402 | L'essai de 7 jours est terminé sans paiement |
+| `SUBSCRIPTION_REQUIRED` | 402 | Un abonnement payé actif est requis |
+| `SUBSCRIPTION_PAST_DUE` | 402 | Le paiement doit être régularisé après la période de grâce |
+| `SUBSCRIPTION_SUSPENDED` | 403 | Le compte de facturation est suspendu administrativement |
 | `API_RATE_LIMIT_EXCEEDED` | 429 | Plus de 10 requêtes/seconde sur la même clé |
 | `MONTHLY_API_REQUEST_QUOTA_EXCEEDED` | 429 | Quota mensuel de requêtes API épuisé |
 

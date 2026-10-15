@@ -162,9 +162,10 @@
             "icon": "credit-card"
           },
           {
-            "group": "Resources",
-            "pages": [
-              "resources/message-types",
+          "group": "Resources",
+          "pages": [
+            "resources/business-event-automation",
+            "resources/message-types",
               "resources/plans-and-quotas",
               "resources/error-codes",
               "resources/faq"
@@ -317,9 +318,10 @@
             "icon": "credit-card"
           },
           {
-            "group": "Ressources",
-            "pages": [
-              "fr/resources/message-types",
+          "group": "Ressources",
+          "pages": [
+            "fr/resources/business-event-automation",
+            "fr/resources/message-types",
               "fr/resources/plans-and-quotas",
               "fr/resources/error-codes",
               "fr/resources/faq"

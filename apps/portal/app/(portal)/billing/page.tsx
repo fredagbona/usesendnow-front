@@ -91,9 +91,9 @@ function getPlanFeatures(plan: Plan, locale: "fr" | "en", billingCopy: ReturnTyp
         : undefined
 
   const teamsFeatureLine =
-    plan.code === "pro"
+    plan.code === "starter" || plan.code === "pro"
       ? billingCopy.teamsPro
-      : plan.code === "max" || plan.code === "plus"
+      : plan.code === "growth" || plan.code === "max" || plan.code === "plus"
         ? billingCopy.teamsMax
         : billingCopy.teamsJoinOnly
 
@@ -237,7 +237,7 @@ function PlanCard({
         <Button variant="secondary" size="sm" disabled className="w-full justify-center">
           {billingCopy.currentPlanButton}
         </Button>
-      ) : plan.code === "free" ? null : (
+      ) : (
         <Button
           variant={isUpgrade ? "primary" : "secondary"}
           size="sm"
@@ -288,10 +288,11 @@ function BillingPageContent() {
   const handledParams = useRef(false)
 
   const sub = subscription?.subscription
+  const access = subscription?.access
   const usage = subscription?.usage
   const periodStart = subscription?.period?.start ?? sub?.currentPeriodStart
   const periodEnd = subscription?.period?.end ?? sub?.currentPeriodEnd
-  const currentPlanCode = sub?.plan?.code ?? "free"
+  const currentPlanCode = sub?.plan?.code ?? "starter"
   const currentPlanIdx = planDisplayRank(currentPlanCode)
 
   const currentPlan =
@@ -309,6 +310,11 @@ function BillingPageContent() {
   const scheduledAction = sub?.scheduledAction ?? null
   const scheduledPlan = sub?.scheduledPlan ?? null
   const scheduledPlanAt = sub?.scheduledPlanAt ?? null
+  const hasPaidActivePlan =
+    access?.operational === true &&
+    sub?.status === "active" &&
+    !!sub.billingProvider &&
+    sub.billingProvider !== "none"
 
   // Handle Dodo return URL params
   useEffect(() => {
@@ -335,9 +341,8 @@ function BillingPageContent() {
 
   const handleSelectPlan = async (plan: Plan) => {
     if (billingMutationsDisabled) return
-    if (plan.code === "free") return
     const planIdx = planDisplayRank(plan.code)
-    const isUpgrade = planIdx > currentPlanIdx
+    const isUpgrade = !hasPaidActivePlan || planIdx > currentPlanIdx
 
     if (isUpgrade && !isCheckoutPlanCode(plan.code)) {
       toast.error(billingCopy.toast.planUnavailable)
@@ -397,9 +402,7 @@ function BillingPageContent() {
       setCancelModalOpen(false)
     } catch (err) {
       if (err instanceof ApiClientError) {
-        if (err.code === "ALREADY_ON_FREE_PLAN") {
-          toast.error(billingCopy.toast.alreadyOnFree)
-        } else if (err.code === "SUBSCRIPTION_INACTIVE") {
+        if (err.code === "SUBSCRIPTION_INACTIVE") {
           toast.error(billingCopy.toast.noActiveSubscription)
         } else if (err.code === "UNAUTHORIZED") {
           return
@@ -460,9 +463,7 @@ function BillingPageContent() {
 
   const statusConfigMap = getStatusConfig(billingCopy)
   const statusConfig = statusConfigMap[sub?.status as keyof typeof statusConfigMap] ?? statusConfigMap.active
-  const isFree = currentPlanCode === "free"
   const canCancel =
-    !isFree &&
     sub?.status === "active" &&
     !hasScheduledChange &&
     !!sub?.billingProvider &&
@@ -579,13 +580,6 @@ function BillingPageContent() {
               </Button>
             </div>
           </Card>
-        </div>
-      )}
-
-      {isFree && (
-        <div className="flex items-start gap-3 p-4 bg-bg-subtle border border-border rounded-2xl">
-          <InformationCircleIcon className="w-5 h-5 text-text-muted shrink-0 mt-0.5" />
-          <p className="text-sm text-text-secondary leading-relaxed">{billingCopy.planPolicyNoteFree}</p>
         </div>
       )}
 
@@ -782,9 +776,9 @@ function BillingPageContent() {
                   <PlanCard
                     key={plan.code}
                     plan={plan}
-                    isCurrent={plan.code === currentPlanCode}
+                    isCurrent={plan.code === currentPlanCode && hasPaidActivePlan}
                     isUpgrade={planIdx > currentPlanIdx}
-                    isDowngrade={planIdx < currentPlanIdx && plan.code !== "free"}
+                    isDowngrade={planIdx < currentPlanIdx}
                     isScheduled={plan.code === scheduledPlan}
                     actioning={actioning}
                     billingMutationsDisabled={billingMutationsDisabled}

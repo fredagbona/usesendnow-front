@@ -1,31 +1,8 @@
 ---
-title: POST Publish a status
-description: Publish a text or image WhatsApp status.
+title: Status endpoint retired
+description: POST /api/v1/statuses is not part of the supported public API.
 ---
 
-## Endpoint
+`POST /api/v1/statuses` is retired. Do not call it from new integrations. WhatsApp Statuses are not included in any current plan and are not counted in outbound usage.
 
-```txt
-POST /api/v1/statuses
-```
-
-## Body
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `instanceId` | UUID | yes | Instance source |
-| `type` | `text` \| `image` | yes | Status type |
-| `content` | string | yes | Texte ou URL publique de l'image |
-| `caption` | string | no | Légende si image |
-| `backgroundColor` | string | no | Color hex si texte |
-
-## Success response `201`
-
-```json
-{
-  "data": {
-    "instanceId": "inst_uuid",
-    "providerMessageId": "BAE5D1A2B3C4D5E6"
-  }
-}
-```
+Use [`POST /api/v1/messages/send`](/api-reference/messages/send) or campaigns instead.

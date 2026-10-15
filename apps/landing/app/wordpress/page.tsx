@@ -157,7 +157,7 @@ export default async function WordPressPage() {
                 return (
                   <article key={item.title} className="overflow-hidden border border-white/8 bg-[#151515]">
                     <div className="border-b border-white/8 bg-[radial-gradient(circle_at_top,rgba(255,214,0,0.16),rgba(21,21,21,0)_60%),#0F0F0F] p-6">
-                      <div className="inline-flex rounded-2xl border border-[#FFD600]/20 bg-[#FFD600]/8 p-4 text-[#FFD600]">
+                      <div className="inline-flex rounded-sm border border-[#FFD600]/20 bg-[#FFD600]/8 p-4 text-[#FFD600]">
                         <Icon className="h-8 w-8" />
                       </div>
                     </div>

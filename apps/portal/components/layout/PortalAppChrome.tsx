@@ -1,11 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import type { Plan, SubscriptionResponse } from "@usesendnow/types"
 import { apiClient } from "@usesendnow/api-client"
 import Sidebar, { MobileDrawer } from "@/components/layout/Sidebar"
 import PortalTitleManager from "@/components/layout/PortalTitleManager"
 import TopNav from "@/components/layout/TopNav"
+import PortalAnnouncementBanner from "@/components/layout/PortalAnnouncementBanner"
 import { usePortalLocale } from "@/components/layout/PortalLocaleProvider"
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"
 
@@ -28,6 +30,8 @@ function getFallbackPlan(
 }
 
 export default function PortalAppChrome({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const router = useRouter()
   const { copy } = usePortalLocale()
   const { me, subscriptionLayout, workspaceBootstrapLoading } = useWorkspace()
   const [collapsed, setCollapsed] = useState(false)
@@ -36,7 +40,7 @@ export default function PortalAppChrome({ children }: { children: React.ReactNod
 
   const subscription = subscriptionLayout ?? billingFallback
   const sub = subscription?.subscription
-  const currentPlanCode = sub?.plan?.code ?? "free"
+  const currentPlanCode = sub?.plan?.code ?? "starter"
   const plan = sub?.plan ?? getFallbackPlan(currentPlanCode, copy.profile.planFallbackFree)
   const planName = plan.name
   const outboundTotal = plan.monthlyOutboundQuota ?? plan.limits?.monthlyOutboundQuota
@@ -46,6 +50,14 @@ export default function PortalAppChrome({ children }: { children: React.ReactNod
     if (subscriptionLayout) return
     void apiClient.billing.getSubscription().then(setBillingFallback).catch(() => {})
   }, [workspaceBootstrapLoading, subscriptionLayout])
+
+  useEffect(() => {
+    const access = subscription?.access
+    if (!access || access.operational || pathname === "/billing" || pathname === "/profile") return
+
+    const params = new URLSearchParams({ reason: access.reason, next: pathname })
+    router.replace(`/billing?${params.toString()}`)
+  }, [pathname, router, subscription?.access])
 
   return (
     <div className="flex flex-col min-h-screen bg-bg-subtle overflow-x-hidden">
@@ -75,6 +87,7 @@ export default function PortalAppChrome({ children }: { children: React.ReactNod
           ].join(" ")}
         >
           <TopNav user={me} planName={planName} onMobileMenu={() => setMobileOpen(true)} />
+          <PortalAnnouncementBanner />
           <main className="flex-1 p-4 md:p-8 w-full min-w-0 overflow-y-auto">{children}</main>
         </div>
       </div>

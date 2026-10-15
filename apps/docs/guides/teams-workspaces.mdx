@@ -1,13 +1,13 @@
 ---
 title: Teams & workspaces
-description: Pro and MAX teams, invitations, team API keys, and X-Team-Id for the public API.
+description: Starter and Growth teams, invitations, team API keys, and X-Team-Id.
 ---
 
 ## Who can use teams?
 
-- **Create a team:** only **Pro** or **MAX** subscription owners.
-- **Caps:** Pro — up to **2** owned teams, **4** seats per team (owner included). MAX — up to **4** owned teams, **8** seats per team.
-- **Invite anyone** by email (including Free users or people without an account yet).
+- **Create a team:** owners with operational **Starter** or **Growth** access.
+- **Caps:** Starter — up to **2** owned teams and **4** seats per team. Growth — up to **4** owned teams and **8** seats per team.
+- **Invite anyone** by email, including people without an account yet.
 
 ## Personal vs team workspace
 
@@ -30,7 +30,7 @@ description: Pro and MAX teams, invitations, team API keys, and X-Team-Id for th
 
 ## Console JWT and optional `X-Team-Id`
 
-On **`/api/*`** resource routes (messages, contacts, templates, campaigns, instances, webhooks, statuses, media, number lookups), you can send **`X-Team-Id`** with the session JWT to use the **team workspace** instead of your personal one. Omit the header for personal workspace. Invalid or non-member teams return **`TEAM_NOT_FOUND`**. Details: [Team context](/api-reference/teams/team-context).
+On **`/api/*`** resource routes (messages, contacts, templates, campaigns, instances, webhooks, media, number lookups), you can send **`X-Team-Id`** with the session JWT to use the **team workspace** instead of your personal one. Omit the header for personal workspace. Invalid or non-member teams return **`TEAM_NOT_FOUND`**. Details: [Team context](/api-reference/teams/team-context).
 
 ## Roles (short)
 
@@ -42,7 +42,7 @@ On **`/api/*`** resource routes (messages, contacts, templates, campaigns, insta
 
 ## Downgrades and teams
 
-You cannot schedule a **downgrade** or **cancellation to Free** while owned teams would violate the target plan’s team limits — delete or shrink teams first (`PLAN_CHANGE_BLOCKED_ACTIVE_TEAMS`).
+You cannot schedule a **downgrade to Starter** while owned teams violate Starter limits. Cancellation blocks operations at period end and never creates a Free plan.
 
 ## Console API prefix
 

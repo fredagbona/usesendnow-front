@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #0A0A0A;
-  --bg-surface: #121212;
-  --bg-surface-strong: #171717;
+  --bg-primary: #fcfaf4;
+  --bg-surface: #ffffff;
+  --bg-surface-strong: #f5f0e4;
   --accent: #FFD600;
-  --text-heading: #F0F0F0;
-  --text-body: #D8D8D8;
-  --text-muted: #8E8E8E;
-  --surface-border: rgba(240, 240, 240, 0.08);
+  --text-heading: #171515;
+  --text-body: #342f2a;
+  --text-muted: #726a63;
+  --surface-border: rgba(23, 21, 21, 0.12);
 }
 
 html {
@@ -16,8 +16,10 @@ html {
 }
 
 body {
-  background: #0A0A0A;
-  color: #F0F0F0;
+  background:
+    radial-gradient(circle at top, rgba(255, 214, 0, 0.18), transparent 24%),
+    linear-gradient(180deg, #fffdf8 0%, #fcfaf4 52%, #f5f0e4 100%);
+  color: #171515;
   font-family: var(--font-poppins), "Inter", sans-serif;
 }
 
@@ -28,4 +30,9 @@ body {
 ::selection {
   background: #FFD600;
   color: #0A0A0A;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }

@@ -1,13 +1,13 @@
 ---
 title: Équipes & espaces de travail
-description: Équipes Pro et MAX, invitations, clés API d'équipe et en-tête X-Team-Id pour l'API publique.
+description: Équipes Starter et Growth, invitations, clés API d'équipe et X-Team-Id.
 ---
 
 ## Qui peut utiliser les équipes ?
 
-- **Créer une équipe :** uniquement les titulaires d'abonnement **Pro** ou **MAX**.
-- **Plafonds :** Pro — jusqu'à **2** équipes possédées, **4** sièges par équipe (propriétaire inclus). MAX — jusqu'à **4** équipes possédées, **8** sièges par équipe.
-- **Inviter** n'importe quelle adresse e-mail (y compris Free ou sans compte).
+- **Créer une équipe :** propriétaires avec un accès opérationnel **Starter** ou **Growth**.
+- **Plafonds :** Starter — **2** équipes et **4** sièges par équipe. Growth — **4** équipes et **8** sièges par équipe.
+- **Inviter** n'importe quelle adresse e-mail, même sans compte existant.
 
 ## Espace personnel vs équipe
 
@@ -30,7 +30,7 @@ description: Équipes Pro et MAX, invitations, clés API d'équipe et en-tête X
 
 ## JWT console et `X-Team-Id` optionnel
 
-Sur les routes ressources **`/api/*`** (messages, contacts, modèles, campagnes, instances, webhooks, statuts, médias, recherches de numéros), vous pouvez envoyer **`X-Team-Id`** avec le JWT de session pour utiliser l'espace **équipe** plutôt que le personnel. Sans en-tête : espace personnel. Équipe invalide ou sans adhésion : **`TEAM_NOT_FOUND`**. Détails : [Contexte équipe](/fr/api-reference/teams/team-context).
+Sur les routes ressources **`/api/*`** (messages, contacts, modèles, campagnes, instances, webhooks, médias, recherches de numéros), vous pouvez envoyer **`X-Team-Id`** avec le JWT de session pour utiliser l'espace **équipe** plutôt que le personnel. Sans en-tête : espace personnel. Équipe invalide ou sans adhésion : **`TEAM_NOT_FOUND`**. Détails : [Contexte équipe](/fr/api-reference/teams/team-context).
 
 ## Rôles (résumé)
 
@@ -42,7 +42,7 @@ Sur les routes ressources **`/api/*`** (messages, contacts, modèles, campagnes,
 
 ## Downgrades et équipes
 
-Impossible de planifier un **downgrade** ou une **résiliation vers Free** tant que vos équipes possédées violent les limites du plan cible — supprimez ou réduisez les équipes d'abord (`PLAN_CHANGE_BLOCKED_ACTIVE_TEAMS`).
+Impossible de planifier un **downgrade vers Starter** tant que vos équipes dépassent ses limites. Une résiliation bloque les opérations en fin de période et ne crée jamais de plan Free.
 
 ## Préfixe API console
 

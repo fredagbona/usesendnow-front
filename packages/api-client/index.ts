@@ -403,8 +403,18 @@ const auth = {
   login: (email: string, password: string) =>
     post<AuthResponse>("/api/auth/login", { email, password }, true),
 
-  signup: (fullName: string, email: string, phone: string, password: string) =>
-    post<SignupResponse>("/api/auth/signup", { fullName, email, phone, password }, true),
+  signup: (
+    fullName: string,
+    email: string,
+    phone: string,
+    password: string,
+    trialPlanCode: "starter" | "growth" = "starter",
+  ) =>
+    post<SignupResponse>(
+      "/api/auth/signup",
+      { fullName, email, phone, password, trialPlanCode },
+      true,
+    ),
 
   resendVerification: (email: string) =>
     post<ResendVerificationResponse>("/api/auth/resend-verification", { email }, true),

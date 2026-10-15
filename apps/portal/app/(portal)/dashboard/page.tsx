@@ -183,7 +183,7 @@ export default function DashboardPage() {
 
   const sub = subscription?.subscription
   const usage = subscription?.usage
-  const currentPlanCode = sub?.plan?.code ?? "free"
+  const currentPlanCode = sub?.plan?.code ?? "starter"
   const currentPlan = sub?.plan ?? getFallbackPlan(currentPlanCode, d.planNameFree)
   const limits = getPlanLimits(currentPlan)
 

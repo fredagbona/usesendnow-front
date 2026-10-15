@@ -58,7 +58,7 @@ export default async function CampaignsPage() {
                     key={block.title}
                     className="border border-white/8 bg-[#121212] p-6 sm:p-8"
                   >
-                    <div className="inline-flex rounded-2xl border border-[#FFD600]/20 bg-[#FFD600]/8 p-3 text-[#FFD600]">
+                    <div className="inline-flex rounded-sm border border-[#FFD600]/20 bg-[#FFD600]/8 p-3 text-[#FFD600]">
                       <Icon className="h-7 w-7" />
                     </div>
                     <h2 className="mt-5 font-(family-name:--font-geist-sans) text-lg font-black uppercase leading-tight tracking-[-0.03em] text-[#F0F0F0] sm:text-xl">

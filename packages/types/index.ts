@@ -520,6 +520,22 @@ export interface Plan {
 
 export type SubscriptionStatus = "active" | "trialing" | "past_due" | "cancelled" | "expired"
 
+export type SubscriptionAccessReason =
+  | "active"
+  | "trialing"
+  | "cancellation_grace"
+  | "past_due_grace"
+  | "trial_expired"
+  | "payment_required"
+  | "past_due"
+  | "suspended"
+
+export interface SubscriptionAccess {
+  operational: boolean
+  reason: SubscriptionAccessReason
+  expiresAt: string | null
+}
+
 export interface Subscription {
   id: string
   planId?: string
@@ -532,6 +548,13 @@ export interface Subscription {
   scheduledPlan?: string | null
   scheduledPlanAt?: string | null
   scheduledAction?: "downgrade" | "cancel" | null
+  trialPlanCode?: "starter" | "growth" | null
+  trialStartedAt?: string | null
+  trialEndsAt?: string | null
+  trialConsumedAt?: string | null
+  pastDueAt?: string | null
+  accessBlockedAt?: string | null
+  suspensionReason?: string | null
 }
 
 export interface UsageData {
@@ -545,6 +568,7 @@ export interface UsageData {
 
 export interface SubscriptionResponse {
   subscription?: Subscription | null
+  access?: SubscriptionAccess
   usage?: UsageData | null
   period?: {
     start: string
@@ -595,6 +619,7 @@ export interface WorkspaceCurrentPayload {
   limits?: PlanLimits
   features?: PlanFeatures
   subscription?: Subscription | null
+  access?: SubscriptionAccess
   usage?: UsageData | null
   period?: { start: string; end: string } | null
   capabilities?: WorkspaceCapabilities

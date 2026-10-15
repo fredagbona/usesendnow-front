@@ -1,6 +1,6 @@
 ---
 title: GET Lister les plans
-description: Retourne le catalogue des plans MsgFlash actifs (EUR).
+description: Retourne les plans actifs Starter et Growth.
 ---
 
 ## Endpoint
@@ -9,61 +9,27 @@ description: Retourne le catalogue des plans MsgFlash actifs (EUR).
 GET /api/v1/billing/plans
 ```
 
-## Réponse succès `200`
+Cet endpoint en lecture seule retourne les deux plans actifs. Les prix sont mensuels et exprimés en EUR. Il n'existe plus de plan Free.
 
-Plans actifs : **free**, **pro**, **max**. Prix en **EUR** (`priceEur`). Pas de FCFA sur cet endpoint.
+| Code | Prix | Instances | Clés API | Webhooks | Groupes | Messages/mois | Requêtes API/mois | Équipes/sièges |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `starter` | 19 € | 5 | 5 | 15 | 50 | 50 000 | 150 000 | 2 / 4 |
+| `growth` | 39 € | 20 | 10 | 50 | Illimités | 150 000 | 500 000 | 4 / 8 |
 
 ```json
 {
   "data": [
     {
-      "code": "free",
-      "name": "Free",
-      "priceEur": 0,
-      "limits": {
-        "maxInstances": 1,
-        "maxApiKeys": 1,
-        "maxWebhookEndpoints": 3,
-        "monthlyOutboundQuota": 500,
-        "monthlyApiRequestQuota": 500
-      },
-      "features": {
-        "campaigns": true,
-        "statuses": false,
-        "voiceNotes": true,
-        "webhooks": true,
-        "numberLookups": true
-      }
-    },
-    {
-      "code": "pro",
-      "name": "Pro",
+      "code": "starter",
+      "name": "Starter",
       "priceEur": 19,
       "limits": {
         "maxInstances": 5,
         "maxApiKeys": 5,
         "maxWebhookEndpoints": 15,
+        "maxContactGroups": 50,
         "monthlyOutboundQuota": 50000,
         "monthlyApiRequestQuota": 150000
-      },
-      "features": {
-        "campaigns": true,
-        "statuses": false,
-        "voiceNotes": true,
-        "webhooks": true,
-        "numberLookups": true
-      }
-    },
-    {
-      "code": "max",
-      "name": "MAX",
-      "priceEur": 39,
-      "limits": {
-        "maxInstances": 20,
-        "maxApiKeys": 10,
-        "maxWebhookEndpoints": 50,
-        "monthlyOutboundQuota": 150000,
-        "monthlyApiRequestQuota": 500000
       },
       "features": {
         "campaigns": true,
@@ -76,3 +42,5 @@ Plans actifs : **free**, **pro**, **max**. Prix en **EUR** (`priceEur`). Pas de 
   ]
 }
 ```
+
+<Note>Chaque nouveau compte bénéficie d'un seul essai de 7 jours sur le plan choisi à l'inscription. Google démarre un essai Starter.</Note>

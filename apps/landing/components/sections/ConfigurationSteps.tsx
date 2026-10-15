@@ -207,7 +207,7 @@ export function ConfigurationSteps({}: ConfigurationStepsProps) {
           className="mt-10 border border-[#FFD600]/30 bg-[#FFD600]/4 p-5 sm:p-6"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FFD600]">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-[#FFD600]">
               <ZapIcon className="h-4 w-4 text-[#0A0A0A]" />
             </div>
             <div>

@@ -1,322 +1,124 @@
-# SPEC — Portal / Billing
+# SPEC - Portal / Billing, Trial and Access
 
 App: portal
-Route: /billing
+Route: `/billing`
 Auth: required
-Status: ready
+Status: implementation contract (2026-07-14)
 
-> **Catalogue plans v2 (2026-05)** — Grille **3 plans** (Free / Pro / MAX), **EUR uniquement**, pas de Starter ni Plus, pas de statuts WhatsApp en UI.  
-> **Source de vérité copy + quotas + landing :** [`35-plan-catalog-and-statuses-frontend.md`](./35-plan-catalog-and-statuses-frontend.md) (§2 tableau quotas, §3 landing, §4 billing).
+## Product rules
 
----
+- There is no Free plan.
+- Sellable plans are `starter` at EUR 19/month and `growth` at EUR 39/month.
+- A new billing account receives one 7-day application-managed trial on the selected plan.
+- Dodo Payments must not add another provider-side trial.
+- Existing paid `pro` accounts migrate to `starter`; `max` accounts migrate to `growth` without a new trial.
+- Existing Free accounts become `expired` and must subscribe before using product operations.
+- When access is not operational, billing, profile, account deletion and contacts export remain available. Product actions and the public API are blocked.
+- WhatsApp Statuses are removed. Do not display them as a plan feature or include them in outbound usage.
 
-## Purpose
+## Endpoints
 
-Vue complète de la facturation : plan actuel, consommation du mois, comparatif des plans, et gestion de l'abonnement (upgrade, annulation).
-Les prix sont affichés en **EUR uniquement** (`priceEur` — ne plus afficher FCFA).
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/billing/plans` | Active Starter/Growth catalog |
+| `GET` | `/api/billing/subscription` | Subscription, access state, usage and period |
+| `GET` | `/api/billing/usage` | Usage and period subset |
+| `GET` | `/api/billing/payments` | Paginated payment history |
+| `POST` | `/api/billing/checkout` | Dodo hosted checkout |
+| `POST` | `/api/billing/downgrade` | Schedule Growth to Starter |
+| `POST` | `/api/billing/cancel` | End paid subscription at period end |
+| `POST` | `/api/billing/cancel-scheduled-change` | Undo scheduled change |
 
----
+JWT endpoints accept optional `X-Team-Id`. Reads resolve against the team owner. Billing mutations and payment history are owner-only in a team workspace.
 
-## Backend endpoints utilisés
-
-| Method | Endpoint                            | Auth   | Usage                                        |
-| ------ | ----------------------------------- | ------ | -------------------------------------------- |
-| GET    | /api/billing/subscription           | JWT    | Plan actuel + usage + période                |
-| GET    | /api/billing/usage                | JWT    | Usage + période (subset)                     |
-| GET    | /api/billing/payments             | JWT    | Historique des paiements (paginé)            |
-| GET    | /api/billing/plans                | public | Catalogue de tous les plans                |
-| POST   | /api/billing/checkout             | JWT    | Créer une session de paiement                |
-| POST   | /api/billing/cancel               | JWT    | Annuler l'abonnement                         |
-| POST   | /api/billing/downgrade            | JWT    | Planifier un downgrade                       |
-| POST   | /api/billing/cancel-scheduled-change | JWT | Annuler un changement de plan planifié    |
-
-### Workspace (`X-Team-Id`)
-
-Optionnel sur les routes JWT ci-dessus **sauf** `GET /api/billing/plans` (catalogue global, sans workspace).
-
-- **Sans `X-Team-Id`** : données de facturation du **compte connecté** (espace personnel).
-- **Avec `X-Team-Id`** (membre actif) : **`GET /subscription`** et **`GET /usage`** ciblent l’abonnement et l’usage du **propriétaire d’équipe** (même ancrage que les quotas de l’espace équipe).
-- **`GET /payments`** : en espace équipe, **réservé au propriétaire d’équipe** ; admin/collaborateur → **`403`** `BILLING_PAYMENTS_TEAM_OWNER_ONLY`.
-- **POST** `checkout`, `cancel`, `downgrade`, `cancel-scheduled-change` : en espace équipe, **uniquement** si l’utilisateur connecté **est** le propriétaire d’équipe ; sinon **`403`** `BILLING_TEAM_MUTATION_FORBIDDEN`.
-
----
-
-## Layout de la page
-
-Layout standard portal.
-
-### Zones principales
-
-- **Header** : titre "Billing & Plans"
-- **CurrentPlanCard** : résumé du plan actif + usage
-- **UsageMetrics** : barres de progression pour chaque quota
-- **PlansComparison** : grille des **3** plans (Free / Pro / MAX) — voir `35-plan-catalog-and-statuses-frontend.md` §2 et §4
-- **DangerZone** : bouton d'annulation (si plan payant actif)
-- **PlanPolicyNote** : note produit expliquant les limites importantes du plan Free
-
----
-
-## Composants de la page
-
-### CurrentPlanCard
-
-Props :
-
-```ts
-{
-  subscription: Subscription;
-  usage: {
-    effectiveOutboundUsage: number;
-    apiRequestsCount: number;
-    activeInstancesCount: number;
-    activeApiKeysCount: number;
-  }
-  period: {
-    start: string;
-    end: string;
-  }
-}
-```
-
-Affiche :
-
-- Badge plan (code + nom, ex: "Pro Plan")
-- Statut abonnement : `active`, `trialing`, `past_due`, `cancelled`, `expired`
-- Période de facturation actuelle (ex: "March 1 – March 31, 2026")
-- Si `cancelAtPeriodEnd: true` → banner orange "Your plan will be cancelled at end of period."
-- Prix mensuel : "{priceFcfa} FCFA / month (€{priceEur})"
-
-### UsageMetrics
-
-Props : `usage: UsageData; limits: PlanLimits`
-
-3 barres de progression :
-
-1. **Messages & Statuses** : `effectiveOutboundUsage / monthlyOutboundQuota`
-2. **API Requests** : `apiRequestsCount / monthlyApiRequestQuota`
-3. **Instances** : `activeInstancesCount / maxInstances`
-
-Chaque barre :
-
-- Label + compteur (ex: "12 / 20")
-- Couleur : green < 70%, orange 70–90%, red > 90%
-- Si quota illimité (`monthlyOutboundQuota: -1` ou très grand) → afficher "Unlimited"
-
-### PlansComparison
-
-Props : `plans: Plan[]; currentPlanCode: string`
-
-Grille 4 colonnes (ou 2x2 sur mobile) pour les plans : free, starter, pro, plus.
-
-Pour chaque plan :
-
-- Nom du plan
-- Prix : **{priceFcfa} FCFA/mois** + (€{priceEur})
-- Liste des limites et features :
-  - Instances : `maxInstances`
-  - Clés API : `maxApiKeys`
-  - Messages/mois : `monthlyOutboundQuota`
-  - API requests/mois : `monthlyApiRequestQuota`
-  - Webhooks : `features.webhooks` (✓/✗)
-  - Campagnes : `features.campaigns` (✓/✗)
-  - Statuts WhatsApp : `features.statuses` (✓/✗)
-- **Bouton d'action** :
-  - Plan actuel → "Current Plan" (disabled)
-  - Plan supérieur → "Upgrade" (primary)
-  - Plan inférieur → "Downgrade" (secondary)
-  - Free → "Downgrade to Free" ou pas de bouton si déjà free
-
-### CancelSubscriptionSection
-
-Affiché uniquement si `billingProvider !== 'none'` (plan payant actif).
-Props : `cancelAtPeriodEnd: boolean; periodEnd: string`
-
-Si `cancelAtPeriodEnd: false` :
-
-- Message : "Cancel your subscription — you'll retain access until {periodEnd}"
-- Bouton "Cancel Subscription" (rouge outline)
-
-Si `cancelAtPeriodEnd: true` :
-
-- Message : "Your plan is scheduled to cancel on {periodEnd}."
-- Bouton désactivé "Cancellation scheduled"
-
-### CancelConfirmationModal
-
-Props : `periodEnd: string; onConfirm: () => void; onCancel: () => void`
-Message : "Your subscription will be cancelled at the end of the current period ({periodEnd}). You'll retain access until then."
-
----
-
-## États à gérer
-
-- `loading` : skeletons sur CurrentPlanCard et UsageMetrics pendant les fetches
-- `upgrading` : loading sur le bouton "Upgrade" du plan sélectionné
-- `cancelling` : loading sur "Cancel Subscription"
-- `error.checkout` : toast "Could not initiate payment. Please try again."
-- `error.cancel` : toast "Could not cancel subscription. Please try again."
-- `checkout_pending` : note "Payment integration coming soon" si `checkoutUrl: null`
-
----
-
-## Actions utilisateur
-
-### Upgrader / Changer de plan
-
-- Déclencheur : bouton "Upgrade" sur un plan
-- Appel API : `POST /api/billing/checkout` — `{ planCode: "pro" }`
-- Succès si `checkoutUrl` non-null : `window.location.href = checkoutUrl` (redirection Paystack)
-- Si `checkoutUrl: null` (paiement pas encore configuré) : afficher un toast "Payment integration coming soon."
-- Erreur 404 : "Plan not found."
-
-### Annuler l'abonnement
-
-- Déclencheur : bouton "Cancel Subscription" → CancelConfirmationModal → "Confirm"
-- Appel API : `POST /api/billing/cancel`
-- Succès : rafraîchir les données (recharger GET /billing/subscription) + toast "Subscription cancelled at period end"
-- Erreur : toast "Could not cancel subscription."
-
----
-
-## Règles métier
-
-- Plan `free` : pas de bouton annulation (pas d'abonnement à annuler).
-- Le plan `free` inclut `1` clé API, **500** messages/mois, campagnes, **3** webhooks, lookups — voir `35-plan-catalog-and-statuses-frontend.md` §4 (note Free).
-- `billingProvider: 'none'` = plan free ou abonnement sans fournisseur de paiement — pas d'annulation possible.
-- `cancelAtPeriodEnd: true` → afficher la date limite d'accès, pas de nouveau bouton d'annulation.
-- Ordre d'affichage des plans : **free → pro → max**.
-- Checkout / upgrade : **`pro`** et **`max`** uniquement (`starter` / `plus` → 400).
-- Le plan actuel dans la grille doit être visuellement mis en avant (border colorée, badge "Current").
-- **Statuts WhatsApp** : ne pas afficher dans le portail (`canPublishStatuses: false`).
-
-### Message frontend à afficher partout où l’on explique le Free
-
-- `Free includes 500 messages/month, campaigns, 3 webhooks, and number lookups — 1 instance, 1 API key, 10 contact groups. WhatsApp Statuses are not available on any plan.`  
-  (FR : voir §4 de `35-plan-catalog-and-statuses-frontend.md`.)
-
----
-
-## Payloads de référence
-
-Response GET /api/billing/subscription:
+## Canonical response
 
 ```json
 {
   "data": {
     "subscription": {
-      "id": "sub_abc",
-      "planId": "plan_pro_id",
+      "id": "sub_uuid",
+      "status": "trialing",
+      "billingProvider": "none",
+      "currentPeriodStart": "2026-07-14T09:00:00.000Z",
+      "currentPeriodEnd": "2026-07-21T09:00:00.000Z",
+      "trialPlanCode": "starter",
+      "trialStartedAt": "2026-07-14T09:00:00.000Z",
+      "trialEndsAt": "2026-07-21T09:00:00.000Z",
+      "trialConsumedAt": "2026-07-14T09:00:00.000Z",
+      "accessBlockedAt": null,
+      "cancelAtPeriodEnd": false,
+      "scheduledPlan": null,
+      "scheduledPlanAt": null,
+      "scheduledAction": null,
       "plan": {
-        "code": "pro",
-        "name": "Pro",
-        "priceEur": 29,
-        "priceFcfa": 17000,
+        "code": "starter",
+        "name": "Starter",
+        "priceEur": 19,
         "limits": {
           "maxInstances": 5,
-          "maxApiKeys": 10,
-          "maxWebhookEndpoints": 10,
-          "monthlyOutboundQuota": 5000,
-          "monthlyApiRequestQuota": 50000
-        },
-        "features": {
-          "campaigns": true,
-          "statuses": true,
-          "voiceNotes": true,
-          "webhooks": true
+          "maxApiKeys": 5,
+          "maxWebhookEndpoints": 15,
+          "maxContactGroups": 50,
+          "monthlyOutboundQuota": 50000,
+          "monthlyApiRequestQuota": 150000
         }
-      },
-      "status": "active",
-      "billingProvider": "paystack",
-      "currentPeriodStart": "2026-03-01T00:00:00.000Z",
-      "currentPeriodEnd": "2026-03-31T23:59:59.999Z",
-      "cancelAtPeriodEnd": false
+      }
+    },
+    "access": {
+      "operational": true,
+      "reason": "trialing",
+      "expiresAt": "2026-07-21T09:00:00.000Z"
     },
     "usage": {
       "messagesCount": 312,
-      "statusesCount": 45,
-      "effectiveOutboundUsage": 357,
+      "statusesCount": 0,
+      "effectiveOutboundUsage": 312,
       "apiRequestsCount": 1240,
-      "activeInstancesCount": 3,
-      "activeApiKeysCount": 2
+      "activeInstancesCount": 1,
+      "activeApiKeysCount": 1
     },
     "period": {
-      "start": "2026-03-01T00:00:00.000Z",
-      "end": "2026-03-31T23:59:59.999Z"
+      "start": "2026-07-01T00:00:00.000Z",
+      "end": "2026-07-31T23:59:59.999Z"
     }
   }
 }
 ```
 
-Response GET /api/billing/plans:
+`statusesCount` is retained temporarily for response compatibility. The UI must ignore it. `effectiveOutboundUsage` equals `messagesCount`.
 
-```json
-{
-  "data": [
-    {
-      "id": "plan_free_id",
-      "code": "free",
-      "name": "Free",
-      "priceEur": 0,
-      "priceFcfa": 0,
-      "isActive": true,
-      "limits": {
-        "maxInstances": 1,
-        "maxApiKeys": 1,
-        "maxWebhookEndpoints": 0,
-        "monthlyOutboundQuota": 20,
-        "monthlyApiRequestQuota": 1000
-      },
-      "features": { "campaigns": false, "statuses": false, "voiceNotes": true, "webhooks": false }
-    },
-    {
-      "code": "starter",
-      "name": "Starter",
-      "priceEur": 9,
-      "priceFcfa": 5500,
-      "limits": {
-        "maxInstances": 2,
-        "maxApiKeys": 3,
-        "maxWebhookEndpoints": 3,
-        "monthlyOutboundQuota": 500,
-        "monthlyApiRequestQuota": 10000
-      },
-      "features": { "campaigns": true, "statuses": false, "voiceNotes": true, "webhooks": true }
-    }
-  ]
-}
-```
+## Access states
 
-Request POST /api/billing/checkout:
+| `reason` | Operational | Frontend behavior |
+|---|---:|---|
+| `trialing` | yes | Show trial countdown and subscribe CTA |
+| `active` | yes | Normal paid experience |
+| `cancellation_grace` | yes | Show access end date |
+| `past_due_grace` | yes, max 72h | Persistent payment warning |
+| `trial_expired` | no | Blocking billing CTA |
+| `payment_required` | no | Blocking billing CTA |
+| `past_due` | no | Require payment update |
+| `suspended` | no | Contact-support state |
 
-```json
-{ "planCode": "pro" }
-```
+Operational screens must handle `402 TRIAL_EXPIRED`, `402 SUBSCRIPTION_REQUIRED`, `402 SUBSCRIPTION_PAST_DUE` and `403 SUBSCRIPTION_SUSPENDED`. Invalidate workspace/subscription queries, show the matching billing message and navigate to `/billing`. Do not retry the denied mutation.
 
-Response POST /api/billing/checkout:
+## Billing page behavior
 
-```json
-{
-  "data": {
-    "checkoutUrl": "https://checkout.paystack.com/abcdef...",
-    "planCode": "pro",
-    "message": "Checkout session created"
-  }
-}
-```
+- Render two plan cards only: Starter and Growth.
+- Use `GET /api/billing/plans` for prices, features and limits.
+- Show exact trial end date and remaining whole days/hours.
+- Show message usage, API requests and instances. Do not show Statuses.
+- Trial or expired user: subscribe CTA calls checkout.
+- Starter paid user: Growth CTA starts checkout.
+- Growth paid user: Starter CTA schedules a downgrade at `currentPeriodEnd`.
+- Paid active user: cancellation schedules expiration at `currentPeriodEnd`; there is no Free fallback.
+- Poll subscription briefly after `?success=true` because Dodo webhook activation can arrive after the redirect.
 
-Response POST /api/billing/cancel:
+## Acceptance criteria
 
-```json
-{
-  "data": { "cancelled": true }
-}
-```
-
----
-
-## Out of scope
-
-- Historique des factures / invoices
-- Méthodes de paiement sauvegardées
-- Codes promo / réduction
-- Downgrade immédiat (seulement en fin de période)
+- No Free, Pro, MAX, Plus or FCFA labels remain on the billing page.
+- Expired users can open billing and profile but cannot perform product operations.
+- Trial countdown is based on backend timestamps, never a frontend-created date.
+- A checkout never grants access before a verified Dodo webhook updates the subscription.
+- Status usage is absent from visible metrics.

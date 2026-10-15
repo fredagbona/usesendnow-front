@@ -6,7 +6,7 @@ export const portalCopy = {
     nav: {
       dashboard: "Tableau de bord",
       instances: "Instances",
-      warmup: "Warmup",
+      warmup: "Health Center",
       messages: "Messages",
       campaigns: "Campagnes",
       contacts: "Contacts",
@@ -27,6 +27,12 @@ export const portalCopy = {
       upgrade: "Mettre à niveau",
       themeSwitchToLight: "Activer le thème clair",
       themeSwitchToDark: "Activer le thème sombre",
+    },
+    announcement: {
+      title: "MsgFlash évolue",
+      message: "Découvrez comment vos événements métier deviennent automatiquement des communications WhatsApp.",
+      cta: "Lire la mise à jour",
+      dismiss: "Masquer cette annonce",
     },
     titles: {
       dashboard: "Tableau de bord",
@@ -137,7 +143,7 @@ export const portalCopy = {
       teamAccessDenied: "Vous n'avez pas les droits nécessaires pour cette action dans cet espace d'équipe.",
       workspaceNotAvailable: "Cet espace d'équipe n'est plus disponible. Passage à l'espace personnel.",
       workspaceCurrentLoadError:
-        "Impossible de charger l'espace de travail (API). Vérifiez la connexion et NEXT_PUBLIC_API_URL.",
+        "Impossible de charger votre espace de travail. Vérifiez votre connexion, puis actualisez la page.",
       workspaceBillingOwnerOnlyHint: "Réservé au propriétaire de l'équipe.",
     },
     auth: {
@@ -222,6 +228,10 @@ export const portalCopy = {
         workEmail: "Email professionnel",
         phone: "Téléphone",
         password: "Mot de passe",
+        trialPlanLabel: "Plan d’essai",
+        starterPlan: "Starter",
+        growthPlan: "Growth",
+        trialPlanHint: "Un essai unique de 7 jours. Google démarre l’essai Starter.",
         termsPrefix: "J'accepte les",
         termsLink: "Conditions d'utilisation",
         termsAnd: "et la",
@@ -317,7 +327,7 @@ export const portalCopy = {
           href: "/teams",
         },
         { id: "page-instances", title: "Instances", description: "Gérer les connexions WhatsApp", href: "/instances" },
-        { id: "page-warmup", title: "Warmup global", description: "Score de sécurité et recommandations par instance", href: "/health" },
+        { id: "page-warmup", title: "Santé globale", description: "Score de sécurité et recommandations par instance", href: "/health" },
         { id: "page-messages", title: "Messages", description: "Envoyer et consulter les messages", href: "/messages" },
         { id: "page-campaigns", title: "Campagnes", description: "Piloter les envois en masse", href: "/campaigns" },
         { id: "page-contacts", title: "Contacts", description: "Carnet d'adresses et imports", href: "/contacts" },
@@ -386,7 +396,7 @@ export const portalCopy = {
       },
       toast: {
         notAvailableOnPlan:
-          "Les clés API ne sont pas disponibles sur le plan Gratuit. Changez de plan pour y accéder.",
+          "Un essai ou un abonnement Starter/Growth actif est requis pour utiliser les clés API.",
         maxReached: "Vous avez atteint la limite de clés API. Révoquez une clé existante ou changez de plan.",
         createFailed: "Impossible de créer la clé API.",
         revoked: "Clé API révoquée",
@@ -425,11 +435,11 @@ export const portalCopy = {
         numberLookups: "Vérifications de numéros",
       },
       planPolicyNoteFree:
-        "Le plan Gratuit inclut 500 messages/mois, les campagnes, 3 webhooks et les vérifications de numéros — 1 instance, 1 clé API, 10 groupes de contacts. Les statuts WhatsApp ne sont disponibles sur aucun plan.",
+        "Il n’existe plus de plan gratuit. Choisissez Starter ou Growth pour continuer à utiliser MsgFlash.",
       teamsJoinOnly:
         "Équipes : pas de création d’espace équipe — vous pouvez rejoindre une équipe sur invitation.",
-      teamsPro: "Équipes : jusqu’à 2 espaces propriétaire, 4 sièges par équipe.",
-      teamsMax: "Équipes : jusqu’à 4 espaces propriétaire, 8 sièges par équipe.",
+      teamsPro: "Starter : jusqu’à 2 espaces propriétaire, 4 sièges par équipe.",
+      teamsMax: "Growth : jusqu’à 4 espaces propriétaire, 8 sièges par équipe.",
       priceUnit: "€ / mois",
       yes: "oui",
       no: "non",
@@ -465,11 +475,11 @@ export const portalCopy = {
       cancelSubscriptionKeepAccessPrefix: "Vous conserverez l'accès",
       cancelSubscriptionUntilPrefix: "jusqu'au",
       cancelSubscriptionUntilFallback: "la fin de votre période",
-      cancelSubscriptionThenFree: "puis passerez au plan Gratuit.",
+      cancelSubscriptionThenFree: "puis l’accès au service sera bloqué.",
       scheduledDowngradeNoticePrefix: "Votre plan passera de",
       scheduledDowngradeNoticeOn: "le",
       scheduledCancelNoticePrefix: "Votre abonnement sera résilié le",
-      scheduledCancelNoticeSuffix: "Vous passerez au plan Gratuit.",
+      scheduledCancelNoticeSuffix: "L’accès au service sera ensuite bloqué.",
       cancelScheduledBadge: "Résiliation programmée",
       downgradeScheduledBadgePrefix: "Rétrogradation →",
       expiresOn: "Expire le",
@@ -493,7 +503,7 @@ export const portalCopy = {
           "Résiliation programmée. Un upgrade annulera la résiliation automatiquement.",
         cancelPeriodTextPrefix: "Votre abonnement sera annulé à la fin de la période en cours",
         cancelPeriodTextSuffix:
-          "Vous conserverez l'accès jusqu'à cette date, puis vous serez automatiquement basculé sur le plan gratuit.",
+          "Vous conserverez l'accès jusqu'à cette date, puis les opérations produit seront bloquées.",
         scheduledCancelKeepPlanPrefix: "Votre abonnement restera actif sur le plan",
         scheduledDowngradeCancelPrefix: "La rétrogradation vers",
         scheduledDowngradeCancelSuffix: "sera annulée. Votre plan",
@@ -514,8 +524,7 @@ export const portalCopy = {
         paymentCancelled: "Paiement annulé. Votre plan n'a pas changé.",
         downgradeScheduled: "Rétrogradation vers {{planName}} programmée à la fin de la période.",
         changeAlreadyScheduled: "Un changement de plan est déjà programmé.",
-        invalidPlanChange:
-          "Ce changement de plan n'est pas possible. Pour passer au plan gratuit, utilisez l'annulation.",
+        invalidPlanChange: "Ce changement de plan n'est pas possible.",
         noActiveSubscription: "Aucun abonnement actif.",
         planUnavailable: "Ce plan n'est pas disponible.",
         paymentTemporarilyUnavailable: "Le paiement est temporairement indisponible. Réessayez plus tard.",
@@ -523,7 +532,7 @@ export const portalCopy = {
         cancelSuccess: "Abonnement annulé — accès conservé jusqu'à la fin de la période.",
         cancelSuccessWithPlan:
           "Abonnement annulé — accès au plan {{planName}} conservé jusqu'à la fin de la période.",
-        alreadyOnFree: "Vous êtes déjà sur le plan gratuit.",
+        alreadyOnFree: "Aucun abonnement actif ne peut être résilié.",
         cancelFailed: "Impossible d'annuler l'abonnement. Réessayez.",
         scheduledCancelled: "Le changement programmé a été annulé.",
         noScheduledChange: "Aucun changement programmé à annuler.",
@@ -1032,7 +1041,7 @@ export const portalCopy = {
     dashboard: {
       pageTitle: "Tableau de bord",
       pageDescription: "Vue d'ensemble de votre activité WhatsApp",
-      planNameFree: "Gratuit",
+      planNameFree: "Starter",
       noInstance: "Aucune instance WhatsApp connectée.",
       connectNow: "Connecter maintenant →",
       messagesThisMonth: "Messages ce mois",
@@ -1323,7 +1332,7 @@ export const portalCopy = {
     },
     instances: {
       health: {
-        title: "Warmup & Santé",
+        title: "Health Center",
         loadError: "Impossible de charger les données de warmup.",
         retry: "Réessayer",
         firstConnected: "Première connexion :",
@@ -1347,7 +1356,7 @@ export const portalCopy = {
         },
       },
       globalHealth: {
-        pageTitle: "Warmup global",
+        pageTitle: "Santé globale",
         pageDescription: "Vue agrégée du score de sécurité et des recommandations pour vos instances connectées.",
         loadError: "Impossible de charger les données de santé pour une ou plusieurs instances.",
         retry: "Réessayer",
@@ -1734,7 +1743,7 @@ export const portalCopy = {
       loadError: "Impossible de charger le profil.",
       noChanges: "Aucune modification détectée.",
       notFound: "Profil introuvable.",
-      planFallbackFree: "Gratuit",
+      planFallbackFree: "Starter",
       planLabel: "Plan",
       formSectionTitle: "Modifier le profil",
       fullNameLabel: "Nom complet",
@@ -1759,7 +1768,7 @@ export const portalCopy = {
     nav: {
       dashboard: "Dashboard",
       instances: "Instances",
-      warmup: "Warmup",
+      warmup: "Health Center",
       messages: "Messages",
       campaigns: "Campaigns",
       contacts: "Contacts",
@@ -1780,6 +1789,12 @@ export const portalCopy = {
       upgrade: "Upgrade",
       themeSwitchToLight: "Switch to light theme",
       themeSwitchToDark: "Switch to dark theme",
+    },
+    announcement: {
+      title: "MsgFlash is evolving",
+      message: "See how your business events become automatic WhatsApp communication.",
+      cta: "Read the update",
+      dismiss: "Dismiss this announcement",
     },
     titles: {
       dashboard: "Dashboard",
@@ -1890,7 +1905,7 @@ export const portalCopy = {
       teamAccessDenied: "You do not have permission for this action in this team workspace.",
       workspaceNotAvailable: "That team workspace is no longer available. Switched to Personal.",
       workspaceCurrentLoadError:
-        "Could not load workspace (API). Check your connection and NEXT_PUBLIC_API_URL.",
+        "We couldn't load your workspace. Check your connection, then refresh the page.",
       workspaceBillingOwnerOnlyHint: "Only the team owner can change billing.",
     },
     auth: {
@@ -1974,6 +1989,10 @@ export const portalCopy = {
         workEmail: "Work email",
         phone: "Phone",
         password: "Password",
+        trialPlanLabel: "Trial plan",
+        starterPlan: "Starter",
+        growthPlan: "Growth",
+        trialPlanHint: "One seven-day trial. Google sign-up starts a Starter trial.",
         termsPrefix: "I accept the",
         termsLink: "Terms of service",
         termsAnd: "and the",
@@ -2068,7 +2087,7 @@ export const portalCopy = {
           href: "/teams",
         },
         { id: "page-instances", title: "Instances", description: "Manage WhatsApp connections", href: "/instances" },
-        { id: "page-warmup", title: "Global warmup", description: "Safety score and recommendations per instance", href: "/health" },
+        { id: "page-warmup", title: "Global health", description: "Safety score and recommendations per instance", href: "/health" },
         { id: "page-messages", title: "Messages", description: "Send and review messages", href: "/messages" },
         { id: "page-campaigns", title: "Campaigns", description: "Run bulk sends", href: "/campaigns" },
         { id: "page-contacts", title: "Contacts", description: "Address book and imports", href: "/contacts" },
@@ -2137,7 +2156,7 @@ export const portalCopy = {
       },
       toast: {
         notAvailableOnPlan:
-          "API keys are not available on the Free plan. Upgrade your plan to access them.",
+          "An active Starter/Growth trial or subscription is required to use API keys.",
         maxReached: "You reached the API key limit. Revoke an existing key or upgrade your plan.",
         createFailed: "Unable to create API key.",
         revoked: "API key revoked",
@@ -2176,11 +2195,11 @@ export const portalCopy = {
         numberLookups: "Number lookups",
       },
       planPolicyNoteFree:
-        "Free includes 500 messages/month, campaigns, 3 webhooks, and number lookups — 1 instance, 1 API key, 10 contact groups. WhatsApp Statuses are not available on any plan.",
+        "There is no Free plan. Choose Starter or Growth to continue using MsgFlash.",
       teamsJoinOnly:
         "Teams: you cannot create a team workspace — you can join when invited.",
-      teamsPro: "Teams: up to 2 owner workspaces, 4 seats each.",
-      teamsMax: "Teams: up to 4 owner workspaces, 8 seats each.",
+      teamsPro: "Starter: up to 2 owner workspaces, 4 seats each.",
+      teamsMax: "Growth: up to 4 owner workspaces, 8 seats each.",
       priceUnit: "€ / month",
       yes: "yes",
       no: "no",
@@ -2216,11 +2235,11 @@ export const portalCopy = {
       cancelSubscriptionKeepAccessPrefix: "You will keep access",
       cancelSubscriptionUntilPrefix: "until",
       cancelSubscriptionUntilFallback: "the end of your current period",
-      cancelSubscriptionThenFree: "then switch to the Free plan.",
+      cancelSubscriptionThenFree: "then service access will be blocked.",
       scheduledDowngradeNoticePrefix: "Your plan will change from",
       scheduledDowngradeNoticeOn: "on",
       scheduledCancelNoticePrefix: "Your subscription will end on",
-      scheduledCancelNoticeSuffix: "You will switch to the Free plan.",
+      scheduledCancelNoticeSuffix: "Service access will then be blocked.",
       cancelScheduledBadge: "Cancellation scheduled",
       downgradeScheduledBadgePrefix: "Downgrade →",
       expiresOn: "Expires on",
@@ -2244,7 +2263,7 @@ export const portalCopy = {
           "Cancellation scheduled. An upgrade will automatically cancel it.",
         cancelPeriodTextPrefix: "Your subscription will be canceled at the end of the current period",
         cancelPeriodTextSuffix:
-          "You will keep access until that date, then automatically move to the free plan.",
+          "You will keep access until that date, then product operations will be blocked.",
         scheduledCancelKeepPlanPrefix: "Your subscription will remain active on",
         scheduledDowngradeCancelPrefix: "Downgrade to",
         scheduledDowngradeCancelSuffix: "will be canceled. Your plan",
@@ -2265,7 +2284,7 @@ export const portalCopy = {
         paymentCancelled: "Payment canceled. Your plan did not change.",
         downgradeScheduled: "Downgrade to {{planName}} scheduled at period end.",
         changeAlreadyScheduled: "A plan change is already scheduled.",
-        invalidPlanChange: "This plan change is not possible. Use cancellation to switch to the free plan.",
+        invalidPlanChange: "This plan change is not possible.",
         noActiveSubscription: "No active subscription.",
         planUnavailable: "This plan is not available.",
         paymentTemporarilyUnavailable: "Payment is temporarily unavailable. Try again later.",
@@ -2273,7 +2292,7 @@ export const portalCopy = {
         cancelSuccess: "Subscription canceled — access kept until the end of the period.",
         cancelSuccessWithPlan:
           "Subscription canceled — access to the {{planName}} plan is kept until the end of the period.",
-        alreadyOnFree: "You are already on the free plan.",
+        alreadyOnFree: "There is no active subscription to cancel.",
         cancelFailed: "Unable to cancel subscription. Please try again.",
         scheduledCancelled: "Scheduled change has been canceled.",
         noScheduledChange: "No scheduled change to cancel.",
@@ -2779,7 +2798,7 @@ export const portalCopy = {
     dashboard: {
       pageTitle: "Dashboard",
       pageDescription: "Overview of your WhatsApp activity",
-      planNameFree: "Free",
+      planNameFree: "Starter",
       noInstance: "No connected WhatsApp instance.",
       connectNow: "Connect now →",
       messagesThisMonth: "Messages this month",
@@ -3064,7 +3083,7 @@ export const portalCopy = {
     },
     instances: {
       health: {
-        title: "Warmup & health",
+        title: "Health Center",
         loadError: "Unable to load warmup data.",
         retry: "Retry",
         firstConnected: "First connected:",
@@ -3088,7 +3107,7 @@ export const portalCopy = {
         },
       },
       globalHealth: {
-        pageTitle: "Global warmup",
+        pageTitle: "Global health",
         pageDescription: "Aggregated safety score and recommendations for your connected instances.",
         loadError: "Unable to load health data for one or more instances.",
         retry: "Retry",
@@ -3473,7 +3492,7 @@ export const portalCopy = {
       loadError: "Unable to load the profile.",
       noChanges: "No changes detected.",
       notFound: "Profile not found.",
-      planFallbackFree: "Free",
+      planFallbackFree: "Starter",
       planLabel: "Plan",
       formSectionTitle: "Edit profile",
       fullNameLabel: "Full name",

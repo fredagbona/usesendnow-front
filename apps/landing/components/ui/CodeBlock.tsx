@@ -21,7 +21,7 @@ export function CodeBlock({ lines, className = "" }: CodeBlockProps) {
 
   return (
     <div
-      className={`bg-[#0A0A0A] rounded-none border-2 border-white/10 font-mono text-sm p-5 overflow-x-auto shadow-[6px_6px_0px_0px_rgba(255,214,0,0.18)] ${className}`}
+      className={`bg-[#0A0A0A] rounded-sm border-2 border-white/10 font-mono text-sm p-5 overflow-x-auto shadow-[6px_6px_0px_0px_rgba(255,214,0,0.18)] ${className}`}
     >
       <pre className="leading-6">
         {lines.map((line, i) => (

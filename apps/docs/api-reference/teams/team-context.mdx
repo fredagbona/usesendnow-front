@@ -19,7 +19,7 @@ Team features use a **workspace** (personal or team). Integrations express that 
 
 ### Which `v1` routes use the team workspace?
 
-Any **`/api/v1/*`** route that reads or writes workspace data resolves the workspace from a **team key** + **`X-Team-Id`**. That includes messages (send, schedule, bulk, history), campaigns, templates, contacts, groups, webhooks, outbound statuses, instances (list, get, state, health), number lookups, media, and related operations.
+Any **`/api/v1/*`** route that reads or writes workspace data resolves the workspace from a **team key** + **`X-Team-Id`**. That includes messages (send, schedule, bulk, history), campaigns, templates, contacts, groups, webhooks, instances (list, get, state, health), number lookups, media, and related operations.
 
 ### Endpoints **not** available with team keys
 
@@ -58,7 +58,7 @@ Resource routes (JWT) accept an **optional** header:
 - **`X-Team-Id: <team uuid>`** — operate in that team’s **shared workspace** (you must be an active member).
 - **Omitted** — operate in your **personal** workspace (default).
 
-Applies to routes such as **`/api/messages`**, **`/api/contacts`**, **`/api/templates`**, **`/api/campaigns`**, **`/api/instances`**, **`/api/webhooks`**, **`/api/statuses`**, **`/api/media`**, **`/api/number-lookups`**, and their sub-paths.
+Applies to routes such as **`/api/messages`**, **`/api/contacts`**, **`/api/templates`**, **`/api/campaigns`**, **`/api/instances`**, **`/api/webhooks`**, **`/api/media`**, **`/api/number-lookups`**, and their sub-paths.
 
 If `X-Team-Id` is not a team you belong to (or the team is gone), the API returns **`404`** with code **`TEAM_NOT_FOUND`**.
 

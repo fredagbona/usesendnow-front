@@ -24,10 +24,10 @@ const copy = {
     subtitle:
       "Pas de bullshit. On montre où on gagne, où on perd, et pourquoi certains choisissent l'API officielle malgré le prix.",
     primary: "Voir les risques",
-    secondary: "Tester gratuitement",
+    secondary: "Commencer l’essai de 7 jours",
     tableHeaders: ["Critère", "MsgFlash", "Twilio", "360dialog", "Wati"],
     rows: [
-      { criterion: "Prix mensuel", msgflash: "0 € à 39 €", twilio: "0 $ + 0.005 $ / msg", dialog360: "49 € / mois + Meta", wati: "49 $ / mois + Meta" },
+      { criterion: "Prix mensuel", msgflash: "19 € à 39 €", twilio: "0 $ + 0.005 $ / msg", dialog360: "49 € / mois + Meta", wati: "49 $ / mois + Meta" },
       { criterion: "Coût par message (France)", msgflash: "Inclus dans l'abonnement", twilio: "~0.143 $ marketing + 0.005 $ markup", dialog360: "~0.143 $ marketing + 0.005 $ markup", wati: "Meta pass-through + plan" },
       { criterion: "Setup", msgflash: "2 min (QR code)", twilio: "1-2 semaines (validation)", dialog360: "1-2 semaines (validation)", wati: "< 1 heure" },
       { criterion: "Validation Meta", msgflash: "Non requise", twilio: "Requise", dialog360: "Requise", wati: "Requise" },
@@ -35,7 +35,7 @@ const copy = {
       { criterion: "Templates pré-approuvés", msgflash: "Non", twilio: "Oui", dialog360: "Oui", wati: "Oui" },
       { criterion: "Webhooks", msgflash: "Livraison, réponses, erreurs", twilio: "Complets", dialog360: "Complets", wati: "Basiques" },
       { criterion: "n8n / Zapier / Make", msgflash: "Natif", twilio: "Via HTTP", dialog360: "Non", wati: "Limité" },
-      { criterion: "SLA / Uptime", msgflash: "99% (Pro+)", twilio: "99.99%", dialog360: "99.9%", wati: "99.9%" },
+      { criterion: "SLA / Uptime", msgflash: "99% (Growth+)", twilio: "99.99%", dialog360: "99.9%", wati: "99.9%" },
       { criterion: "Support", msgflash: "Discord + Email", twilio: "Enterprise", dialog360: "Email", wati: "Chat" },
       { criterion: "Ban risk", msgflash: "Moyen (numéro dédié recommandé)", twilio: "Faible", dialog360: "Faible", wati: "Faible" },
       { criterion: "Idéal pour", msgflash: "Devs, makers, automations", twilio: "Enterprise, devs custom", dialog360: "Devs API-first", wati: "SMB no-code" },
@@ -69,10 +69,10 @@ const copy = {
     title: "MsgFlash vs Twilio, 360dialog, Wati: the honest comparison (2026)",
     subtitle: "No fluff. We show where we win, where we lose, and why some teams still choose the official API despite the price.",
     primary: "See the risks",
-    secondary: "Start free",
+    secondary: "Start seven-day trial",
     tableHeaders: ["Criterion", "MsgFlash", "Twilio", "360dialog", "Wati"],
     rows: [
-      { criterion: "Monthly price", msgflash: "€0 to €39", twilio: "$0 + $0.005 / msg", dialog360: "€49 / month + Meta", wati: "$49 / month + Meta" },
+      { criterion: "Monthly price", msgflash: "€19 to €39", twilio: "$0 + $0.005 / msg", dialog360: "€49 / month + Meta", wati: "$49 / month + Meta" },
       { criterion: "Cost per message (France)", msgflash: "Included in the subscription", twilio: "~$0.143 marketing + $0.005 markup", dialog360: "~$0.143 marketing + $0.005 markup", wati: "Meta pass-through + plan" },
       { criterion: "Setup", msgflash: "2 min (QR code)", twilio: "1-2 weeks (validation)", dialog360: "1-2 weeks (validation)", wati: "< 1 hour" },
       { criterion: "Meta validation", msgflash: "Not required", twilio: "Required", dialog360: "Required", wati: "Required" },
@@ -80,7 +80,7 @@ const copy = {
       { criterion: "Pre-approved templates", msgflash: "No", twilio: "Yes", dialog360: "Yes", wati: "Yes" },
       { criterion: "Webhooks", msgflash: "Delivery, replies, errors", twilio: "Full", dialog360: "Full", wati: "Basic" },
       { criterion: "n8n / Zapier / Make", msgflash: "Native", twilio: "Via HTTP", dialog360: "No", wati: "Limited" },
-      { criterion: "SLA / Uptime", msgflash: "99% (Pro+)", twilio: "99.99%", dialog360: "99.9%", wati: "99.9%" },
+      { criterion: "SLA / Uptime", msgflash: "99% (Growth+)", twilio: "99.99%", dialog360: "99.9%", wati: "99.9%" },
       { criterion: "Support", msgflash: "Discord + Email", twilio: "Enterprise", dialog360: "Email", wati: "Chat" },
       { criterion: "Ban risk", msgflash: "Medium (dedicated number recommended)", twilio: "Low", dialog360: "Low", wati: "Low" },
       { criterion: "Best for", msgflash: "Devs, makers, automations", twilio: "Enterprise, custom devs", dialog360: "API-first devs", wati: "SMB no-code" },
@@ -196,7 +196,7 @@ export default async function ComparatifPage() {
                 locale === "en" ? "Warning modal, not a hard block" : "Modal d'alerte, pas de blocage dur",
                 locale === "en" ? "User keeps the final decision" : "L'utilisateur garde la décision finale",
               ].map((item) => (
-                <div key={item} className="rounded-2xl border border-white/8 bg-[#0F0F0F] px-4 py-4 text-sm text-[#D5D5D5]">
+                <div key={item} className="rounded-sm border border-white/8 bg-[#0F0F0F] px-4 py-4 text-sm text-[#D5D5D5]">
                   {item}
                 </div>
               ))}
@@ -224,7 +224,7 @@ export default async function ComparatifPage() {
                 locale === "en" ? "Warnings only V1" : "Warnings only V1",
                 locale === "en" ? "Warm / cold / unknown split" : "Distinction warm / cold / unknown",
               ].map((item) => (
-                <div key={item} className="rounded-2xl border border-white/8 bg-[#0F0F0F] px-4 py-4 text-sm text-[#D5D5D5]">
+                <div key={item} className="rounded-sm border border-white/8 bg-[#0F0F0F] px-4 py-4 text-sm text-[#D5D5D5]">
                   {item}
                 </div>
               ))}
@@ -235,7 +235,7 @@ export default async function ComparatifPage() {
         <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2">
             <article className="border border-white/8 bg-[#121212] p-6 sm:p-8">
-              <div className="inline-flex rounded-full border border-[#FFD600]/20 bg-[#FFD600]/10 px-3 py-1 font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#FFD600]">
+              <div className="inline-flex rounded-sm border border-[#FFD600]/20 bg-[#FFD600]/10 px-3 py-1 font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#FFD600]">
                 {page.winTitle}
               </div>
               <div className="mt-5 space-y-3">
@@ -249,7 +249,7 @@ export default async function ComparatifPage() {
             </article>
 
             <article className="border border-white/8 bg-[#121212] p-6 sm:p-8">
-              <div className="inline-flex rounded-full border border-white/12 bg-white/6 px-3 py-1 font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#F0F0F0]">
+              <div className="inline-flex rounded-sm border border-white/12 bg-white/6 px-3 py-1 font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#F0F0F0]">
                 {page.loseTitle}
               </div>
               <div className="mt-5 space-y-3">

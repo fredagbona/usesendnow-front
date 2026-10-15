@@ -1,6 +1,6 @@
 ---
-title: GET Usage billing enrichi
-description: Retourne plan, limites, features, usage et période courante.
+title: GET Usage de facturation
+description: Retourne l'usage mensuel et l'accès effectif du compte.
 ---
 
 ## Endpoint
@@ -9,44 +9,21 @@ description: Retourne plan, limites, features, usage et période courante.
 GET /api/v1/billing/usage
 ```
 
-## Réponse succès `200`
-
 ```json
 {
   "data": {
-    "plan": {
-      "code": "pro",
-      "name": "Pro"
-    },
-    "limits": {
-      "maxInstances": 5,
-      "maxApiKeys": 10,
-      "maxWebhookEndpoints": 10,
-      "monthlyOutboundQuota": 5000,
-      "monthlyApiRequestQuota": 50000
-    },
-    "features": {
-      "campaigns": true,
-      "statuses": true,
-      "voiceNotes": true,
-      "webhooks": true
-    },
+    "plan": { "code": "starter", "name": "Starter" },
+    "access": { "operational": true, "reason": "active", "blockedAt": null, "graceEndsAt": null },
     "usage": {
-      "messagesCount": 1240,
-      "statusesCount": 85,
-      "effectiveOutboundUsage": 1325,
-      "apiRequestsCount": 4500,
-      "activeInstancesCount": 3,
-      "activeApiKeysCount": 2
+      "messagesCount": 1250,
+      "effectiveOutboundUsage": 1250,
+      "apiRequestsCount": 8400,
+      "activeInstancesCount": 2,
+      "activeApiKeysCount": 1
     },
-    "period": {
-      "start": "2026-04-01T00:00:00.000Z",
-      "end": "2026-04-30T23:59:59.999Z"
-    }
+    "period": { "start": "2026-07-01T00:00:00.000Z", "end": "2026-07-31T23:59:59.999Z" }
   }
 }
 ```
 
-## Règles workspace
-
-Cet endpoint reflète le **compte personnel** du propriétaire de la clé. Il exige une **clé API personnelle** (`msgf_live_…`). Une **clé d'équipe** est rejetée en `403` avec le code [`TEAM_KEY_NOT_ALLOWED`](/fr/resources/error-codes#équipes-workspaces). Voir [Team context](/fr/api-reference/teams/team-context).
+`effectiveOutboundUsage` est égal à `messagesCount`. Les statuts WhatsApp ne sont ni supportés ni facturés. L'usage est suivi par compte de facturation et reste disponible dans le portail via `GET /api/billing/subscription`.

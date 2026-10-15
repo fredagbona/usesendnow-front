@@ -1,75 +1,33 @@
 ---
 title: Plans and quotas
-description: MsgFlash plan comparison (EUR) and usage tracking through the public API.
+description: Starter and Growth pricing, trials, limits, and access rules.
 ---
 
-## Plan comparison
+MsgFlash offers two paid plans and no Free plan.
 
-MsgFlash focuses on **deliverability**, **campaigns**, and **transactional notifications** (webhooks, API). WhatsApp **statuses** are no longer part of the product offering.
+| | Starter | Growth |
+| --- | ---: | ---: |
+| Monthly price | €19 | €39 |
+| Trial | 7 days | 7 days |
+| WhatsApp instances | 5 | 20 |
+| API keys | 5 | 10 |
+| Webhook endpoints | 15 | 50 |
+| Contact groups | 50 | Unlimited |
+| Messages/month | 50,000 | 150,000 |
+| API requests/month | 150,000 | 500,000 |
+| Owned teams | 2 | 4 |
+| Seats/team | 4 | 8 |
 
-| | Free | Pro | MAX |
-| --- | --- | --- | --- |
-| **Monthly price** | €0 | €19 | €39 |
-| Instances | 1 | 5 | 20 |
-| Messages + statuses / month | 500 | 50,000 | 150,000 |
-| API requests / month | 500 | 150,000 | 500,000 |
-| API keys | 1 | 5 | 10 |
-| Webhook endpoints | 3 | 15 | 50 |
-| Contact groups | 10 | 50 | Unlimited |
-| Campaigns | yes | yes | yes |
-| Webhooks | yes | yes | yes |
-| Number lookups | yes | yes | yes |
-| Voice notes | yes | yes | yes |
-| Teams (owner) | — | 2 teams, 4 seats each | 4 teams, 8 seats each |
+## Trial and access
 
-<Note>
-Prices are in **EUR only**. The Starter plan has been retired. New paid subscriptions are **Pro** or **MAX** only. Checkout via the dashboard accepts `pro` or `max`.
-</Note>
+- A billing account can consume one 7-day application-managed trial.
+- Password signup accepts `trialPlanCode: "starter" | "growth"`; the default is `starter`.
+- Google signup starts a Starter trial.
+- The Dodo Payments trial setting must remain disabled because MsgFlash owns the trial clock.
+- At trial expiry, unpaid accounts become non-operational. There is no automatic fallback plan.
+- Cancellation keeps access until period end, then blocks product operations.
+- A failed renewal can expose a 72-hour `past_due_grace`; use the returned `access` object rather than calculating it in the browser.
 
----
+## Usage counting
 
-## Quota rules
-
-- Messages and statuses share the same monthly outbound quota: `effectiveOutboundUsage = messagesCount + statusesCount`
-- The monthly API quota is separate from the real-time rate limit
-- Scheduled messages re-check quota at send time
-- `features.statuses` is `false` on all plans — `POST /api/v1/statuses` returns `403` `STATUSES_NOT_AVAILABLE_ON_PLAN`
-
----
-
-## Track your usage
-
-```bash
-curl https://srv.msgflash.com/api/v1/billing/usage \
-  -H "x-api-key: msgf_live_your_api_key_here"
-```
-
-Example:
-
-```json
-{
-  "data": {
-    "plan": { "code": "pro", "name": "Pro" },
-    "limits": {
-      "maxInstances": 5,
-      "maxApiKeys": 5,
-      "maxWebhookEndpoints": 15,
-      "monthlyOutboundQuota": 50000,
-      "monthlyApiRequestQuota": 150000
-    },
-    "features": {
-      "campaigns": true,
-      "statuses": false,
-      "voiceNotes": true,
-      "webhooks": true,
-      "numberLookups": true
-    },
-    "usage": {
-      "messagesCount": 1240,
-      "statusesCount": 0,
-      "effectiveOutboundUsage": 1240,
-      "apiRequestsCount": 4500
-    }
-  }
-}
-```
+Outbound usage counts accepted messages only. WhatsApp Statuses are removed. API requests are metered separately. Listing and detail responses expose current counters and plan limits so clients can show warnings before hard quota errors.

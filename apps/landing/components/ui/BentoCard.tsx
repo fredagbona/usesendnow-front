@@ -18,9 +18,9 @@ export function BentoCard({
   elevated = false,
 }: BentoCardProps) {
   const radiusMap = {
-    sharp: "rounded-none",
-    rounded: "rounded-2xl",
-    large: "rounded-3xl",
+    sharp: "rounded-sm",
+    rounded: "rounded-sm",
+    large: "rounded-sm",
   };
 
   return (

@@ -79,9 +79,9 @@ export function Pricing({}: PricingProps) {
 
           <div className="border border-[#FFD600] bg-[#0D0D0D]">
             <div className="flex items-center gap-2 border-b border-[#FFD600]/30 px-4 py-3">
-              <span className="h-2 w-2 rounded-full bg-[#FFD600]" />
-              <span className="h-2 w-2 rounded-full bg-[#4B4B4B]" />
-              <span className="h-2 w-2 rounded-full bg-[#4B4B4B]" />
+              <span className="h-2 w-2 bg-[#FFD600]" />
+              <span className="h-2 w-2 bg-[#4B4B4B]" />
+              <span className="h-2 w-2 bg-[#4B4B4B]" />
             </div>
             <pre className="overflow-x-auto px-4 py-5 font-mono text-xs leading-6 text-[#FFD600] sm:px-5">
               <code>{messages.pricing.codeSample}</code>

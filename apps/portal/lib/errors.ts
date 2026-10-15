@@ -1,6 +1,6 @@
 const ERROR_MESSAGES: Record<string, string> = {
   MAX_INSTANCES_REACHED: "Limite d'instances atteinte pour votre plan.",
-  API_KEYS_NOT_AVAILABLE_ON_PLAN: "Les clés API ne sont pas disponibles sur le plan gratuit.",
+  API_KEYS_NOT_AVAILABLE_ON_PLAN: "Un essai ou abonnement Starter/Growth actif est requis pour les clés API.",
   MAX_API_KEYS_REACHED: "Limite de clés API atteinte pour votre plan.",
   WEBHOOKS_NOT_AVAILABLE_ON_PLAN: "Les webhooks ne sont pas disponibles sur votre plan.",
   MAX_WEBHOOK_ENDPOINTS_REACHED: "Limite d'endpoints webhook atteinte.",

@@ -8,7 +8,7 @@
     "dev:admin": "turbo dev --filter=admin",
     "build": "turbo build --filter=!docs",
     "build:portal": "turbo build --filter=portal",
-    "build:admin": "turbo build --filter=admin", 
+    "build:admin": "turbo build --filter=admin",
     "build:landing": "turbo build --filter=landing",
     "lint": "turbo lint --filter=!docs",
     "lint:landing": "turbo lint --filter=landing",
@@ -22,5 +22,9 @@
   "devDependencies": {
     "turbo": "latest"
   },
-  "packageManager": "pnpm@9.0.0"
+  "packageManager": "pnpm@9.0.0",
+  "dependencies": {
+    "@hugeicons/core-free-icons": "^4.2.2",
+    "@hugeicons/react": "^1.1.9"
+  }
 }

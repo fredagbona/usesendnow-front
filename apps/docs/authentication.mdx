@@ -92,10 +92,8 @@ Detailed guide:
 
 | Plan | Allowed API keys |
 |---|---|
-| Free | 1 |
-| Starter | 3 |
-| Pro | 10 |
-| Plus | 10 |
+| Starter | 5 |
+| Growth | 10 |
 
 ---
 
@@ -118,7 +116,10 @@ Detailed guide:
 |---|---|---|
 | `UNAUTHORIZED` | 401 | Missing, invalid, or revoked key |
 | `FORBIDDEN` | 403 | The key is valid but cannot access the resource |
-| `SUBSCRIPTION_INACTIVE` | 403 | The account no longer has an active subscription for the requested action |
+| `TRIAL_EXPIRED` | 402 | The 7-day trial ended without payment |
+| `SUBSCRIPTION_REQUIRED` | 402 | An active paid subscription is required |
+| `SUBSCRIPTION_PAST_DUE` | 402 | Payment recovery is required after the grace period |
+| `SUBSCRIPTION_SUSPENDED` | 403 | The billing account is administratively suspended |
 | `API_RATE_LIMIT_EXCEEDED` | 429 | More than 10 requests/second on the same key |
 | `MONTHLY_API_REQUEST_QUOTA_EXCEEDED` | 429 | Monthly API request quota exhausted |
 

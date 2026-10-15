@@ -1,196 +1,42 @@
 ---
-title: Billing
-description: Read your current plan, usage, and billing history from the public API.
+title: Billing integration
+description: Integrate Starter/Growth trials, checkout, subscription access, and usage.
 ---
 
-## Public billing endpoints
+## Product rules
 
-| Method | Endpoint |
-|---|---|
-| `GET` | `/api/v1/billing/plans` |
-| `GET` | `/api/v1/billing/subscription` |
-| `GET` | `/api/v1/billing/usage` |
-| `GET` | `/api/v1/billing/payments` |
-| `GET` | `/api/v1/usage` |
+MsgFlash has two paid plans: Starter at €19/month and Growth at €39/month. A new billing account gets one 7-day trial on the selected plan. There is no Free plan and an unpaid account is blocked after its trial.
 
-<Note>
-Public billing through an API key is read-only. Sensitive actions such as checkout, cancellation, or downgrade happen from the dashboard.
-</Note>
+## Frontend flow
 
-<Warning>
-Billing reads (`/me`, `/usage`, `/billing/subscription`, `/billing/usage`, `/billing/payments`) require a **personal API key** (`msgf_live_…`). A **team API key** (`msgf_team_…`) is rejected with `403` `TEAM_KEY_NOT_ALLOWED`. For team-aware billing data, use the console API with `Authorization: Bearer <jwt>` and the optional `X-Team-Id` header — see [Team context](/api-reference/teams/team-context).
-</Warning>
+1. Send `trialPlanCode: "starter" | "growth"` to `POST /api/auth/signup`. Omit it to select Starter.
+2. Read `GET /api/billing/subscription` after authentication.
+3. Treat `data.access.operational` as the access source of truth.
+4. If access is blocked, redirect product routes to `/billing` while keeping billing, profile, account deletion, and contact export available.
+5. Start checkout with `POST /api/billing/checkout` and `planCode: "starter" | "growth"`.
+6. Refetch subscription state after returning from Dodo Payments. Do not mark an account paid from the browser return URL alone.
 
-## Query parameters
+## Access handling
 
-All of these routes are `GET`.
+| Reason | Operational | Recommended UI |
+| --- | --- | --- |
+| `active`, `trialing`, `cancellation_grace`, `past_due_grace` | yes | Show remaining trial/period/grace time |
+| `trial_expired`, `payment_required` | no | Billing paywall and plan selection |
+| `past_due` | no | Payment recovery screen |
+| `suspended` | no | Contact support; do not offer a client-side bypass |
 
-| Endpoint | Query params | Body |
-|---|---|---|
-| `/api/v1/billing/plans` | noe | noe |
-| `/api/v1/billing/subscription` | noe | noe |
-| `/api/v1/billing/usage` | noe | noe |
-| `/api/v1/usage` | noe | noe |
-| `/api/v1/billing/payments` | `page`, `limit` | noe |
+Product API calls may return `402 TRIAL_EXPIRED`, `402 SUBSCRIPTION_REQUIRED`, `402 SUBSCRIPTION_PAST_DUE`, or `403 SUBSCRIPTION_SUSPENDED`. Preserve the current route when redirecting so the user can resume after payment.
 
----
+## Dodo Payments
 
-## List plans
+Create one recurring monthly product for Starter (€19) and one for Growth (€39). Configure their product IDs as `DODO_PRODUCT_ID_STARTER` and `DODO_PRODUCT_ID_GROWTH`. Disable provider-side trials. Webhooks, not return URLs, activate subscriptions and record payments.
 
-```bash
-curl https://srv.msgflash.com/api/v1/billing/plans \
-  -H "x-api-key: msgf_live_your_api_key_here"
-```
+Configure the backend with `DODO_PAYMENTS_ENVIRONMENT`, `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_WEBHOOK_KEY`, `DODO_PRODUCT_ID_STARTER`, and `DODO_PRODUCT_ID_GROWTH`. Test credentials and product IDs must only be used with `test_mode`; production credentials and product IDs must only be used with `live_mode`.
 
-### Success response
+Register `https://srv.msgflash.com/api/payments/webhook/dodo` as the Dodo webhook URL, replacing the host if the backend public URL differs for the target environment.
 
-```json
-{
-  "data": [
-    {
-      "code": "pro",
-      "name": "Pro",
-      "priceEur": 19,
-      "limits": {
-        "maxInstances": 5,
-        "maxApiKeys": 5,
-        "maxWebhookEndpoints": 15,
-        "monthlyOutboundQuota": 50000,
-        "monthlyApiRequestQuota": 150000
-      },
-      "features": {
-        "campaigns": true,
-        "statuses": false,
-        "voiceNotes": true,
-        "webhooks": true,
-        "numberLookups": true
-      }
-    }
-  ]
-}
-```
+## Cancellation and downgrade
 
-See [Plans and quotas](/resources/plans-and-quotas) for the full **Free / Pro / MAX** comparison (EUR only).
+Growth can be downgraded to Starter at period end. Cancellation also applies at period end. Once effective, cancellation produces an expired, non-operational account; it never creates a Free subscription.
 
----
-
-## Current subscription
-
-```bash
-curl https://srv.msgflash.com/api/v1/billing/subscription \
-  -H "x-api-key: msgf_live_your_api_key_here"
-```
-
-Example:
-
-```json
-{
-  "data": {
-    "subscription": {
-      "plan": {
-        "code": "pro",
-        "name": "Pro",
-        "limits": {
-          "maxInstances": 5,
-          "maxApiKeys": 5,
-          "maxWebhookEndpoints": 15
-        },
-        "features": {
-          "campaigns": true,
-          "statuses": false,
-          "webhooks": true
-        }
-      },
-      "scheduledPlan": null,
-      "scheduledPlanAt": null,
-      "scheduledAction": null
-    },
-    "usage": {
-      "messagesCount": 0,
-      "statusesCount": 0,
-      "effectiveOutboundUsage": 0,
-      "apiRequestsCount": 0,
-      "activeInstancesCount": 1,
-      "activeApiKeysCount": 1
-    },
-    "period": {
-      "start": "2026-04-01T00:00:00.000Z",
-      "end": "2026-04-30T23:59:59.999Z"
-    }
-  }
-}
-```
-
-<Note>
-Read limits from `subscription.plan.limits.*`, not from `subscription.plan.maxInstances`.
-</Note>
-
-<Note>
-Paid checkout accepts `pro` or `max` only. Legacy plan codes `starter` and `plus` may still appear on old payment records.
-</Note>
-
----
-
-## Enriched usage
-
-```bash
-curl https://srv.msgflash.com/api/v1/billing/usage \
-  -H "x-api-key: msgf_live_your_api_key_here"
-```
-
-This endpoint returns:
-- current plan
-- limits
-- features
-- monthly usage
-- billing period
-
----
-
-## Payment history
-
-```bash
-curl "https://srv.msgflash.com/api/v1/billing/payments?page=1&limit=20" \
-  -H "x-api-key: msgf_live_your_api_key_here"
-```
-
-Response:
-
-```json
-{
-  "data": {
-    "payments": [
-      {
-        "id": "pay_uuid",
-        "provider": "dodo",
-        "planCode": "pro",
-        "planName": "Pro",
-        "amount": 1900,
-        "currency": "EUR",
-        "status": "succeeded",
-        "periodStart": "2026-04-01T09:43:13.737Z",
-        "periodEnd": "2026-05-01T09:43:13.737Z",
-        "createdAt": "2026-04-01T09:43:13.745Z"
-      }
-    ],
-    "total": 1,
-    "page": 1,
-    "totalPages": 1
-  }
-}
-```
-
-### Query params
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `page` | integer | no | Default `1` |
-| `limit` | integer | no | Default `20`, max `100` |
-
-## Common errors
-
-| Code | HTTP | When |
-|---|---|---|
-| `UNAUTHORIZED` | 401 | Missing or invalid key |
-| `TEAM_KEY_NOT_ALLOWED` | 403 | Team API key used on a personal-only billing route |
-| `API_RATE_LIMIT_EXCEEDED` | 429 | Too many requests per second |
+See [Plans and quotas](/resources/plans-and-quotas), [Current subscription](/api-reference/billing/subscription), and [Billing usage](/api-reference/billing/usage).

@@ -22,9 +22,9 @@ const sizeClasses: Record<ButtonSize, string> = {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-[#FFD600] text-[#0A0A0A] border border-[#FFD600]",
+    "bg-[#FFD600] text-[#171515] border border-[#D7B800] hover:bg-[#FFE04A]",
   secondary:
-    "bg-transparent text-[#F0F0F0] border border-[#3A3A3A] hover:border-[#FFD600] hover:text-[#FFD600]",
+    "bg-white text-[#171515] border border-black/15 hover:border-[#A18A00] hover:text-[#171515] hover:bg-[#FFF8D6]",
 }
 
 export function Button({
@@ -36,7 +36,7 @@ export function Button({
   showArrow = false,
 }: ButtonProps) {
   const classes = [
-    "inline-flex items-center justify-center gap-2 font-(family-name:--font-geist-sans) font-bold uppercase tracking-[0.08em] rounded-none transition-colors cursor-pointer",
+    "inline-flex items-center justify-center gap-2 font-(family-name:--font-geist-sans) font-semibold uppercase tracking-[0.1em] rounded-sm transition-all duration-300 ease-out cursor-pointer will-change-transform",
     sizeClasses[size],
     variantClasses[variant],
     className,
@@ -45,12 +45,12 @@ export function Button({
   const motionProps =
     variant === "primary"
       ? {
-          whileHover: { x: 2, y: 2, boxShadow: "none" },
-          whileTap: { x: 2, y: 2, boxShadow: "none" },
-          style: { boxShadow: "4px 4px 0px #0A0A0A" },
+          whileHover: { y: -1, scale: 1.01 },
+          whileTap: { y: 0, scale: 0.99 },
+          style: { boxShadow: "0 8px 24px rgba(23,21,21,0.12)" },
         }
       : {
-          whileHover: { y: -1 },
+          whileHover: { y: -1, scale: 1.01 },
           whileTap: { y: 0 },
         }
 

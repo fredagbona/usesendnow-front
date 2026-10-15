@@ -1,45 +1,33 @@
 ---
 title: Plans et quotas
-description: Comparatif des plans MsgFlash (EUR) et suivi de consommation via l'API publique.
+description: Prix, essais, limites et règles d'accès de Starter et Growth.
 ---
 
-## Comparatif des plans
+MsgFlash propose deux plans payants et aucun plan Free.
 
-MsgFlash se concentre sur la **délivrabilité**, les **campagnes** et les **notifications transactionnelles** (webhooks, API). Les **statuts WhatsApp** ne font plus partie de l'offre.
+| | Starter | Growth |
+| --- | ---: | ---: |
+| Prix mensuel | 19 € | 39 € |
+| Essai | 7 jours | 7 jours |
+| Instances WhatsApp | 5 | 20 |
+| Clés API | 5 | 10 |
+| Endpoints webhook | 15 | 50 |
+| Groupes de contacts | 50 | Illimités |
+| Messages/mois | 50 000 | 150 000 |
+| Requêtes API/mois | 150 000 | 500 000 |
+| Équipes possédées | 2 | 4 |
+| Sièges/équipe | 4 | 8 |
 
-| | Free | Pro | MAX |
-| --- | --- | --- | --- |
-| **Prix mensuel** | 0 € | 19 € | 39 € |
-| Instances | 1 | 5 | 20 |
-| Messages + statuts / mois | 500 | 50 000 | 150 000 |
-| Requêtes API / mois | 500 | 150 000 | 500 000 |
-| Clés API | 1 | 5 | 10 |
-| Endpoints webhook | 3 | 15 | 50 |
-| Groupes de contacts | 10 | 50 | Illimité |
-| Campagnes | oui | oui | oui |
-| Webhooks | oui | oui | oui |
-| Lookups numéros | oui | oui | oui |
-| Notes vocales | oui | oui | oui |
-| Équipes (owner) | — | 2 équipes, 4 sièges | 4 équipes, 8 sièges |
+## Essai et accès
 
-<Note>
-Prix affichés en **EUR uniquement**. Le plan Starter est retiré. Les nouveaux abonnements payants sont **Pro** ou **MAX**.
-</Note>
+- Un compte de facturation ne peut consommer qu'un seul essai applicatif de 7 jours.
+- L'inscription par mot de passe accepte `trialPlanCode: "starter" | "growth"` ; la valeur par défaut est `starter`.
+- L'inscription Google démarre un essai Starter.
+- L'option trial de Dodo Payments doit rester désactivée car MsgFlash possède l'horloge d'essai.
+- À l'expiration, un compte non payé devient non opérationnel. Aucun plan de repli n'est appliqué.
+- Une résiliation conserve l'accès jusqu'à la fin de période puis bloque les opérations produit.
+- Un renouvellement échoué peut ouvrir une grâce `past_due_grace` de 72 heures ; le frontend doit lire l'objet `access` plutôt que recalculer l'état.
 
----
+## Comptage de l'usage
 
-## Règles de quota
-
-- Les messages et statuts partagent le quota mensuel sortant
-- `effectiveOutboundUsage = messagesCount + statusesCount`
-- Le quota API mensuel est distinct du rate limit temps réel
-- `features.statuses` est `false` sur tous les plans
-
----
-
-## Suivre votre consommation
-
-```bash
-curl https://srv.msgflash.com/api/v1/billing/usage \
-  -H "x-api-key: msgf_live_votre_cle_api"
-```
+L'usage outbound compte uniquement les messages acceptés. Les statuts WhatsApp sont supprimés. Les requêtes API sont comptées séparément. Les réponses de facturation exposent les compteurs et les limites pour afficher des alertes avant les erreurs de quota.

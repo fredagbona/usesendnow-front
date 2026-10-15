@@ -174,7 +174,7 @@ export default async function RisksPage() {
         <section className="border-b border-white/8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="mx-auto max-w-6xl border border-[#FFD600]/18 bg-[linear-gradient(180deg,rgba(255,214,0,0.08),rgba(18,18,18,0.98))] p-6 sm:p-8">
             <div className="flex items-start gap-3">
-              <div className="rounded-2xl border border-[#FFD600]/25 bg-[#FFD600]/10 p-3">
+              <div className="rounded-sm border border-[#FFD600]/25 bg-[#FFD600]/10 p-3">
                 <Shield01Icon className="h-6 w-6 text-[#FFD600]" />
               </div>
               <div>
@@ -191,7 +191,7 @@ export default async function RisksPage() {
             </div>
 
             <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="rounded-2xl border border-white/8 bg-[#0F0F0F] p-5">
+              <div className="rounded-sm border border-white/8 bg-[#0F0F0F] p-5">
                 <div className="flex items-center gap-2">
                   <ChartHistogramIcon className="h-5 w-5 text-[#FFD600]" />
                   <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#F0F0F0]">
@@ -201,7 +201,7 @@ export default async function RisksPage() {
                 <ol className="mt-4 space-y-3 text-sm leading-7 text-[#D0D0D0]">
                   {page.warmupSteps.map((step, index) => (
                     <li key={step} className="flex gap-3">
-                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#FFD600]/25 bg-[#FFD600]/10 font-(family-name:--font-geist-sans) text-xs font-bold text-[#FFD600]">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-[#FFD600]/25 bg-[#FFD600]/10 font-(family-name:--font-geist-sans) text-xs font-bold text-[#FFD600]">
                         {index + 1}
                       </span>
                       <span>{step}</span>
@@ -209,7 +209,7 @@ export default async function RisksPage() {
                   ))}
                 </ol>
               </div>
-              <div className="rounded-2xl border border-white/8 bg-[#0F0F0F] p-5">
+              <div className="rounded-sm border border-white/8 bg-[#0F0F0F] p-5">
                 <div className="flex items-center gap-2">
                   <InformationCircleIcon className="h-5 w-5 text-[#FFD600]" />
                   <p className="font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#F0F0F0]">
@@ -233,7 +233,7 @@ export default async function RisksPage() {
           <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2">
             {page.risks.map((risk) => (
               <article key={risk.title} className="border border-white/8 bg-[#121212] p-6 sm:p-8">
-                <div className="inline-flex rounded-full border border-[#FFD600]/20 bg-[#FFD600]/10 px-3 py-1 font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#FFD600]">
+                <div className="inline-flex rounded-sm border border-[#FFD600]/20 bg-[#FFD600]/10 px-3 py-1 font-(family-name:--font-geist-sans) text-xs font-bold uppercase tracking-[0.08em] text-[#FFD600]">
                   {risk.label} {risk.title}
                 </div>
                 <p className="mt-4 font-(family-name:--font-poppins) text-sm leading-7 text-[#B7B7B7]">{risk.description}</p>

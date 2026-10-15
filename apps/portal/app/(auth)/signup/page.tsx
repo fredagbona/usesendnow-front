@@ -64,7 +64,13 @@ export default function SignupPage() {
   const { copy } = usePortalLocale()
   const signupCopy = copy.auth.signup
   const router = useRouter()
-  const [form, setForm] = useState({ fullName: "", email: "", phone: "", password: "" })
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    trialPlanCode: "starter" as "starter" | "growth",
+  })
   const [showPassword, setShowPassword] = useState(false)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -77,7 +83,7 @@ export default function SignupPage() {
     if (getToken()) router.replace("/dashboard")
   }, [router])
 
-  const handleChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (field: "fullName" | "email" | "phone" | "password") => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }))
   }
 
@@ -90,7 +96,13 @@ export default function SignupPage() {
     setIsConflictError(false)
     setLoading(true)
     try {
-      const response = await apiClient.auth.signup(form.fullName, form.email, form.phone, form.password)
+      const response = await apiClient.auth.signup(
+        form.fullName,
+        form.email,
+        form.phone,
+        form.password,
+        form.trialPlanCode,
+      )
       if (typeof window !== "undefined") {
         localStorage.setItem(VERIFICATION_EMAIL_STORAGE_KEY, response.email)
       }
@@ -217,6 +229,36 @@ export default function SignupPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <fieldset className="space-y-2">
+          <legend className="text-xs font-semibold text-text-secondary uppercase tracking-widest">
+            {signupCopy.trialPlanLabel}
+          </legend>
+          <div className="grid grid-cols-2 gap-2">
+            {(["starter", "growth"] as const).map((planCode) => (
+              <button
+                key={planCode}
+                type="button"
+                aria-pressed={form.trialPlanCode === planCode}
+                onClick={() => setForm((previous) => ({ ...previous, trialPlanCode: planCode }))}
+                className={[
+                  "border px-3 py-3 text-left transition-colors",
+                  form.trialPlanCode === planCode
+                    ? "border-border-strong bg-primary-subtle"
+                    : "border-border bg-bg hover:border-border-strong",
+                ].join(" ")}
+              >
+                <span className="block text-sm font-semibold text-text">
+                  {planCode === "starter" ? signupCopy.starterPlan : signupCopy.growthPlan}
+                </span>
+                <span className="block text-xs text-text-secondary mt-1">
+                  {planCode === "starter" ? "€19/month" : "€39/month"}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-text-muted">{signupCopy.trialPlanHint}</p>
+        </fieldset>
+
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-text-secondary uppercase tracking-widest">{signupCopy.fullName}</label>
           <input type="text" value={form.fullName} onChange={handleChange("fullName")} placeholder="Jean Dupont" required minLength={2} autoComplete="name" className={inputClass} />

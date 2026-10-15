@@ -4,6 +4,8 @@ Route: /signup
 Auth: public
 Status: ready
 
+> Contract 2026-07-14: there is no Free plan. Each new billing account gets one 7-day trial on Starter or Growth.
+
 ---
 
 ## Purpose
@@ -45,6 +47,7 @@ Champs :
 - `email` — input email, required
 - `phone` — input tel, required (ex: +22912345678)
 - `password` — input password, required, min 8 chars
+- `trialPlanCode` — segmented choice, required, `starter | growth`, default `starter`
 
 Bouton submit : "Create account" — loading state pendant l'appel API.
 
@@ -67,7 +70,7 @@ Bouton "Sign up with Google" — redirige vers `GET /api/auth/google`.
 
 ### Inscription email/password
 - Déclencheur : submit du formulaire
-- Appel API : `POST /api/auth/signup` — `{ fullName, email, phone, password }`
+- Appel API : `POST /api/auth/signup` — `{ fullName, email, phone, password, trialPlanCode }`
 - Succès : ne rien stocker en localStorage. Afficher un écran `Check your email`.
 - Payload succès attendu :
   - `data.success === true`
@@ -93,6 +96,7 @@ Si l’utilisateur clique sur `Resend verification email` :
 - Déclencheur : clic sur "Sign up with Google"
 - Action : `window.location.href = '/api/auth/google'`
 - Même flow que login — callback → `/auth/callback?token=<jwt>`
+- Tant que le choix de plan n'est pas transporté dans un état OAuth signé, un nouveau compte Google démarre un trial Starter.
 
 ---
 
@@ -102,6 +106,8 @@ Si l’utilisateur clique sur `Resend verification email` :
 - Un compte créé via Google n'a pas de mot de passe — si l'email existe déjà, le googleId est lié au compte existant (pas de doublon).
 - Un compte créé via signup classique n’est pas connecté automatiquement.
 - L’utilisateur doit vérifier son email puis se connecter manuellement via `/login`.
+- Le trial commence côté backend à la création du compte; le frontend ne calcule jamais lui-même `trialEndsAt`.
+- Un compte existant ne reçoit jamais un second trial.
 
 ---
 
@@ -114,7 +120,8 @@ POST /api/auth/signup
   "fullName": "Fred Agbona",
   "email": "fred@example.com",
   "phone": "+22912345678",
-  "password": "mypassword123"
+  "password": "mypassword123",
+  "trialPlanCode": "starter"
 }
 ```
 

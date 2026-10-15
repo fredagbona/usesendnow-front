@@ -23,7 +23,10 @@ description: Principaux codes d'erreur retournés par l'API publique MsgFlash.
 |---|---|---|
 | `UNAUTHORIZED` | 401 | Clé API manquante, invalide ou révoquée. Vérifiez `x-api-key`. |
 | `FORBIDDEN` | 403 | Ressource non accessible avec cette clé |
-| `SUBSCRIPTION_INACTIVE` | 403 | Le compte n'a pas de souscription exploitable pour cette action |
+| `TRIAL_EXPIRED` | 402 | L'essai de 7 jours est terminé sans paiement actif |
+| `SUBSCRIPTION_REQUIRED` | 402 | Un abonnement payé actif est requis |
+| `SUBSCRIPTION_PAST_DUE` | 402 | Le paiement doit être régularisé après la grâce |
+| `SUBSCRIPTION_SUSPENDED` | 403 | Le compte de facturation est suspendu |
 | `API_RATE_LIMIT_EXCEEDED` | 429 | Plus de 10 requêtes/seconde sur la même clé |
 | `MONTHLY_API_REQUEST_QUOTA_EXCEEDED` | 429 | Quota mensuel de requêtes API épuisé |
 
@@ -39,7 +42,6 @@ description: Principaux codes d'erreur retournés par l'API publique MsgFlash.
 | `WEBHOOKS_NOT_AVAILABLE_ON_PLAN` | 403 | Webhooks indisponibles sur le plan actuel |
 | `MAX_WEBHOOK_ENDPOINTS_REACHED` | 403 | Limite d'endpoints webhook atteinte |
 | `CAMPAIGNS_NOT_AVAILABLE_ON_PLAN` | 403 | Campagnes indisponibles sur le plan actuel |
-| `STATUSES_NOT_AVAILABLE_ON_PLAN` | 403 | Statuts WhatsApp indisponibles sur le plan actuel |
 | `MAX_CONTACT_GROUPS_REACHED` | 403 | Limite de groupes de contacts atteinte |
 | `FEATURE_NOT_AVAILABLE_ON_PLAN` | 403 | Feature indisponible sur le plan courant |
 
@@ -81,7 +83,7 @@ Ces codes apparaissent quand la requête combine un mauvais type de clé API ave
 | `TEAM_KEY_NOT_ALLOWED` | 403 | Clé d'équipe utilisée sur une route `v1` réservée au compte personnel (`/me`, `/usage`, `/billing/subscription`, `/billing/usage`, `/billing/payments`). Utilisez une clé personnelle. |
 | `TEAM_NOT_FOUND` | 404 | `X-Team-Id` ne correspond à aucune équipe dont vous êtes membre actif (supprimée, retirée ou ID erroné). |
 | `TEAM_ACCESS_DENIED` | 403 | Authentifié mais le rôle ne permet pas cette action (ex. collaborateur tentant de gérer des clés d'équipe). |
-| `TEAM_FEATURE_UNAVAILABLE` | 403 | Le plan de votre compte n'inclut pas la création d'équipes (Free). Passez à Pro ou MAX. |
+| `TEAM_FEATURE_UNAVAILABLE` | 403 | Le compte n'est pas opérationnel pour créer une équipe. Activez Starter ou Growth. |
 | `TEAM_LIMIT_REACHED` | 403 | Le propriétaire a atteint le nombre maximum d'équipes autorisé par son plan. |
 | `TEAM_SEAT_LIMIT_REACHED` | 403 | L'équipe a déjà le nombre maximum de membres autorisé par le plan du propriétaire. |
 | `INSTANCE_NOT_ASSIGNED` | 403 | Collaborateur qui cible une instance non assignée à lui dans ce workspace d'équipe. |

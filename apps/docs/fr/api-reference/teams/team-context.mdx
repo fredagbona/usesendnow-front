@@ -19,7 +19,7 @@ Les fonctionnalités équipe utilisent un **espace de travail** (personnel ou é
 
 ### Quelles routes `v1` utilisent l'espace équipe ?
 
-Toute route **`/api/v1/*`** qui lit ou écrit des données résout l'espace à partir d'une **clé d'équipe** + **`X-Team-Id`** : messages (envoi, planification, lot, historique), campagnes, modèles, contacts, groupes, webhooks, statuts sortants, instances (liste, détail, état, santé), recherches de numéros, médias, etc.
+Toute route **`/api/v1/*`** qui lit ou écrit des données résout l'espace à partir d'une **clé d'équipe** + **`X-Team-Id`** : messages (envoi, planification, lot, historique), campagnes, modèles, contacts, groupes, webhooks, instances (liste, détail, état, santé), recherches de numéros, médias, etc.
 
 ### Endpoints **non** disponibles avec une clé d'équipe
 
@@ -58,7 +58,7 @@ Les routes ressources (JWT) acceptent un en-tête **optionnel** :
 - **`X-Team-Id: <uuid équipe>`** — agir dans l'espace **partagé** de cette équipe (vous devez être membre actif).
 - **Absent** — espace **personnel** (défaut).
 
-S'applique notamment à **`/api/messages`**, **`/api/contacts`**, **`/api/templates`**, **`/api/campaigns`**, **`/api/instances`**, **`/api/webhooks`**, **`/api/statuses`**, **`/api/media`**, **`/api/number-lookups`** et leurs sous-chemins.
+S'applique notamment à **`/api/messages`**, **`/api/contacts`**, **`/api/templates`**, **`/api/campaigns`**, **`/api/instances`**, **`/api/webhooks`**, **`/api/media`**, **`/api/number-lookups`** et leurs sous-chemins.
 
 Si `X-Team-Id` ne correspond pas à une équipe dont vous êtes membre (ou équipe supprimée) : **`404`**, code **`TEAM_NOT_FOUND`**.
 

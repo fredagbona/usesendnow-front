@@ -1,6 +1,6 @@
 ---
-title: GET Souscription courante
-description: Retourne la souscription courante, l'usage du portail et la période courante.
+title: GET Abonnement courant
+description: Retourne l'abonnement, l'accès effectif, l'usage et la période.
 ---
 
 ## Endpoint
@@ -9,45 +9,43 @@ description: Retourne la souscription courante, l'usage du portail et la périod
 GET /api/v1/billing/subscription
 ```
 
-## Réponse succès `200`
-
 ```json
 {
   "data": {
     "subscription": {
-      "plan": {
-        "code": "free",
-        "limits": {
-          "maxInstances": 1
-        },
-        "features": {
-          "campaigns": false
-        }
-      },
+      "status": "trialing",
+      "plan": { "code": "starter", "name": "Starter" },
+      "trialPlanCode": "starter",
+      "trialStartedAt": "2026-07-14T09:00:00.000Z",
+      "trialEndsAt": "2026-07-21T09:00:00.000Z",
+      "trialConsumedAt": "2026-07-14T09:00:00.000Z",
       "scheduledPlan": null,
       "scheduledPlanAt": null,
       "scheduledAction": null
     },
+    "access": {
+      "operational": true,
+      "reason": "trialing",
+      "blockedAt": null,
+      "graceEndsAt": null
+    },
     "usage": {
       "messagesCount": 0,
-      "statusesCount": 0,
       "effectiveOutboundUsage": 0,
       "apiRequestsCount": 0,
-      "activeInstancesCount": 1,
-      "activeApiKeysCount": 1
+      "activeInstancesCount": 0,
+      "activeApiKeysCount": 0
     },
     "period": {
-      "start": "2026-04-01T00:00:00.000Z",
-      "end": "2026-04-30T23:59:59.999Z"
+      "start": "2026-07-14T09:00:00.000Z",
+      "end": "2026-07-21T09:00:00.000Z"
     }
   }
 }
 ```
 
-<Note>
-Le plan Free expose maintenant `maxApiKeys: 1` côté `subscription.plan.limits`.
-</Note>
+`access.operational` est la source de vérité du frontend. Les raisons possibles sont `active`, `trialing`, `cancellation_grace`, `past_due_grace`, `trial_expired`, `payment_required`, `past_due` et `suspended`.
 
-## Règles workspace
+Si l'accès est bloqué, les endpoints produit répondent `402` (`TRIAL_EXPIRED`, `SUBSCRIPTION_REQUIRED` ou `SUBSCRIPTION_PAST_DUE`) ou `403 SUBSCRIPTION_SUSPENDED`. La facturation, le profil, la suppression du compte et l'export des contacts restent accessibles dans le portail.
 
-Cet endpoint reflète le **compte personnel** du propriétaire de la clé. Il exige une **clé API personnelle** (`msgf_live_…`). Une **clé d'équipe** est rejetée en `403` avec le code [`TEAM_KEY_NOT_ALLOWED`](/fr/resources/error-codes#équipes-workspaces). Pour des données billing d'équipe côté console, utilisez `GET /api/billing/subscription` avec `Authorization: Bearer <jwt>` et l'en-tête optionnel `X-Team-Id`. Voir [Team context](/fr/api-reference/teams/team-context).
+<Note>`statusesCount` peut encore apparaître temporairement pour compatibilité. Les statuts WhatsApp sont supprimés et ne contribuent jamais à `effectiveOutboundUsage`.</Note>

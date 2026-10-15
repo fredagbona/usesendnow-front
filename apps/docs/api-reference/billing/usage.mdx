@@ -1,6 +1,6 @@
 ---
-title: GET Extended billing usage
-description: Return plan, limits, features, usage, and current period.
+title: GET Billing usage
+description: Return monthly usage and effective account access.
 ---
 
 ## Endpoint
@@ -9,44 +9,21 @@ description: Return plan, limits, features, usage, and current period.
 GET /api/v1/billing/usage
 ```
 
-## Success response `200`
-
 ```json
 {
   "data": {
-    "plan": {
-      "code": "pro",
-      "name": "Pro"
-    },
-    "limits": {
-      "maxInstances": 5,
-      "maxApiKeys": 10,
-      "maxWebhookEndpoints": 10,
-      "monthlyOutboundQuota": 5000,
-      "monthlyApiRequestQuota": 50000
-    },
-    "features": {
-      "campaigns": true,
-      "statuses": true,
-      "voiceNotes": true,
-      "webhooks": true
-    },
+    "plan": { "code": "starter", "name": "Starter" },
+    "access": { "operational": true, "reason": "active", "blockedAt": null, "graceEndsAt": null },
     "usage": {
-      "messagesCount": 1240,
-      "statusesCount": 85,
-      "effectiveOutboundUsage": 1325,
-      "apiRequestsCount": 4500,
-      "activeInstancesCount": 3,
-      "activeApiKeysCount": 2
+      "messagesCount": 1250,
+      "effectiveOutboundUsage": 1250,
+      "apiRequestsCount": 8400,
+      "activeInstancesCount": 2,
+      "activeApiKeysCount": 1
     },
-    "period": {
-      "start": "2026-04-01T00:00:00.000Z",
-      "end": "2026-04-30T23:59:59.999Z"
-    }
+    "period": { "start": "2026-07-01T00:00:00.000Z", "end": "2026-07-31T23:59:59.999Z" }
   }
 }
 ```
 
-## Workspace rules
-
-This endpoint reflects the **personal account** of the key owner. It requires a **personal API key** (`msgf_live_…`). A **team API key** is rejected with `403` and code [`TEAM_KEY_NOT_ALLOWED`](/resources/error-codes#teams-workspaces). See [Team context](/api-reference/teams/team-context).
+`effectiveOutboundUsage` equals `messagesCount`. WhatsApp Statuses are not supported or billed. Usage is tracked per billing account and is also available to the portal through `GET /api/billing/subscription`.

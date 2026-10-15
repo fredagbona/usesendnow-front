@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Geist, Inter } from "next/font/google";
 import Script from "next/script";
 import { landingBrand } from "../lib/brand";
 import { detectLandingLocaleFromHeaders } from "../lib/landing-locale.server";
 import { LandingLocaleProvider } from "../lib/landing-i18n";
 import "./globals.css";
 
-const displayFont = Space_Grotesk({
+const displayFont = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: ["700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const bodyFont = Inter({
@@ -22,10 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await detectLandingLocaleFromHeaders()
 
   return {
-    title: "MsgFlash - " + (locale === "en" ? "WhatsApp infrastructure for products and automations" : "Infrastructure WhatsApp pour produits et automatisations"),
-    description: locale === "en"
-      ? "WhatsApp infrastructure for products and automations."
-      : landingBrand.tagline,
+    title: "MsgFlash",
+    description:
+      locale === "en"
+        ? "Run your business. Every customer stays informed automatically."
+        : landingBrand.tagline,
     icons: {
       icon: [
         { url: "/favicon.ico", sizes: "any" },
@@ -36,15 +37,16 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     manifest: "/site.webmanifest",
     openGraph: {
-      title: locale === "en" ? "MsgFlash - WhatsApp infrastructure for products and automations" : "MsgFlash - Infrastructure WhatsApp pour produits et automatisations",
-      description: locale === "en"
-        ? "WhatsApp infrastructure for products and automations."
-        : landingBrand.tagline,
+      title: "MsgFlash",
+      description:
+        locale === "en"
+          ? "Run your business. Every customer stays informed automatically."
+          : landingBrand.tagline,
       type: "website",
       url: `https://${landingBrand.domain}`,
       images: [
         {
-          url: `${landingBrand.appUrl.replace("app.", "")}/og-image.png`,
+          url: `${landingBrand.marketingUrl}/og-image.png`,
           width: 512,
           height: 512,
           alt: "MsgFlash landing",
@@ -53,11 +55,12 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: locale === "en" ? "MsgFlash - WhatsApp infrastructure for products and automations" : "MsgFlash - Infrastructure WhatsApp pour produits et automatisations",
-      description: locale === "en"
-        ? "WhatsApp infrastructure for products and automations."
-        : landingBrand.tagline,
-      images: [`${landingBrand.appUrl.replace("app.", "")}/og-image.png`],
+      title: "MsgFlash",
+      description:
+        locale === "en"
+          ? "Run your business. Every customer stays informed automatically."
+          : landingBrand.tagline,
+      images: [`${landingBrand.marketingUrl}/og-image.png`],
     },
   }
 }
@@ -71,7 +74,7 @@ export default async function RootLayout({
 
   return (
     <html lang={initialLocale} className={`${displayFont.variable} ${bodyFont.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#0A0A0A] text-[#F0F0F0]">
+      <body className="min-h-full flex flex-col bg-[#FCFAF4] text-[#171515]">
         <LandingLocaleProvider initialLocale={initialLocale}>
           <Script
             defer

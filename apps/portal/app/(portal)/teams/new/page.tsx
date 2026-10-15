@@ -20,7 +20,7 @@ export default function TeamCreatePage() {
   const router = useRouter()
   const [name, setName] = useState("")
   const [invites, setInvites] = useState<CreateTeamInviteInput[]>([{ email: "", role: "collaborator" }])
-  const [planCode, setPlanCode] = useState<string>("free")
+  const [planCode, setPlanCode] = useState<string>("starter")
   const [loadingPlan, setLoadingPlan] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -30,10 +30,10 @@ export default function TeamCreatePage() {
     ;(async () => {
       try {
         const sub: SubscriptionResponse = await apiClient.billing.getSubscription()
-        const code = sub.subscription?.plan?.code ?? "free"
+        const code = sub.subscription?.plan?.code ?? "starter"
         if (!cancelled) setPlanCode(code.toLowerCase())
       } catch {
-        if (!cancelled) setPlanCode("free")
+        if (!cancelled) setPlanCode("starter")
       } finally {
         if (!cancelled) setLoadingPlan(false)
       }
@@ -43,7 +43,7 @@ export default function TeamCreatePage() {
     }
   }, [])
 
-  const canCreate = planCode === "pro" || planCode === "max" || planCode === "plus"
+  const canCreate = ["starter", "growth", "pro", "max", "plus"].includes(planCode)
 
   const addRow = () => setInvites((rows) => [...rows, { email: "", role: "collaborator" }])
   const removeRow = (index: number) => setInvites((rows) => rows.filter((_, i) => i !== index))

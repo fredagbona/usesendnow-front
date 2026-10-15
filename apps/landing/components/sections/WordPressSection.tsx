@@ -45,7 +45,7 @@ export function WordPressSection({}: WordPressSectionProps) {
             </div>
 
             <div className="border-t border-white/8 bg-[radial-gradient(circle_at_top,rgba(255,214,0,0.18),rgba(10,10,10,0)_42%),#0D0D0D] px-6 py-8 lg:border-l lg:border-t-0">
-              <div className="rounded-[28px] border border-white/8 bg-[#161616] p-5">
+              <div className="rounded-sm border border-white/8 bg-[#161616] p-5">
                 <div className="flex items-center gap-3">
                   <Image src="/logo-wp.png" alt="WordPress" width={34} height={34} className="h-8 w-8 object-contain" />
                   <span className="font-(family-name:--font-geist-sans) text-xl font-black text-[#F0F0F0]">×</span>
@@ -85,7 +85,7 @@ export function WordPressSection({}: WordPressSectionProps) {
                 return (
                   <article key={pillar.title} className="border border-white/8 bg-[#151515]">
                     <div className="border-b border-white/8 bg-[#0F0F0F] p-6">
-                      <div className="inline-flex h-14 w-14 items-center justify-center rounded border border-[#FFD600]/20 bg-[#FFD600]/6 text-[#FFD600]">
+                      <div className="inline-flex h-14 w-14 items-center justify-center rounded-sm border border-[#FFD600]/20 bg-[#FFD600]/6 text-[#FFD600]">
                         <Icon className="h-7 w-7" />
                       </div>
                     </div>
